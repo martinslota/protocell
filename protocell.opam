@@ -1,0 +1,20 @@
+opam-version: "2.0"
+homepage: "https://github.com/martinslota/ocaml-protocell/"
+dev-repo: "git+https://github.com/martinslota/ocaml-protocell.git"
+bug-reports: "https://github.com/martinslota/ocaml-protocell/issues"
+doc: "https://martinslota.github.io/ocaml-protocell/"
+author: "Martin Slota <martin.slota@keemail.me>"
+license: "Apache-2.0"
+maintainer: "Martin Slota <martin.slota@keemail.me>"
+build: [["dune" "build" "-p" name "-j" jobs]]
+run-test: [["dune" "runtest" "-p" name "-j" jobs]]
+depends: [
+  "base" {>= "v0.10"}
+  "dune" {build}
+  "ocaml" {>= "4.04.1"}
+  "ocaml-protoc"
+]
+synopsis: "A Protobuf plugin for OCaml"
+description: """
+Rapidly evolving.
+"""

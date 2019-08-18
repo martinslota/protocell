@@ -1,0 +1,3 @@
+(library
+ (name spec)
+ (libraries ocaml-protoc))
