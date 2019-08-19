@@ -6,10 +6,10 @@ module Generated_code = Protoc_interface.Generated_code
 
 let tap ~f x = f x; x
 
-let generate_file : Shared_types.Protobuf.File.t -> Shared_types.Generated_code.File.t =
+let generate_file : Protobuf.File.t -> Generated_code.File.t =
  fun {name; _} -> {name; contents = name ^ "\n"}
 
-let generate_files : Shared_types.Protobuf.t -> Shared_types.Generated_code.t =
+let generate_files : Protobuf.t -> Generated_code.t =
  fun {files} -> List.map ~f:generate_file files
 
 let () =
