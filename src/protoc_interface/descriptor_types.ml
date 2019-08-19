@@ -44,8 +44,8 @@ type uninterpreted_option_name_part = {
 type uninterpreted_option = {
   name : uninterpreted_option_name_part list;
   identifier_value : string option;
-  positive_int_value : int64 option;
-  negative_int_value : int64 option;
+  positive_int_value : int option;
+  negative_int_value : int option;
   double_value : float option;
   string_value : bytes option;
   aggregate_value : string option;
@@ -63,13 +63,13 @@ type field_options = {
 
 type field_descriptor_proto = {
   name : string option;
-  number : int32 option;
+  number : int option;
   label : field_descriptor_proto_label option;
   type_ : field_descriptor_proto_type option;
   type_name : string option;
   extendee : string option;
   default_value : string option;
-  oneof_index : int32 option;
+  oneof_index : int option;
   json_name : string option;
   options : field_options option;
 }
@@ -81,7 +81,7 @@ type enum_value_options = {
 
 type enum_value_descriptor_proto = {
   name : string option;
-  number : int32 option;
+  number : int option;
   options : enum_value_options option;
 }
 
@@ -98,8 +98,8 @@ type enum_descriptor_proto = {
 }
 
 type descriptor_proto_extension_range = {
-  start : int32 option;
-  end_ : int32 option;
+  start : int option;
+  end_ : int option;
 }
 
 type oneof_options = {
@@ -120,8 +120,8 @@ type message_options = {
 }
 
 type descriptor_proto_reserved_range = {
-  start : int32 option;
-  end_ : int32 option;
+  start : int option;
+  end_ : int option;
 }
 
 type descriptor_proto = {
@@ -186,8 +186,8 @@ type file_options = {
 }
 
 type source_code_info_location = {
-  path : int32 list;
-  span : int32 list;
+  path : int list;
+  span : int list;
   leading_comments : string option;
   trailing_comments : string option;
   leading_detached_comments : string list;
@@ -201,8 +201,8 @@ type file_descriptor_proto = {
   name : string option;
   package : string option;
   dependency : string list;
-  public_dependency : int32 list;
-  weak_dependency : int32 list;
+  public_dependency : int list;
+  weak_dependency : int list;
   message_type : descriptor_proto list;
   enum_type : enum_descriptor_proto list;
   service : service_descriptor_proto list;
@@ -217,10 +217,10 @@ type file_descriptor_set = {
 }
 
 type generated_code_info_annotation = {
-  path : int32 list;
+  path : int list;
   source_file : string option;
-  begin_ : int32 option;
-  end_ : int32 option;
+  begin_ : int option;
+  end_ : int option;
 }
 
 type generated_code_info = {
@@ -246,8 +246,8 @@ let rec default_uninterpreted_option_name_part
 let rec default_uninterpreted_option 
   ?name:((name:uninterpreted_option_name_part list) = [])
   ?identifier_value:((identifier_value:string option) = None)
-  ?positive_int_value:((positive_int_value:int64 option) = None)
-  ?negative_int_value:((negative_int_value:int64 option) = None)
+  ?positive_int_value:((positive_int_value:int option) = None)
+  ?negative_int_value:((negative_int_value:int option) = None)
   ?double_value:((double_value:float option) = None)
   ?string_value:((string_value:bytes option) = None)
   ?aggregate_value:((aggregate_value:string option) = None)
@@ -281,13 +281,13 @@ let rec default_field_options
 
 let rec default_field_descriptor_proto 
   ?name:((name:string option) = None)
-  ?number:((number:int32 option) = None)
+  ?number:((number:int option) = None)
   ?label:((label:field_descriptor_proto_label option) = None)
   ?type_:((type_:field_descriptor_proto_type option) = None)
   ?type_name:((type_name:string option) = None)
   ?extendee:((extendee:string option) = None)
   ?default_value:((default_value:string option) = None)
-  ?oneof_index:((oneof_index:int32 option) = None)
+  ?oneof_index:((oneof_index:int option) = None)
   ?json_name:((json_name:string option) = None)
   ?options:((options:field_options option) = None)
   () : field_descriptor_proto  = {
@@ -313,7 +313,7 @@ let rec default_enum_value_options
 
 let rec default_enum_value_descriptor_proto 
   ?name:((name:string option) = None)
-  ?number:((number:int32 option) = None)
+  ?number:((number:int option) = None)
   ?options:((options:enum_value_options option) = None)
   () : enum_value_descriptor_proto  = {
   name;
@@ -342,8 +342,8 @@ let rec default_enum_descriptor_proto
 }
 
 let rec default_descriptor_proto_extension_range 
-  ?start:((start:int32 option) = None)
-  ?end_:((end_:int32 option) = None)
+  ?start:((start:int option) = None)
+  ?end_:((end_:int option) = None)
   () : descriptor_proto_extension_range  = {
   start;
   end_;
@@ -378,8 +378,8 @@ let rec default_message_options
 }
 
 let rec default_descriptor_proto_reserved_range 
-  ?start:((start:int32 option) = None)
-  ?end_:((end_:int32 option) = None)
+  ?start:((start:int option) = None)
+  ?end_:((end_:int option) = None)
   () : descriptor_proto_reserved_range  = {
   start;
   end_;
@@ -488,8 +488,8 @@ let rec default_file_options
 }
 
 let rec default_source_code_info_location 
-  ?path:((path:int32 list) = [])
-  ?span:((span:int32 list) = [])
+  ?path:((path:int list) = [])
+  ?span:((span:int list) = [])
   ?leading_comments:((leading_comments:string option) = None)
   ?trailing_comments:((trailing_comments:string option) = None)
   ?leading_detached_comments:((leading_detached_comments:string list) = [])
@@ -511,8 +511,8 @@ let rec default_file_descriptor_proto
   ?name:((name:string option) = None)
   ?package:((package:string option) = None)
   ?dependency:((dependency:string list) = [])
-  ?public_dependency:((public_dependency:int32 list) = [])
-  ?weak_dependency:((weak_dependency:int32 list) = [])
+  ?public_dependency:((public_dependency:int list) = [])
+  ?weak_dependency:((weak_dependency:int list) = [])
   ?message_type:((message_type:descriptor_proto list) = [])
   ?enum_type:((enum_type:enum_descriptor_proto list) = [])
   ?service:((service:service_descriptor_proto list) = [])
@@ -542,10 +542,10 @@ let rec default_file_descriptor_set
 }
 
 let rec default_generated_code_info_annotation 
-  ?path:((path:int32 list) = [])
+  ?path:((path:int list) = [])
   ?source_file:((source_file:string option) = None)
-  ?begin_:((begin_:int32 option) = None)
-  ?end_:((end_:int32 option) = None)
+  ?begin_:((begin_:int option) = None)
+  ?end_:((end_:int option) = None)
   () : generated_code_info_annotation  = {
   path;
   source_file;

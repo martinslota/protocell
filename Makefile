@@ -1,3 +1,5 @@
+PROTOC_INTERFACE_FOLDER := src/protoc_interface
+
 .PHONY: build
 build: ## Build the code
 	dune build
@@ -11,8 +13,14 @@ format: ## Reformat all code
 	dune build @fmt --auto-promote
 
 .PHONY: test
+test: build
 test: ## Run the tests
 	dune runtest --force
+	$(eval TMP := $(shell mktemp -d))
+	protoc --plugin=protoc-gen-ocaml=$(CURDIR)/_build/default/src/protocell/protocell.exe --ocaml_out=$(TMP) test/test.proto
+	@echo "\n\nFile contents:\n"
+	@find $(TMP) -type f | xargs cat
+	@rm -r $(TMP)
 
 .PHONY: release
 release: ## Create a new release on Github. Prepare the release for publishing on opam repositories.
@@ -24,8 +32,8 @@ release: ## Create a new release on Github. Prepare the release for publishing o
 .PHONY: generate-spec
 generate-spec: 
 	$(eval PROTOBUF_INCLUDE := $(shell find /usr -type d -path '*include/google/protobuf' | head -n 1 | xargs dirname | xargs dirname))
-	@dune exec -- ocaml-protoc -I $(PROTOBUF_INCLUDE) -ml_out src/spec $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto
-	@dune exec -- ocaml-protoc -I $(PROTOBUF_INCLUDE) -ml_out src/spec $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
+	@dune exec -- ocaml-protoc -I $(PROTOBUF_INCLUDE) -int32_type int_t -int64_type int_t -ml_out $(PROTOC_INTERFACE_FOLDER) $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto
+	@dune exec -- ocaml-protoc -I $(PROTOBUF_INCLUDE) -int32_type int_t -int64_type int_t -ml_out $(PROTOC_INTERFACE_FOLDER) $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
 
 .PHONY: help
 help: ## Display this help

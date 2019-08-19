@@ -53,8 +53,8 @@ let rec pp_uninterpreted_option fmt (v:Descriptor_types.uninterpreted_option) =
     Format.pp_open_vbox fmt 1;
     Pbrt.Pp.pp_record_field "name" (Pbrt.Pp.pp_list pp_uninterpreted_option_name_part) fmt v.Descriptor_types.name;
     Pbrt.Pp.pp_record_field "identifier_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.identifier_value;
-    Pbrt.Pp.pp_record_field "positive_int_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int64) fmt v.Descriptor_types.positive_int_value;
-    Pbrt.Pp.pp_record_field "negative_int_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int64) fmt v.Descriptor_types.negative_int_value;
+    Pbrt.Pp.pp_record_field "positive_int_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.positive_int_value;
+    Pbrt.Pp.pp_record_field "negative_int_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.negative_int_value;
     Pbrt.Pp.pp_record_field "double_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_float) fmt v.Descriptor_types.double_value;
     Pbrt.Pp.pp_record_field "string_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_bytes) fmt v.Descriptor_types.string_value;
     Pbrt.Pp.pp_record_field "aggregate_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.aggregate_value;
@@ -80,13 +80,13 @@ let rec pp_field_descriptor_proto fmt (v:Descriptor_types.field_descriptor_proto
   let pp_i fmt () =
     Format.pp_open_vbox fmt 1;
     Pbrt.Pp.pp_record_field "name" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.name;
-    Pbrt.Pp.pp_record_field "number" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.number;
+    Pbrt.Pp.pp_record_field "number" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.number;
     Pbrt.Pp.pp_record_field "label" (Pbrt.Pp.pp_option pp_field_descriptor_proto_label) fmt v.Descriptor_types.label;
     Pbrt.Pp.pp_record_field "type_" (Pbrt.Pp.pp_option pp_field_descriptor_proto_type) fmt v.Descriptor_types.type_;
     Pbrt.Pp.pp_record_field "type_name" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.type_name;
     Pbrt.Pp.pp_record_field "extendee" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.extendee;
     Pbrt.Pp.pp_record_field "default_value" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.default_value;
-    Pbrt.Pp.pp_record_field "oneof_index" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.oneof_index;
+    Pbrt.Pp.pp_record_field "oneof_index" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.oneof_index;
     Pbrt.Pp.pp_record_field "json_name" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.json_name;
     Pbrt.Pp.pp_record_field "options" (Pbrt.Pp.pp_option pp_field_options) fmt v.Descriptor_types.options;
     Format.pp_close_box fmt ()
@@ -106,7 +106,7 @@ let rec pp_enum_value_descriptor_proto fmt (v:Descriptor_types.enum_value_descri
   let pp_i fmt () =
     Format.pp_open_vbox fmt 1;
     Pbrt.Pp.pp_record_field "name" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.name;
-    Pbrt.Pp.pp_record_field "number" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.number;
+    Pbrt.Pp.pp_record_field "number" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.number;
     Pbrt.Pp.pp_record_field "options" (Pbrt.Pp.pp_option pp_enum_value_options) fmt v.Descriptor_types.options;
     Format.pp_close_box fmt ()
   in
@@ -135,8 +135,8 @@ let rec pp_enum_descriptor_proto fmt (v:Descriptor_types.enum_descriptor_proto) 
 let rec pp_descriptor_proto_extension_range fmt (v:Descriptor_types.descriptor_proto_extension_range) = 
   let pp_i fmt () =
     Format.pp_open_vbox fmt 1;
-    Pbrt.Pp.pp_record_field "start" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.start;
-    Pbrt.Pp.pp_record_field "end_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.end_;
+    Pbrt.Pp.pp_record_field "start" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.start;
+    Pbrt.Pp.pp_record_field "end_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.end_;
     Format.pp_close_box fmt ()
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -173,8 +173,8 @@ let rec pp_message_options fmt (v:Descriptor_types.message_options) =
 let rec pp_descriptor_proto_reserved_range fmt (v:Descriptor_types.descriptor_proto_reserved_range) = 
   let pp_i fmt () =
     Format.pp_open_vbox fmt 1;
-    Pbrt.Pp.pp_record_field "start" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.start;
-    Pbrt.Pp.pp_record_field "end_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.end_;
+    Pbrt.Pp.pp_record_field "start" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.start;
+    Pbrt.Pp.pp_record_field "end_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.end_;
     Format.pp_close_box fmt ()
   in
   Pbrt.Pp.pp_brk pp_i fmt ()
@@ -268,8 +268,8 @@ let rec pp_file_options fmt (v:Descriptor_types.file_options) =
 let rec pp_source_code_info_location fmt (v:Descriptor_types.source_code_info_location) = 
   let pp_i fmt () =
     Format.pp_open_vbox fmt 1;
-    Pbrt.Pp.pp_record_field "path" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int32) fmt v.Descriptor_types.path;
-    Pbrt.Pp.pp_record_field "span" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int32) fmt v.Descriptor_types.span;
+    Pbrt.Pp.pp_record_field "path" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int) fmt v.Descriptor_types.path;
+    Pbrt.Pp.pp_record_field "span" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int) fmt v.Descriptor_types.span;
     Pbrt.Pp.pp_record_field "leading_comments" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.leading_comments;
     Pbrt.Pp.pp_record_field "trailing_comments" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.trailing_comments;
     Pbrt.Pp.pp_record_field "leading_detached_comments" (Pbrt.Pp.pp_list Pbrt.Pp.pp_string) fmt v.Descriptor_types.leading_detached_comments;
@@ -291,8 +291,8 @@ let rec pp_file_descriptor_proto fmt (v:Descriptor_types.file_descriptor_proto) 
     Pbrt.Pp.pp_record_field "name" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.name;
     Pbrt.Pp.pp_record_field "package" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.package;
     Pbrt.Pp.pp_record_field "dependency" (Pbrt.Pp.pp_list Pbrt.Pp.pp_string) fmt v.Descriptor_types.dependency;
-    Pbrt.Pp.pp_record_field "public_dependency" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int32) fmt v.Descriptor_types.public_dependency;
-    Pbrt.Pp.pp_record_field "weak_dependency" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int32) fmt v.Descriptor_types.weak_dependency;
+    Pbrt.Pp.pp_record_field "public_dependency" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int) fmt v.Descriptor_types.public_dependency;
+    Pbrt.Pp.pp_record_field "weak_dependency" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int) fmt v.Descriptor_types.weak_dependency;
     Pbrt.Pp.pp_record_field "message_type" (Pbrt.Pp.pp_list pp_descriptor_proto) fmt v.Descriptor_types.message_type;
     Pbrt.Pp.pp_record_field "enum_type" (Pbrt.Pp.pp_list pp_enum_descriptor_proto) fmt v.Descriptor_types.enum_type;
     Pbrt.Pp.pp_record_field "service" (Pbrt.Pp.pp_list pp_service_descriptor_proto) fmt v.Descriptor_types.service;
@@ -315,10 +315,10 @@ let rec pp_file_descriptor_set fmt (v:Descriptor_types.file_descriptor_set) =
 let rec pp_generated_code_info_annotation fmt (v:Descriptor_types.generated_code_info_annotation) = 
   let pp_i fmt () =
     Format.pp_open_vbox fmt 1;
-    Pbrt.Pp.pp_record_field "path" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int32) fmt v.Descriptor_types.path;
+    Pbrt.Pp.pp_record_field "path" (Pbrt.Pp.pp_list Pbrt.Pp.pp_int) fmt v.Descriptor_types.path;
     Pbrt.Pp.pp_record_field "source_file" (Pbrt.Pp.pp_option Pbrt.Pp.pp_string) fmt v.Descriptor_types.source_file;
-    Pbrt.Pp.pp_record_field "begin_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.begin_;
-    Pbrt.Pp.pp_record_field "end_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int32) fmt v.Descriptor_types.end_;
+    Pbrt.Pp.pp_record_field "begin_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.begin_;
+    Pbrt.Pp.pp_record_field "end_" (Pbrt.Pp.pp_option Pbrt.Pp.pp_int) fmt v.Descriptor_types.end_;
     Format.pp_close_box fmt ()
   in
   Pbrt.Pp.pp_brk pp_i fmt ()

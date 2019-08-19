@@ -47,8 +47,8 @@ type uninterpreted_option_name_part = {
 type uninterpreted_option = {
   name : uninterpreted_option_name_part list;
   identifier_value : string option;
-  positive_int_value : int64 option;
-  negative_int_value : int64 option;
+  positive_int_value : int option;
+  negative_int_value : int option;
   double_value : float option;
   string_value : bytes option;
   aggregate_value : string option;
@@ -66,13 +66,13 @@ type field_options = {
 
 type field_descriptor_proto = {
   name : string option;
-  number : int32 option;
+  number : int option;
   label : field_descriptor_proto_label option;
   type_ : field_descriptor_proto_type option;
   type_name : string option;
   extendee : string option;
   default_value : string option;
-  oneof_index : int32 option;
+  oneof_index : int option;
   json_name : string option;
   options : field_options option;
 }
@@ -84,7 +84,7 @@ type enum_value_options = {
 
 type enum_value_descriptor_proto = {
   name : string option;
-  number : int32 option;
+  number : int option;
   options : enum_value_options option;
 }
 
@@ -101,8 +101,8 @@ type enum_descriptor_proto = {
 }
 
 type descriptor_proto_extension_range = {
-  start : int32 option;
-  end_ : int32 option;
+  start : int option;
+  end_ : int option;
 }
 
 type oneof_options = {
@@ -123,8 +123,8 @@ type message_options = {
 }
 
 type descriptor_proto_reserved_range = {
-  start : int32 option;
-  end_ : int32 option;
+  start : int option;
+  end_ : int option;
 }
 
 type descriptor_proto = {
@@ -189,8 +189,8 @@ type file_options = {
 }
 
 type source_code_info_location = {
-  path : int32 list;
-  span : int32 list;
+  path : int list;
+  span : int list;
   leading_comments : string option;
   trailing_comments : string option;
   leading_detached_comments : string list;
@@ -204,8 +204,8 @@ type file_descriptor_proto = {
   name : string option;
   package : string option;
   dependency : string list;
-  public_dependency : int32 list;
-  weak_dependency : int32 list;
+  public_dependency : int list;
+  weak_dependency : int list;
   message_type : descriptor_proto list;
   enum_type : enum_descriptor_proto list;
   service : service_descriptor_proto list;
@@ -220,10 +220,10 @@ type file_descriptor_set = {
 }
 
 type generated_code_info_annotation = {
-  path : int32 list;
+  path : int list;
   source_file : string option;
-  begin_ : int32 option;
-  end_ : int32 option;
+  begin_ : int option;
+  end_ : int option;
 }
 
 type generated_code_info = {
@@ -255,8 +255,8 @@ val default_uninterpreted_option_name_part :
 val default_uninterpreted_option : 
   ?name:uninterpreted_option_name_part list ->
   ?identifier_value:string option ->
-  ?positive_int_value:int64 option ->
-  ?negative_int_value:int64 option ->
+  ?positive_int_value:int option ->
+  ?negative_int_value:int option ->
   ?double_value:float option ->
   ?string_value:bytes option ->
   ?aggregate_value:string option ->
@@ -278,13 +278,13 @@ val default_field_options :
 
 val default_field_descriptor_proto : 
   ?name:string option ->
-  ?number:int32 option ->
+  ?number:int option ->
   ?label:field_descriptor_proto_label option ->
   ?type_:field_descriptor_proto_type option ->
   ?type_name:string option ->
   ?extendee:string option ->
   ?default_value:string option ->
-  ?oneof_index:int32 option ->
+  ?oneof_index:int option ->
   ?json_name:string option ->
   ?options:field_options option ->
   unit ->
@@ -300,7 +300,7 @@ val default_enum_value_options :
 
 val default_enum_value_descriptor_proto : 
   ?name:string option ->
-  ?number:int32 option ->
+  ?number:int option ->
   ?options:enum_value_options option ->
   unit ->
   enum_value_descriptor_proto
@@ -323,8 +323,8 @@ val default_enum_descriptor_proto :
 (** [default_enum_descriptor_proto ()] is the default value for type [enum_descriptor_proto] *)
 
 val default_descriptor_proto_extension_range : 
-  ?start:int32 option ->
-  ?end_:int32 option ->
+  ?start:int option ->
+  ?end_:int option ->
   unit ->
   descriptor_proto_extension_range
 (** [default_descriptor_proto_extension_range ()] is the default value for type [descriptor_proto_extension_range] *)
@@ -353,8 +353,8 @@ val default_message_options :
 (** [default_message_options ()] is the default value for type [message_options] *)
 
 val default_descriptor_proto_reserved_range : 
-  ?start:int32 option ->
-  ?end_:int32 option ->
+  ?start:int option ->
+  ?end_:int option ->
   unit ->
   descriptor_proto_reserved_range
 (** [default_descriptor_proto_reserved_range ()] is the default value for type [descriptor_proto_reserved_range] *)
@@ -431,8 +431,8 @@ val default_file_options :
 (** [default_file_options ()] is the default value for type [file_options] *)
 
 val default_source_code_info_location : 
-  ?path:int32 list ->
-  ?span:int32 list ->
+  ?path:int list ->
+  ?span:int list ->
   ?leading_comments:string option ->
   ?trailing_comments:string option ->
   ?leading_detached_comments:string list ->
@@ -450,8 +450,8 @@ val default_file_descriptor_proto :
   ?name:string option ->
   ?package:string option ->
   ?dependency:string list ->
-  ?public_dependency:int32 list ->
-  ?weak_dependency:int32 list ->
+  ?public_dependency:int list ->
+  ?weak_dependency:int list ->
   ?message_type:descriptor_proto list ->
   ?enum_type:enum_descriptor_proto list ->
   ?service:service_descriptor_proto list ->
@@ -470,10 +470,10 @@ val default_file_descriptor_set :
 (** [default_file_descriptor_set ()] is the default value for type [file_descriptor_set] *)
 
 val default_generated_code_info_annotation : 
-  ?path:int32 list ->
+  ?path:int list ->
   ?source_file:string option ->
-  ?begin_:int32 option ->
-  ?end_:int32 option ->
+  ?begin_:int option ->
+  ?end_:int option ->
   unit ->
   generated_code_info_annotation
 (** [default_generated_code_info_annotation ()] is the default value for type [generated_code_info_annotation] *)

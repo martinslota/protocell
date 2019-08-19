@@ -1,4 +1,4 @@
 (executable
  (name protocell)
  (public_name protocell)
- (libraries base ocaml-protoc spec stdio))
+ (libraries base protoc_interface stdio shared_types))

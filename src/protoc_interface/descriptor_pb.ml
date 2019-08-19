@@ -13,8 +13,8 @@ let default_uninterpreted_option_name_part_mutable () : uninterpreted_option_nam
 type uninterpreted_option_mutable = {
   mutable name : Descriptor_types.uninterpreted_option_name_part list;
   mutable identifier_value : string option;
-  mutable positive_int_value : int64 option;
-  mutable negative_int_value : int64 option;
+  mutable positive_int_value : int option;
+  mutable negative_int_value : int option;
   mutable double_value : float option;
   mutable string_value : bytes option;
   mutable aggregate_value : string option;
@@ -52,13 +52,13 @@ let default_field_options_mutable () : field_options_mutable = {
 
 type field_descriptor_proto_mutable = {
   mutable name : string option;
-  mutable number : int32 option;
+  mutable number : int option;
   mutable label : Descriptor_types.field_descriptor_proto_label option;
   mutable type_ : Descriptor_types.field_descriptor_proto_type option;
   mutable type_name : string option;
   mutable extendee : string option;
   mutable default_value : string option;
-  mutable oneof_index : int32 option;
+  mutable oneof_index : int option;
   mutable json_name : string option;
   mutable options : Descriptor_types.field_options option;
 }
@@ -88,7 +88,7 @@ let default_enum_value_options_mutable () : enum_value_options_mutable = {
 
 type enum_value_descriptor_proto_mutable = {
   mutable name : string option;
-  mutable number : int32 option;
+  mutable number : int option;
   mutable options : Descriptor_types.enum_value_options option;
 }
 
@@ -123,8 +123,8 @@ let default_enum_descriptor_proto_mutable () : enum_descriptor_proto_mutable = {
 }
 
 type descriptor_proto_extension_range_mutable = {
-  mutable start : int32 option;
-  mutable end_ : int32 option;
+  mutable start : int option;
+  mutable end_ : int option;
 }
 
 let default_descriptor_proto_extension_range_mutable () : descriptor_proto_extension_range_mutable = {
@@ -167,8 +167,8 @@ let default_message_options_mutable () : message_options_mutable = {
 }
 
 type descriptor_proto_reserved_range_mutable = {
-  mutable start : int32 option;
-  mutable end_ : int32 option;
+  mutable start : int option;
+  mutable end_ : int option;
 }
 
 let default_descriptor_proto_reserved_range_mutable () : descriptor_proto_reserved_range_mutable = {
@@ -289,8 +289,8 @@ let default_file_options_mutable () : file_options_mutable = {
 }
 
 type source_code_info_location_mutable = {
-  mutable path : int32 list;
-  mutable span : int32 list;
+  mutable path : int list;
+  mutable span : int list;
   mutable leading_comments : string option;
   mutable trailing_comments : string option;
   mutable leading_detached_comments : string list;
@@ -316,8 +316,8 @@ type file_descriptor_proto_mutable = {
   mutable name : string option;
   mutable package : string option;
   mutable dependency : string list;
-  mutable public_dependency : int32 list;
-  mutable weak_dependency : int32 list;
+  mutable public_dependency : int list;
+  mutable weak_dependency : int list;
   mutable message_type : Descriptor_types.descriptor_proto list;
   mutable enum_type : Descriptor_types.enum_descriptor_proto list;
   mutable service : Descriptor_types.service_descriptor_proto list;
@@ -351,10 +351,10 @@ let default_file_descriptor_set_mutable () : file_descriptor_set_mutable = {
 }
 
 type generated_code_info_annotation_mutable = {
-  mutable path : int32 list;
+  mutable path : int list;
   mutable source_file : string option;
-  mutable begin_ : int32 option;
-  mutable end_ : int32 option;
+  mutable begin_ : int option;
+  mutable end_ : int option;
 }
 
 let default_generated_code_info_annotation_mutable () : generated_code_info_annotation_mutable = {
@@ -463,12 +463,12 @@ let rec decode_uninterpreted_option d =
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(uninterpreted_option), field(3)" pk
     | Some (4, Pbrt.Varint) -> begin
-      v.positive_int_value <- Some (Pbrt.Decoder.int64_as_varint d);
+      v.positive_int_value <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (4, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(uninterpreted_option), field(4)" pk
     | Some (5, Pbrt.Varint) -> begin
-      v.negative_int_value <- Some (Pbrt.Decoder.int64_as_varint d);
+      v.negative_int_value <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (5, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(uninterpreted_option), field(5)" pk
@@ -567,7 +567,7 @@ let rec decode_field_descriptor_proto d =
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(field_descriptor_proto), field(1)" pk
     | Some (3, Pbrt.Varint) -> begin
-      v.number <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.number <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(field_descriptor_proto), field(3)" pk
@@ -597,7 +597,7 @@ let rec decode_field_descriptor_proto d =
     | Some (7, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(field_descriptor_proto), field(7)" pk
     | Some (9, Pbrt.Varint) -> begin
-      v.oneof_index <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.oneof_index <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (9, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(field_descriptor_proto), field(9)" pk
@@ -664,7 +664,7 @@ let rec decode_enum_value_descriptor_proto d =
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(enum_value_descriptor_proto), field(1)" pk
     | Some (2, Pbrt.Varint) -> begin
-      v.number <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.number <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(enum_value_descriptor_proto), field(2)" pk
@@ -751,12 +751,12 @@ let rec decode_descriptor_proto_extension_range d =
     | None -> (
     ); continue__ := false
     | Some (1, Pbrt.Varint) -> begin
-      v.start <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.start <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(descriptor_proto_extension_range), field(1)" pk
     | Some (2, Pbrt.Varint) -> begin
-      v.end_ <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.end_ <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(descriptor_proto_extension_range), field(2)" pk
@@ -861,12 +861,12 @@ let rec decode_descriptor_proto_reserved_range d =
     | None -> (
     ); continue__ := false
     | Some (1, Pbrt.Varint) -> begin
-      v.start <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.start <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(descriptor_proto_reserved_range), field(1)" pk
     | Some (2, Pbrt.Varint) -> begin
-      v.end_ <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.end_ <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(descriptor_proto_reserved_range), field(2)" pk
@@ -1207,12 +1207,12 @@ let rec decode_source_code_info_location d =
       v.path <- List.rev v.path;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.path <- Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int32_as_varint d)::l) [] d;
+      v.path <- Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int_as_varint d)::l) [] d;
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(source_code_info_location), field(1)" pk
     | Some (2, Pbrt.Bytes) -> begin
-      v.span <- Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int32_as_varint d)::l) [] d;
+      v.span <- Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int_as_varint d)::l) [] d;
     end
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(source_code_info_location), field(2)" pk
@@ -1290,12 +1290,12 @@ let rec decode_file_descriptor_proto d =
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(file_descriptor_proto), field(3)" pk
     | Some (10, Pbrt.Varint) -> begin
-      v.public_dependency <- (Pbrt.Decoder.int32_as_varint d) :: v.public_dependency;
+      v.public_dependency <- (Pbrt.Decoder.int_as_varint d) :: v.public_dependency;
     end
     | Some (10, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(file_descriptor_proto), field(10)" pk
     | Some (11, Pbrt.Varint) -> begin
-      v.weak_dependency <- (Pbrt.Decoder.int32_as_varint d) :: v.weak_dependency;
+      v.weak_dependency <- (Pbrt.Decoder.int_as_varint d) :: v.weak_dependency;
     end
     | Some (11, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(file_descriptor_proto), field(11)" pk
@@ -1379,7 +1379,7 @@ let rec decode_generated_code_info_annotation d =
       v.path <- List.rev v.path;
     ); continue__ := false
     | Some (1, Pbrt.Bytes) -> begin
-      v.path <- Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int32_as_varint d)::l) [] d;
+      v.path <- Pbrt.Decoder.packed_fold (fun l d -> (Pbrt.Decoder.int_as_varint d)::l) [] d;
     end
     | Some (1, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(generated_code_info_annotation), field(1)" pk
@@ -1389,12 +1389,12 @@ let rec decode_generated_code_info_annotation d =
     | Some (2, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(generated_code_info_annotation), field(2)" pk
     | Some (3, Pbrt.Varint) -> begin
-      v.begin_ <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.begin_ <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (3, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(generated_code_info_annotation), field(3)" pk
     | Some (4, Pbrt.Varint) -> begin
-      v.end_ <- Some (Pbrt.Decoder.int32_as_varint d);
+      v.end_ <- Some (Pbrt.Decoder.int_as_varint d);
     end
     | Some (4, pk) -> 
       Pbrt.Decoder.unexpected_payload "Message(generated_code_info_annotation), field(4)" pk
@@ -1486,13 +1486,13 @@ let rec encode_uninterpreted_option (v:Descriptor_types.uninterpreted_option) en
   begin match v.Descriptor_types.positive_int_value with
   | Some x -> 
     Pbrt.Encoder.key (4, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int64_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.negative_int_value with
   | Some x -> 
     Pbrt.Encoder.key (5, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int64_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.double_value with
@@ -1568,7 +1568,7 @@ let rec encode_field_descriptor_proto (v:Descriptor_types.field_descriptor_proto
   begin match v.Descriptor_types.number with
   | Some x -> 
     Pbrt.Encoder.key (3, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.label with
@@ -1604,7 +1604,7 @@ let rec encode_field_descriptor_proto (v:Descriptor_types.field_descriptor_proto
   begin match v.Descriptor_types.oneof_index with
   | Some x -> 
     Pbrt.Encoder.key (9, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.json_name with
@@ -1644,7 +1644,7 @@ let rec encode_enum_value_descriptor_proto (v:Descriptor_types.enum_value_descri
   begin match v.Descriptor_types.number with
   | Some x -> 
     Pbrt.Encoder.key (2, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.options with
@@ -1697,13 +1697,13 @@ let rec encode_descriptor_proto_extension_range (v:Descriptor_types.descriptor_p
   begin match v.Descriptor_types.start with
   | Some x -> 
     Pbrt.Encoder.key (1, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.end_ with
   | Some x -> 
     Pbrt.Encoder.key (2, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   ()
@@ -1765,13 +1765,13 @@ let rec encode_descriptor_proto_reserved_range (v:Descriptor_types.descriptor_pr
   begin match v.Descriptor_types.start with
   | Some x -> 
     Pbrt.Encoder.key (1, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.end_ with
   | Some x -> 
     Pbrt.Encoder.key (2, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   ()
@@ -2008,13 +2008,13 @@ let rec encode_source_code_info_location (v:Descriptor_types.source_code_info_lo
   Pbrt.Encoder.key (1, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.nested (fun encoder ->
     List.iter (fun x -> 
-      Pbrt.Encoder.int32_as_varint x encoder;
+      Pbrt.Encoder.int_as_varint x encoder;
     ) v.Descriptor_types.path;
   ) encoder;
   Pbrt.Encoder.key (2, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.nested (fun encoder ->
     List.iter (fun x -> 
-      Pbrt.Encoder.int32_as_varint x encoder;
+      Pbrt.Encoder.int_as_varint x encoder;
     ) v.Descriptor_types.span;
   ) encoder;
   begin match v.Descriptor_types.leading_comments with
@@ -2061,11 +2061,11 @@ let rec encode_file_descriptor_proto (v:Descriptor_types.file_descriptor_proto) 
   ) v.Descriptor_types.dependency;
   List.iter (fun x -> 
     Pbrt.Encoder.key (10, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   ) v.Descriptor_types.public_dependency;
   List.iter (fun x -> 
     Pbrt.Encoder.key (11, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   ) v.Descriptor_types.weak_dependency;
   List.iter (fun x -> 
     Pbrt.Encoder.key (4, Pbrt.Bytes) encoder; 
@@ -2114,7 +2114,7 @@ let rec encode_generated_code_info_annotation (v:Descriptor_types.generated_code
   Pbrt.Encoder.key (1, Pbrt.Bytes) encoder; 
   Pbrt.Encoder.nested (fun encoder ->
     List.iter (fun x -> 
-      Pbrt.Encoder.int32_as_varint x encoder;
+      Pbrt.Encoder.int_as_varint x encoder;
     ) v.Descriptor_types.path;
   ) encoder;
   begin match v.Descriptor_types.source_file with
@@ -2126,13 +2126,13 @@ let rec encode_generated_code_info_annotation (v:Descriptor_types.generated_code
   begin match v.Descriptor_types.begin_ with
   | Some x -> 
     Pbrt.Encoder.key (3, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   begin match v.Descriptor_types.end_ with
   | Some x -> 
     Pbrt.Encoder.key (4, Pbrt.Varint) encoder; 
-    Pbrt.Encoder.int32_as_varint x encoder;
+    Pbrt.Encoder.int_as_varint x encoder;
   | None -> ();
   end;
   ()
