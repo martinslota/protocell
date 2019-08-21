@@ -9,6 +9,7 @@ maintainer: "Martin Slota <martin.slota@keemail.me>"
 build: [["dune" "build" "-p" name "-j" jobs]]
 run-test: [["dune" "runtest" "-p" name "-j" jobs]]
 depends: [
+  "alcotest" {with-test}
   "base" {>= "v0.10"}
   "dune" {build}
   "ocaml" {>= "4.04.1"}
