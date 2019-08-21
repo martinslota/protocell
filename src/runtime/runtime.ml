@@ -18,6 +18,7 @@ module Input = struct
     position : int ref;
   }
 
+  (* FIXME how about overflow ? *)
   let get {bytes; position} =
     let result = bytes.[!position] in
     Int.incr position; result
