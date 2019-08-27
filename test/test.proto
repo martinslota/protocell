@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-import "google/protobuf/timestamp.proto";
-
-message M {
-  int32 f = 1;
-  google.protobuf.Timestamp t = 2;
-}

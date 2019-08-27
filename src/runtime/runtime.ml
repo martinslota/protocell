@@ -72,6 +72,15 @@ module Field = struct
     append_varint buffer length;
     Buffer.add_string buffer value
 
+  let stringify_int_32 : int -> Buffer.t -> unit =
+   fun value buffer -> Int.to_string value |> Buffer.add_string buffer
+
+  let stringify_string : string -> Buffer.t -> unit =
+   fun value buffer ->
+    Buffer.add_char buffer '"';
+    Buffer.add_string buffer value;
+    Buffer.add_char buffer '"'
+
   type decoding_error = [`Wrong_wire_type]
 
   type 'a decoding_result = ('a, decoding_error) Result.t
@@ -139,4 +148,14 @@ module Message = struct
         in
         deserializer wire_value)
     |> Result.all_unit
+
+  let stringify : (string * (Buffer.t -> unit)) list -> string =
+   fun fields ->
+    let buffer = Buffer.create 1024 in
+    List.iter fields ~f:(fun (field_name, encoder) ->
+        Buffer.add_string buffer field_name;
+        Buffer.add_string buffer ": ";
+        encoder buffer;
+        Buffer.add_string buffer ";\n");
+    Buffer.contents buffer
 end

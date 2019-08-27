@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message Message_name {
+  int32 int_field = 7;
+  repeated string string_field = 42;
+}

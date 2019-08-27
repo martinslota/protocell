@@ -15,11 +15,6 @@ format: ## Reformat all code
 .PHONY: test
 test: build
 test: ## Run the tests
-	$(eval TMP := $(shell mktemp -d))
-	protoc --plugin=protoc-gen-ocaml=$(CURDIR)/_build/default/src/protocell/protocell.exe --ocaml_out=$(TMP) test/test.proto
-	@echo "\n\nFile contents:\n"
-	@find $(TMP) -type f | xargs cat
-	@rm -r $(TMP)
 	dune runtest --force
 
 .PHONY: release

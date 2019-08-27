@@ -11,6 +11,7 @@ run-test: [["dune" "runtest" "-p" name "-j" jobs]]
 depends: [
   "alcotest" {with-test}
   "base" {>= "v0.10"}
+  "core" {with-test & >= "v0.10"}
   "dune" {build}
   "ocaml" {>= "4.04.1"}
   "ocaml-protoc"
