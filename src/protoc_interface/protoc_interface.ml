@@ -62,7 +62,7 @@ module Protobuf = struct
       | None -> name
       | Some stem -> stem
     in
-    let name = Printf.sprintf "%s.ml" base_name in
+    let name = Printf.sprintf "%s_pc.ml" base_name in
     {name; messages = List.map ~f:message_of_request message_type}
 
   let of_request : Plugin.code_generator_request -> t =

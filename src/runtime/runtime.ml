@@ -3,7 +3,7 @@ open Base
 let append_varint : Buffer.t -> int -> unit =
  fun f i ->
   let rec loop b =
-    if b > 0x7f
+    if b > 0x7f || b < 0
     then (
       let byte = b land 0x7f in
       Buffer.add_char f (byte lor 128 |> Char.of_int_exn);

@@ -38,6 +38,7 @@ module Code = struct
                Printf.sprintf "%s : %s;" field_name field_type)
         |> lines;
         line "}";
+        line "[@@deriving eq, show]";
       ]
 
   let make_let name type_annotation code =

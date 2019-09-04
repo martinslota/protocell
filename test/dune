@@ -2,13 +2,13 @@
  (name test)
  (libraries alcotest core runtime)
  (preprocess
-  (pps ppx_deriving_yojson)))
+  (pps ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show)))
 
 (rule
- (targets test_pb.ml)
+ (targets sanity_pc.ml)
  (deps
   (:plugin ../src/protocell/protocell.exe)
-  (:proto test_pb.proto))
+  (:proto sanity.proto))
  (action
   (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
 
@@ -16,6 +16,6 @@
  (name runtest)
  (deps
   (:test test.exe)
-  test_pb.proto)
+  sanity.proto)
  (action
   (run %{test} --color=always)))
