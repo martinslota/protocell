@@ -2,6 +2,8 @@ open Base
 module Protobuf = Shared_types.Protobuf
 module Generated_code = Shared_types.Generated_code
 
+type options = {derivers : string list}
+
 module Code = struct
   type t =
     | Line of string
@@ -29,8 +31,14 @@ module Code = struct
         line "}";
       ]
 
-  let make_record_type type_name fields =
-    block
+  let make_record_type ~options:{derivers} type_name fields =
+    let deriving =
+      match derivers with
+      | [] -> []
+      | _ ->
+          [String.concat ~sep:", " derivers |> Printf.sprintf "[@@deriving %s]" |> line]
+    in
+    [
       [
         type_name |> Printf.sprintf "type %s = {" |> line;
         fields
@@ -38,8 +46,11 @@ module Code = struct
                Printf.sprintf "%s : %s;" field_name field_type)
         |> lines;
         line "}";
-        line "[@@deriving eq, show]";
-      ]
+      ];
+      deriving;
+    ]
+    |> List.concat
+    |> block
 
   let make_let name type_annotation code =
     block [Printf.sprintf "let %s : %s =" name type_annotation |> line; code]
@@ -75,8 +86,8 @@ module Code = struct
     append buffer ~indent:"" code; Buffer.contents buffer
 end
 
-let generate_message : Protobuf.Message.t -> Code.t =
- fun {name; fields} ->
+let generate_message : options:options -> Protobuf.Message.t -> Code.t =
+ fun ~options {name; fields} ->
   let type_to_string : Protobuf.field_data_type -> string = function
     | Protobuf.String -> "String"
     | Int32 -> "Int32"
@@ -93,7 +104,7 @@ let generate_message : Protobuf.Message.t -> Code.t =
     fields
     |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
            name, type_to_ocaml_type data_type)
-    |> Code.make_record_type "t"
+    |> Code.make_record_type ~options "t"
   in
   let serialize_code =
     Code.make_let "serialize" "t -> string"
@@ -184,19 +195,19 @@ let generate_message : Protobuf.Message.t -> Code.t =
     name
     [type_declaration; serialize_code; deserialize_code; stringify_code]
 
-let generate_file : Protobuf.File.t -> Generated_code.File.t =
- fun {name; messages} ->
+let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
+ fun ~options {name; messages} ->
   let contents =
     Code.(
       make_file
         [
           line "module F' = Runtime.Field";
           line "module M' = Runtime.Message";
-          List.map messages ~f:generate_message |> block ~indented:false;
+          List.map messages ~f:(generate_message ~options) |> block ~indented:false;
         ])
     |> Code.emit
   in
   {name; contents}
 
-let generate_files : Protobuf.t -> Generated_code.t =
- fun {files} -> List.map ~f:generate_file files
+let generate_files : options:options -> Protobuf.t -> Generated_code.t =
+ fun ~options {files} -> List.map ~f:(generate_file ~options) files
