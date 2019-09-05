@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Int32 {
+  int32 field = 1;
+}

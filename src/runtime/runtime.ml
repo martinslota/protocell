@@ -12,37 +12,6 @@ let append_varint : Buffer.t -> int -> unit =
   in
   loop i
 
-module Input = struct
-  type t = {
-    bytes : string;
-    position : int ref;
-  }
-
-  (* FIXME how about overflow ? *)
-  let get {bytes; position} =
-    let result = bytes.[!position] in
-    Int.incr position; result
-end
-
-let read_varint : Input.t -> int =
- fun input ->
-  let add c (acc : int) shift =
-    let shft = 7 * shift in
-    acc + (c lsl shft)
-  in
-  let rec loop (acc : int) shift =
-    let c = Input.get input in
-    if Char.to_int c land 0x80 > 0
-    then loop (add (Char.to_int c land 0x7f) acc shift) (Int.succ shift)
-    else add (Char.to_int c) acc shift
-  in
-  loop 0 0
-
-let read_string : Input.t -> string =
- fun ({bytes; position} as input) ->
-  let length = read_varint input in
-  String.sub bytes ~pos:!position ~len:length
-
 type wire_value =
   | Varint of int
   | Length_delimited of string
@@ -60,7 +29,7 @@ module Field = struct
     | Int32 -> Varint_type
     | String -> Length_delimited_type
 
-  let wire_type_to_int = function
+  let wire_type_to_id = function
     | Varint_type -> 0
     | Length_delimited_type -> 2
 
@@ -81,7 +50,10 @@ module Field = struct
     Buffer.add_string buffer value;
     Buffer.add_char buffer '"'
 
-  type decoding_error = [`Wrong_wire_type]
+  type decoding_error =
+    [ `Wrong_wire_type
+    | `Unknown_wire_type of int
+    | Reader.error ]
 
   type 'a decoding_result = ('a, decoding_error) Result.t
 
@@ -120,7 +92,7 @@ module Message = struct
     let buffer = Buffer.create 1024 in
     List.iter fields ~f:(fun (field_number, field_type, encoder) ->
         let wire_type_number =
-          field_type |> Field.field_type_to_wire_type |> Field.wire_type_to_int
+          field_type |> Field.field_type_to_wire_type |> Field.wire_type_to_id
         in
         let wire_descriptor = (field_number lsl 3) lor wire_type_number in
         append_varint buffer wire_descriptor;
@@ -132,21 +104,33 @@ module Message = struct
       (unit, Field.decoding_error) Result.t
     =
    fun bytes field_deserializers ->
-    let input = Input.{bytes; position = ref 0} in
-    (* FIXME *)
-    List.map field_deserializers ~f:(fun (_expected_field_number, deserializer) ->
-        let wire_descriptor = read_varint input in
-        let wire_type = wire_descriptor land 0x7 in
-        (* FIXME *)
-        let _field_number = wire_descriptor lsr 3 in
-        let wire_value =
-          match wire_type with
-          | 0 -> Varint (read_varint input)
-          | 2 -> Length_delimited (read_string input)
-          (* FIXME *)
-          | _ -> failwith "What?"
-        in
-        deserializer wire_value)
+    let open Result.Let_syntax in
+    let reader = Reader.create bytes in
+    let rec read_all () =
+      match Reader.has_more_bytes reader with
+      | false -> []
+      | true ->
+          let wire_record =
+            Reader.read_varint reader >>= fun wire_descriptor ->
+            let wire_type = wire_descriptor land 0x7 in
+            let field_number = wire_descriptor lsr 3 in
+            (match wire_type with
+            | 0 -> Reader.read_varint reader >>| fun int -> Varint int
+            | 2 -> Reader.read_string reader >>| fun bytes -> Length_delimited bytes
+            | _ -> Error (`Unknown_wire_type wire_type))
+            >>| fun wire_value -> field_number, wire_value
+          in
+          wire_record :: read_all ()
+    in
+    read_all () |> Result.all >>= fun wire_records ->
+    let wire_records =
+      Hashtbl.of_alist_multi ~growth_allowed:false (module Int) wire_records
+    in
+    List.map field_deserializers ~f:(fun (expected_field_number, deserializer) ->
+        match Hashtbl.find wire_records expected_field_number with
+        | None -> Ok ()
+        | Some [] -> Ok ()
+        | Some (value :: _) -> deserializer value)
     |> Result.all_unit
 
   let stringify : (string * (Buffer.t -> unit)) list -> string =

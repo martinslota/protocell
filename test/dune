@@ -10,10 +10,10 @@
    (WITH_DERIVERS eq,show))))
 
 (rule
- (targets sanity_pc.ml)
+ (targets sanity_pc.ml integers_pc.ml)
  (deps
   (:plugin ../src/protocell/protocell.exe)
-  (:proto sanity.proto))
+  (:proto sanity.proto integers.proto))
  (action
   (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
 
