@@ -7,9 +7,9 @@ module Generated_code = Protoc_interface.Generated_code
 
 let determine_options () =
   let derivers =
-    match Stdlib_sys.getenv_opt "WITH_DERIVERS" with
-    | Some derivers -> String.split derivers ~on:','
-    | None -> []
+    match Stdlib_sys.getenv "WITH_DERIVERS" with
+    | derivers -> String.split derivers ~on:','
+    | exception _ -> []
   in
   Generator.{derivers}
 
