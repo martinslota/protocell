@@ -24,4 +24,4 @@ let () =
   |> Generated_code.to_response
   |> Plugin.encode_response
   |> Bytes.to_string
-  |> Out_channel.print_string
+  |> Out_channel.(output_string stdout)
