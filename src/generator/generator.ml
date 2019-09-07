@@ -91,14 +91,17 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
   let type_to_string : Protobuf.field_data_type -> string = function
     | Protobuf.String -> "String"
     | Int32 -> "Int32"
+    | Int64 -> "Int64"
   in
   let type_to_snake_case : Protobuf.field_data_type -> string = function
     | String -> "string"
     | Int32 -> "int_32"
+    | Int64 -> "int_64"
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String -> "string"
     | Int32 -> "int"
+    | Int64 -> "int"
   in
   let type_declaration =
     fields
@@ -132,7 +135,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     Code.make_lambda argument body
   in
   let deserialize_code =
-    Code.make_let "deserialize" "string -> (t, F'.decoding_error) result"
+    Code.make_let "deserialize" "string -> (t, M'.e1) result"
     @@
     let argument = "input'" in
     let decoder_declarations =
@@ -191,9 +194,51 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     in
     Code.make_lambda argument body
   in
+  let unstringify_code =
+    Code.make_let "unstringify" "string -> (t, M'.e2) result"
+    @@
+    let argument = "input'" in
+    let decoder_declarations =
+      fields
+      |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
+             Printf.sprintf
+               "let %s = F'.%s_decoder () in"
+               name
+               (type_to_snake_case data_type))
+      |> Code.lines
+    in
+    let result_match =
+      Code.(
+        make_match
+          (block
+             [
+               argument |> Printf.sprintf "M'.unstringify %s" |> line;
+               fields
+               |> List.map ~f:(fun Protobuf.Field.{name; _} ->
+                      Printf.sprintf "\"%s\", F'.consume %s" name name)
+               |> make_list;
+             ])
+          [
+            ( "Ok ()",
+              fields
+              |> List.map ~f:(fun Protobuf.Field.{name; _} ->
+                     Printf.sprintf "%s = F'.value %s" name name)
+              |> make_record ~prefix:"Ok " );
+            "Error _ as error", lines ["error"];
+          ])
+    in
+    let body = [decoder_declarations; result_match] |> Code.block ~indented:false in
+    Code.make_lambda argument body
+  in
   Code.make_module
     name
-    [type_declaration; serialize_code; deserialize_code; stringify_code]
+    [
+      type_declaration;
+      serialize_code;
+      deserialize_code;
+      stringify_code;
+      unstringify_code;
+    ]
 
 let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
  fun ~options {name; messages} ->

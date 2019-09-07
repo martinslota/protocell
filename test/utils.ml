@@ -19,7 +19,9 @@ module type Serdes_testable = sig
 
   val stringify : t -> string
 
-  val deserialize : string -> (t, Runtime.Field.decoding_error) result
+  val deserialize : string -> (t, Runtime.Message.e1) result
+
+  val unstringify : string -> (t, Runtime.Message.e2) result
 
   val name : string
 
@@ -38,6 +40,11 @@ module Suite (T : Serdes_testable) = struct
     | Ok actual -> Alcotest.(check t_testable "WTF?" value actual)
     | Error _ -> Alcotest.fail "Serdes code failed"
 
+  let stringification_test value () =
+    match value |> T.stringify |> T.unstringify with
+    | Ok actual -> Alcotest.(check t_testable "WTF?" value actual)
+    | Error _ -> Alcotest.fail "Stringification code failed"
+
   let protoc_serdes_test value () =
     match
       execute_process_with_input
@@ -51,9 +58,22 @@ module Suite (T : Serdes_testable) = struct
       | Error _ -> Alcotest.fail "Deserialization error"
       | Ok actual -> Alcotest.(check t_testable "WTF?" value actual))
 
+  let protoc_serdes_test2 value () =
+    match
+      execute_process_with_input
+        ~prog:"protoc"
+        ~args:[Printf.sprintf "--decode=%s" T.protobuf_type_name; protobuf_file_name]
+        ~input:(T.serialize value)
+    with
+    | Error error -> Alcotest.fail error
+    | Ok output -> (
+      match T.unstringify output with
+      | Error _ -> Alcotest.fail "Unstrigification error"
+      | Ok actual -> Alcotest.(check t_testable "WTF?" value actual))
+
   let tests =
     let value_count = List.length T.values_to_test in
-    ( T.name,
+    ( T.protobuf_type_name,
       [
         List.mapi T.values_to_test ~f:(fun index value ->
             let test_name =
@@ -66,11 +86,27 @@ module Suite (T : Serdes_testable) = struct
         List.mapi T.values_to_test ~f:(fun index value ->
             let test_name =
               Printf.sprintf
+                "Stringify and unstringify using generated code (%d/%d)"
+                (index + 1)
+                value_count
+            in
+            Alcotest.test_case test_name `Quick @@ stringification_test value);
+        List.mapi T.values_to_test ~f:(fun index value ->
+            let test_name =
+              Printf.sprintf
                 "Serialize using protoc, deserialize using generated code (%d/%d)"
                 (index + 1)
                 value_count
             in
             Alcotest.test_case test_name `Quick @@ protoc_serdes_test value);
+        List.mapi T.values_to_test ~f:(fun index value ->
+            let test_name =
+              Printf.sprintf
+                "Serialize using generated code, deserialize using protoc (%d/%d)"
+                (index + 1)
+                value_count
+            in
+            Alcotest.test_case test_name `Quick @@ protoc_serdes_test2 value);
       ]
       |> List.concat )
 end
