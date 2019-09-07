@@ -1,53 +1,21 @@
 open Base
-module Byte_stream = Byte_stream
+module Byte_input = Byte_input
 module Protoc_dump_reader = Protoc_dump_reader
-
-let append_varint : Buffer.t -> int -> unit =
- fun f i ->
-  let open Int64 in
-  let i = of_int i in
-  let rec loop b =
-    if b > of_int 0x7f || b < zero
-    then (
-      let byte = b land of_int 0x7f in
-      Buffer.add_char f (byte lor of_int 128 |> to_int_exn |> Char.of_int_exn);
-      loop (b lsr 7))
-    else Buffer.add_char f (b |> to_int_exn |> Char.of_int_exn)
-  in
-  loop i
+module Wire_format = Wire_format
 
 type wire_value = Protoc_dump_reader.value =
   | Varint of int
   | Length_delimited of string
 
 module Field = struct
-  type wire_type =
-    | Varint_type
-    | Length_delimited_type
+  type field_value =
+    | Int32 of int
+    | Int64 of int
+    | String of string
 
-  type field_type =
-    | Int32
-    | Int64
-    | String
-
-  let field_type_to_wire_type = function
-    | Int32 -> Varint_type
-    | Int64 -> Varint_type
-    | String -> Length_delimited_type
-
-  let wire_type_to_id = function
-    | Varint_type -> 0
-    | Length_delimited_type -> 2
-
-  let encode_int_32 : int -> Buffer.t -> unit = Fn.flip append_varint
-
-  let encode_int_64 : int -> Buffer.t -> unit = Fn.flip append_varint
-
-  let encode_string : string -> Buffer.t -> unit =
-   fun value buffer ->
-    let length = String.length value in
-    append_varint buffer length;
-    Buffer.add_string buffer value
+  let field_value_to_wire_value = function
+    | Int32 value | Int64 value -> Varint value
+    | String value -> Length_delimited value
 
   let stringify_int_32 : int -> Buffer.t -> unit =
    fun value buffer -> Int.to_string value |> Buffer.add_string buffer
@@ -58,7 +26,7 @@ module Field = struct
   let stringify_string : string -> Buffer.t -> unit =
    fun value buffer ->
     Buffer.add_char buffer '"';
-    Buffer.add_string buffer value;
+    Buffer.add_string buffer (Caml.String.escaped value);
     Buffer.add_char buffer '"'
 
   type decoding_error = [`Wrong_wire_type]
@@ -73,6 +41,7 @@ module Field = struct
   let int_32_decoder () =
     let read = function
       | Varint value -> Ok value
+      (* FIXME out of range problems caught here *)
       | Length_delimited _ -> Error `Wrong_wire_type
     in
     {value = ref 0; read}
@@ -103,17 +72,13 @@ module Field = struct
 end
 
 module Message = struct
-  let serialize : (int * Field.field_type * (Buffer.t -> unit)) list -> string =
+  let serialize : (int * Field.field_value) list -> string =
    fun fields ->
-    let buffer = Buffer.create 1024 in
-    List.iter fields ~f:(fun (field_number, field_type, encoder) ->
-        let wire_type_number =
-          field_type |> Field.field_type_to_wire_type |> Field.wire_type_to_id
-        in
-        let wire_descriptor = (field_number lsl 3) lor wire_type_number in
-        append_varint buffer wire_descriptor;
-        encoder buffer);
-    Buffer.contents buffer
+    let output = Byte_output.create () in
+    List.iter fields ~f:(fun (field_number, field_value) ->
+        let wire_value = Field.field_value_to_wire_value field_value in
+        Wire_format.Writer.append_field output ~field_number ~wire_value);
+    Byte_output.contents output
 
   type e1 =
     [ Field.decoding_error
@@ -184,7 +149,7 @@ module Message = struct
     =
    fun bytes field_deserializers ->
     let open Result.Let_syntax in
-    let stream = Byte_stream.create bytes in
+    let stream = Byte_input.create bytes in
     match
       Protoc_dump_reader.tokenize stream >>= Protoc_dump_reader.read_key_value_pairs
     with

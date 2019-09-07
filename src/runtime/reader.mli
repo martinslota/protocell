@@ -2,7 +2,11 @@ open Base
 
 type t
 
-type error = [`No_more_bytes]
+type error =
+  [ `Varint_too_long
+  | `Varint_out_of_bounds of Int64.t
+  | `Invalid_string_length of int
+  | Byte_input.error ]
 
 val create : string -> t
 

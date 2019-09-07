@@ -1,4 +1,3 @@
-module Stdlib_sys = Sys
 open Base
 open Stdio
 module Plugin = Protoc_interface.Plugin
@@ -7,7 +6,7 @@ module Generated_code = Protoc_interface.Generated_code
 
 let determine_options () =
   let derivers =
-    match Stdlib_sys.getenv "WITH_DERIVERS" with
+    match Caml.Sys.getenv "WITH_DERIVERS" with
     | derivers -> String.split derivers ~on:','
     | exception _ -> []
   in

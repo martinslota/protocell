@@ -88,7 +88,7 @@ end
 
 let generate_message : options:options -> Protobuf.Message.t -> Code.t =
  fun ~options {name; fields} ->
-  let type_to_string : Protobuf.field_data_type -> string = function
+  let type_to_constructor : Protobuf.field_data_type -> string = function
     | Protobuf.String -> "String"
     | Int32 -> "Int32"
     | Int64 -> "Int64"
@@ -122,12 +122,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       let serialization_items =
         fields
         |> List.map ~f:(fun Protobuf.Field.{name; number; data_type} ->
-               Printf.sprintf
-                 "%d, F'.%s, F'.encode_%s %s"
-                 number
-                 (type_to_string data_type)
-                 (type_to_snake_case data_type)
-                 name)
+               Printf.sprintf "%d, F'.%s %s" number (type_to_constructor data_type) name)
         |> Code.make_list
       in
       Code.(block [serialization_items; line "|> M'.serialize"])
