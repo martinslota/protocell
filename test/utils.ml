@@ -19,9 +19,9 @@ module type Serdes_testable = sig
 
   val stringify : t -> string
 
-  val deserialize : string -> (t, Runtime.Message.e1) result
+  val deserialize : string -> (t, Runtime.Message.deserialization_error) result
 
-  val unstringify : string -> (t, Runtime.Message.e2) result
+  val unstringify : string -> (t, Runtime.Message.unstringification_error) result
 
   val name : string
 

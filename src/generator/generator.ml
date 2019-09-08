@@ -130,14 +130,14 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     Code.make_lambda argument body
   in
   let deserialize_code =
-    Code.make_let "deserialize" "string -> (t, M'.e1) result"
+    Code.make_let "deserialize" "string -> (t, M'.deserialization_error) result"
     @@
     let argument = "input'" in
     let decoder_declarations =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.%s_decoder () in"
+               "let %s = F'.%s_cell () in"
                name
                (type_to_snake_case data_type))
       |> Code.lines
@@ -150,14 +150,14 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
                argument |> Printf.sprintf "M'.deserialize %s" |> line;
                fields
                |> List.map ~f:(fun Protobuf.Field.{name; number; _} ->
-                      Printf.sprintf "%d, F'.consume %s" number name)
+                      Printf.sprintf "%d, %s.decode" number name)
                |> make_list;
              ])
           [
             ( "Ok ()",
               fields
               |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                     Printf.sprintf "%s = F'.value %s" name name)
+                     Printf.sprintf "%s = !(%s.value)" name name)
               |> make_record ~prefix:"Ok " );
             "Error _ as error", lines ["error"];
           ])
@@ -190,14 +190,14 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     Code.make_lambda argument body
   in
   let unstringify_code =
-    Code.make_let "unstringify" "string -> (t, M'.e2) result"
+    Code.make_let "unstringify" "string -> (t, M'.unstringification_error) result"
     @@
     let argument = "input'" in
     let decoder_declarations =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.%s_decoder () in"
+               "let %s = F'.%s_cell () in"
                name
                (type_to_snake_case data_type))
       |> Code.lines
@@ -210,14 +210,14 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
                argument |> Printf.sprintf "M'.unstringify %s" |> line;
                fields
                |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                      Printf.sprintf "\"%s\", F'.consume %s" name name)
+                      Printf.sprintf "\"%s\", %s.decode" name name)
                |> make_list;
              ])
           [
             ( "Ok ()",
               fields
               |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                     Printf.sprintf "%s = F'.value %s" name name)
+                     Printf.sprintf "%s = !(%s.value)" name name)
               |> make_record ~prefix:"Ok " );
             "Error _ as error", lines ["error"];
           ])
