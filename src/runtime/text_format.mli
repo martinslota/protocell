@@ -1,11 +1,7 @@
 open Base
 
-type wire_value =
-  | Varint of int
-  | Length_delimited of string
-
 module Writer : sig
-  val append_all : Byte_output.t -> (string * wire_value) list -> unit
+  val append_all : Byte_output.t -> (string * Types.wire_value) list -> unit
 end
 
 module Reader : sig
@@ -15,5 +11,5 @@ module Reader : sig
     | `Identifier_expected
     | Byte_input.error ]
 
-  val read_all : Byte_input.t -> ((string * wire_value) list, [> error]) Result.t
+  val read_all : Byte_input.t -> ((string * Types.wire_value) list, [> error]) Result.t
 end

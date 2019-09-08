@@ -4,7 +4,7 @@ type wire_type =
   | Varint_type
   | Length_delimited_type
 
-type wire_value = Text_format.wire_value =
+type wire_value = Types.wire_value =
   | Varint of int
   | Length_delimited of string
 

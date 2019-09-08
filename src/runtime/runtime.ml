@@ -2,7 +2,7 @@ open Base
 module Byte_input = Byte_input
 module Wire_format = Wire_format
 
-type wire_value = Text_format.wire_value =
+type wire_value = Types.wire_value =
   | Varint of int
   | Length_delimited of string
 

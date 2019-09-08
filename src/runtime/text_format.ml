@@ -1,6 +1,6 @@
 open Base
 
-type wire_value =
+type wire_value = Types.wire_value =
   | Varint of int
   | Length_delimited of string
 
