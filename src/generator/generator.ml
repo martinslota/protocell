@@ -179,9 +179,9 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
         fields
         |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
                Printf.sprintf
-                 {|"%s", F'.stringify_%s %s|}
+                 {|"%s", F'.%s %s|}
                  name
-                 (type_to_snake_case data_type)
+                 (type_to_constructor data_type)
                  name)
         |> Code.make_list
       in

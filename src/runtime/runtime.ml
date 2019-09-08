@@ -1,9 +1,8 @@
 open Base
 module Byte_input = Byte_input
-module Protoc_dump_reader = Protoc_dump_reader
 module Wire_format = Wire_format
 
-type wire_value = Protoc_dump_reader.value =
+type wire_value = Text_format.wire_value =
   | Varint of int
   | Length_delimited of string
 
@@ -17,17 +16,9 @@ module Field = struct
     | Int32 value | Int64 value -> Varint value
     | String value -> Length_delimited value
 
-  let stringify_int_32 : int -> Buffer.t -> unit =
-   fun value buffer -> Int.to_string value |> Buffer.add_string buffer
-
-  let stringify_int_64 : int -> Buffer.t -> unit =
-   fun value buffer -> Int.to_string value |> Buffer.add_string buffer
-
-  let stringify_string : string -> Buffer.t -> unit =
-   fun value buffer ->
-    Buffer.add_char buffer '"';
-    Buffer.add_string buffer (Caml.String.escaped value);
-    Buffer.add_char buffer '"'
+  let to_wire_values field_values =
+    List.map field_values ~f:(fun (field_number, field_value) ->
+        field_number, field_value_to_wire_value field_value)
 
   type decoding_error = [`Wrong_wire_type]
 
@@ -74,16 +65,14 @@ end
 module Message = struct
   let serialize : (int * Field.field_value) list -> string =
    fun fields ->
+    let wire_values = Field.to_wire_values fields in
     let output = Byte_output.create () in
-    List.iter fields ~f:(fun (field_number, field_value) ->
-        let wire_value = Field.field_value_to_wire_value field_value in
-        Wire_format.Writer.append_field output ~field_number ~wire_value);
+    Wire_format.Writer.append_all output wire_values;
     Byte_output.contents output
 
   type e1 =
     [ Field.decoding_error
-    | Reader.error
-    | `Unknown_wire_type of int ]
+    | Wire_format.Reader.error ]
 
   let mape = function
     | `Wrong_wire_type as v -> v
@@ -93,25 +82,8 @@ module Message = struct
       (unit, e1) Result.t
     =
    fun bytes field_deserializers ->
-    let open Result.Let_syntax in
-    let reader = Reader.create bytes in
-    let rec read_all () =
-      match Reader.has_more_bytes reader with
-      | false -> []
-      | true ->
-          let wire_record =
-            Reader.read_varint reader >>= fun wire_descriptor ->
-            let wire_type = wire_descriptor land 0x7 in
-            let field_number = wire_descriptor lsr 3 in
-            (match wire_type with
-            | 0 -> Reader.read_varint reader >>| fun int -> Varint int
-            | 2 -> Reader.read_string reader >>| fun bytes -> Length_delimited bytes
-            | _ -> Error (`Unknown_wire_type wire_type))
-            >>| fun wire_value -> field_number, wire_value
-          in
-          wire_record :: read_all ()
-    in
-    match read_all () |> Result.all with
+    let input = Byte_input.create bytes in
+    match Wire_format.Reader.read_all input with
     | Error _ as error -> error
     | Ok wire_records -> (
         let wire_records =
@@ -128,19 +100,16 @@ module Message = struct
         | Error e -> Error (mape e)
         | Ok () -> Ok ())
 
-  let stringify : (string * (Buffer.t -> unit)) list -> string =
+  let stringify : (string * Field.field_value) list -> string =
    fun fields ->
-    let buffer = Buffer.create 1024 in
-    List.iter fields ~f:(fun (field_name, encoder) ->
-        Buffer.add_string buffer field_name;
-        Buffer.add_string buffer ": ";
-        encoder buffer;
-        Buffer.add_string buffer "\n");
-    Buffer.contents buffer
+    let wire_values = Field.to_wire_values fields in
+    let output = Byte_output.create () in
+    Text_format.Writer.append_all output wire_values;
+    Byte_output.contents output
 
   type e2 =
     [ Field.decoding_error
-    | Protoc_dump_reader.error ]
+    | Text_format.Reader.error ]
 
   let unstringify
       :  string ->
@@ -148,11 +117,8 @@ module Message = struct
       (unit, e2) Result.t
     =
    fun bytes field_deserializers ->
-    let open Result.Let_syntax in
     let stream = Byte_input.create bytes in
-    match
-      Protoc_dump_reader.tokenize stream >>= Protoc_dump_reader.read_key_value_pairs
-    with
+    match Text_format.Reader.read_all stream with
     | Error _ as error -> error
     | Ok records -> (
         let records =
