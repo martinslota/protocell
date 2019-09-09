@@ -73,40 +73,21 @@ module Suite (T : Serdes_testable) = struct
 
   let tests =
     let value_count = List.length T.values_to_test in
+    let make_tests title test_fn =
+      List.mapi T.values_to_test ~f:(fun index value ->
+          let test_name = Printf.sprintf "%s (%d/%d)" title (index + 1) value_count in
+          Alcotest.test_case test_name `Quick @@ test_fn value)
+    in
     ( T.protobuf_type_name,
       [
-        List.mapi T.values_to_test ~f:(fun index value ->
-            let test_name =
-              Printf.sprintf
-                "Serialize and deserialize using generated code (%d/%d)"
-                (index + 1)
-                value_count
-            in
-            Alcotest.test_case test_name `Quick @@ serdes_test value);
-        List.mapi T.values_to_test ~f:(fun index value ->
-            let test_name =
-              Printf.sprintf
-                "Stringify and unstringify using generated code (%d/%d)"
-                (index + 1)
-                value_count
-            in
-            Alcotest.test_case test_name `Quick @@ stringification_test value);
-        List.mapi T.values_to_test ~f:(fun index value ->
-            let test_name =
-              Printf.sprintf
-                "Serialize using protoc, deserialize using generated code (%d/%d)"
-                (index + 1)
-                value_count
-            in
-            Alcotest.test_case test_name `Quick @@ protoc_serdes_test value);
-        List.mapi T.values_to_test ~f:(fun index value ->
-            let test_name =
-              Printf.sprintf
-                "Serialize using generated code, deserialize using protoc (%d/%d)"
-                (index + 1)
-                value_count
-            in
-            Alcotest.test_case test_name `Quick @@ protoc_serdes_test2 value);
+        make_tests "Serialize and deserialize using generated code" serdes_test;
+        make_tests "Stringify and unstringify using generated code" stringification_test;
+        make_tests
+          "Serialize using protoc, deserialize using generated code"
+          protoc_serdes_test;
+        make_tests
+          "Serialize using generated code, deserialize using protoc"
+          protoc_serdes_test2;
       ]
       |> List.concat )
 end

@@ -1,12 +1,12 @@
 open Base
 
+type wire_value = Types.wire_value =
+  | Varint of int64
+  | Length_delimited of string
+
 type wire_type =
   | Varint_type
   | Length_delimited_type
-
-type wire_value = Types.wire_value =
-  | Varint of int
-  | Length_delimited of string
 
 let wire_value_to_type = function
   | Varint _ -> Varint_type
@@ -17,38 +17,42 @@ let wire_type_to_id = function
   | Length_delimited_type -> 2
 
 module Writer = struct
-  type t = Byte_output.t
+  let seven_bit_mask = Int64.of_int 0b0111_1111
 
-  let append_varint : t -> int -> unit =
-   fun f i ->
+  let eighth_bit = Int64.of_int 0b1000_0000
+
+  let write_varint_64 output value =
     let open Int64 in
-    let i = of_int i in
-    let rec loop b =
-      if b > of_int 0x7f || b < zero
-      then (
-        let byte = b land of_int 0x7f in
-        Byte_output.write_byte f (byte lor of_int 128 |> to_int_exn |> Char.of_int_exn);
-        loop (b lsr 7))
-      else Byte_output.write_byte f (b |> to_int_exn |> Char.of_int_exn)
+    let write_byte byte =
+      byte |> to_int_exn |> Char.of_int_exn |> Byte_output.write_byte output
     in
-    loop i
+    let rec append_rest value =
+      let lower_seven_bits = value land seven_bit_mask in
+      match value = lower_seven_bits with
+      | true -> write_byte lower_seven_bits
+      | false ->
+          write_byte (lower_seven_bits lor eighth_bit);
+          append_rest (value lsr 7)
+    in
+    append_rest value
 
-  let append_field : t -> field_number:int -> wire_value:wire_value -> unit =
-   fun buffer ~field_number ~wire_value ->
+  let write_varint output value = value |> Int64.of_int |> write_varint_64 output
+
+  let write_value buffer field_number wire_value =
     let wire_type = wire_value_to_type wire_value in
     let wire_type_id = wire_type_to_id wire_type in
     let wire_descriptor = (field_number lsl 3) lor wire_type_id in
-    append_varint buffer wire_descriptor;
+    write_varint buffer wire_descriptor;
     match wire_value with
-    | Varint int -> append_varint buffer int
+    | Varint int -> write_varint_64 buffer int
     | Length_delimited bytes ->
         let length = String.length bytes in
-        append_varint buffer length;
+        write_varint buffer length;
         Byte_output.write_bytes buffer bytes
 
-  let append_all output values =
+  let write_values output values =
     List.iter values ~f:(fun (field_number, wire_value) ->
-        append_field output ~field_number ~wire_value)
+        write_value output field_number wire_value)
 end
 
 module Reader = struct
@@ -60,7 +64,7 @@ module Reader = struct
     | Byte_input.error ]
 
   let read_varint_64 input =
-    let add_7_bits : bits:Int64.t -> offset:int -> value:Int64.t -> Int64.t =
+    let add_7_bits : bits:int64 -> offset:int -> value:int64 -> int64 =
      fun ~bits ~offset ~value ->
       let shift = 7 * offset in
       Int64.((bits lsl shift) lor value)
@@ -97,7 +101,7 @@ module Reader = struct
         Error (`Invalid_string_length string_length)
     | string_length -> Byte_input.read_bytes input string_length
 
-  let read_all input =
+  let read_values input =
     let rec collect_all () =
       let open Result.Let_syntax in
       match Byte_input.has_more_bytes input with
@@ -108,7 +112,7 @@ module Reader = struct
             let wire_type = wire_descriptor land 0x7 in
             let field_number = wire_descriptor lsr 3 in
             (match wire_type with
-            | 0 -> read_varint input >>| fun int -> Varint int
+            | 0 -> read_varint_64 input >>| fun int -> Varint int
             | 2 -> read_string input >>| fun bytes -> Length_delimited bytes
             | _ -> Error (`Unknown_wire_type wire_type))
             >>| fun wire_value -> field_number, wire_value

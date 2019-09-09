@@ -9,5 +9,15 @@ module Suite = Utils.Suite (struct
   let protobuf_type_name = "Message_name"
 
   let values_to_test =
-    [{int_field = 42; string_field = "hey there!"}; {int_field = -1; string_field = ""}]
+    [
+      {int_field = 42; string_field = "hey there!"};
+      {int_field = -1; string_field = ""};
+      {
+        int_field = 0;
+        string_field =
+          {|\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+            "a rather problematic string"
+          \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
+      };
+    ]
 end)

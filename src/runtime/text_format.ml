@@ -1,28 +1,35 @@
 open Base
 
 type wire_value = Types.wire_value =
-  | Varint of int
+  | Varint of int64
   | Length_delimited of string
 
 module Writer = struct
-  let stringify : wire_value -> Byte_output.t -> unit =
-   fun value buffer ->
+  let write_value output value =
     match value with
-    | Varint int -> Int.to_string int |> Byte_output.write_bytes buffer
+    | Varint int -> Int64.to_string int |> Byte_output.write_bytes output
     | Length_delimited string ->
-        Byte_output.write_byte buffer '"';
-        Byte_output.write_bytes buffer (Caml.String.escaped string);
-        Byte_output.write_byte buffer '"'
+        Byte_output.write_byte output '"';
+        Byte_output.write_bytes output (String.escaped string);
+        Byte_output.write_byte output '"'
 
-  let append_all buffer values =
+  let write_values output values =
     List.iter values ~f:(fun (field_name, value) ->
-        Byte_output.write_bytes buffer field_name;
-        Byte_output.write_bytes buffer ": ";
-        stringify value buffer;
-        Byte_output.write_byte buffer '\n')
+        Byte_output.write_bytes output field_name;
+        Byte_output.write_bytes output ": ";
+        write_value output value;
+        Byte_output.write_byte output '\n')
 end
 
 module Reader = struct
+  type token =
+    | Whitespace of string
+    | Identifier of string
+    | String of string
+    | Key_value_separator
+    | Open_message
+    | Close_message
+
   let is_whitespace character =
     List.exists [' '; '\t'; '\r'; '\n'] ~f:(Char.equal character)
 
@@ -38,28 +45,29 @@ module Reader = struct
     || Char.equal character '_'
     || Char.equal character '-'
 
-  type token =
-    | Whitespace of string
-    | Identifier of string
-    | String of string
-    | Key_value_separator
-    | Open_message
-    | Close_message
-
-  let tokenize stream =
-    let read_rest stream character condition =
-      Char.to_string character ^ Byte_input.read_while stream condition
+  let tokenize input =
+    let read_rest input character condition =
+      Char.to_string character ^ Byte_input.read_while input condition
     in
     let rec collect accumulator =
-      match Byte_input.read_byte stream with
+      match Byte_input.read_byte input with
       | Ok character -> (
           let token =
             match character with
             | '"' -> (
                 let contents =
-                  Byte_input.read_while stream (fun c -> not (Char.equal c '"'))
+                  let is_escaped = ref false in
+                  Byte_input.read_while input (fun c ->
+                      match c, !is_escaped with
+                      | '"', false -> false
+                      | '\\', old_is_escaped ->
+                          is_escaped := not old_is_escaped;
+                          true
+                      | _, _ ->
+                          is_escaped := false;
+                          true)
                 in
-                match Byte_input.read_byte stream with
+                match Byte_input.read_byte input with
                 | Ok '"' -> Ok (String (Caml.Scanf.unescaped contents))
                 | Ok character -> Error (`Unexpected_character character)
                 | Error `Not_enough_bytes as error -> error)
@@ -67,9 +75,9 @@ module Reader = struct
             | '}' -> Ok Close_message
             | ':' -> Ok Key_value_separator
             | _ when is_whitespace character ->
-                Ok (Whitespace (read_rest stream character is_whitespace))
+                Ok (Whitespace (read_rest input character is_whitespace))
             | _ when is_word_character character ->
-                Ok (Identifier (read_rest stream character is_word_character))
+                Ok (Identifier (read_rest input character is_word_character))
             | _ -> Error (`Unexpected_character character)
           in
           match token with
@@ -88,7 +96,7 @@ module Reader = struct
   let read_key_value_pair tokens =
     match tokens with
     | Identifier key :: Key_value_separator :: Identifier number_string :: rest -> (
-      match Int.of_string number_string with
+      match Int64.of_string number_string with
       | exception _ -> Error (`Invalid_number_string number_string)
       | int -> Ok (key, Varint int, rest))
     | Identifier key :: Key_value_separator :: String string :: rest ->
@@ -111,7 +119,7 @@ module Reader = struct
     in
     collect [] tokens
 
-  let read_all stream =
+  let read_values input =
     let open Result.Let_syntax in
-    tokenize stream >>= read_key_value_pairs
+    tokenize input >>= read_key_value_pairs
 end

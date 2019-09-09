@@ -3,7 +3,7 @@ module Byte_input = Byte_input
 module Wire_format = Wire_format
 
 type wire_value = Types.wire_value =
-  | Varint of int
+  | Varint of int64
   | Length_delimited of string
 
 module Field = struct
@@ -13,7 +13,7 @@ module Field = struct
     | String of string
 
   let field_value_to_wire_value = function
-    | Int32 value | Int64 value -> Varint value
+    | Int32 value | Int64 value -> Varint (Int64.of_int value)
     | String value -> Length_delimited value
 
   let to_wire_values field_values =
@@ -35,7 +35,7 @@ module Field = struct
     let value = ref 0 in
     let decode = function
       | Varint i ->
-          value := i;
+          value := Int64.to_int_exn i;
           Ok ()
       (* FIXME out of range problems caught here *)
       | Length_delimited _ -> Error `Wrong_wire_type
@@ -46,7 +46,7 @@ module Field = struct
     let value = ref 0 in
     let decode = function
       | Varint i ->
-          value := i;
+          value := Int64.to_int_exn i;
           Ok ()
       | Length_delimited _ -> Error `Wrong_wire_type
     in
@@ -86,7 +86,7 @@ module Message = struct
    fun fields ->
     let wire_values = Field.to_wire_values fields in
     let output = Byte_output.create () in
-    Wire_format.Writer.append_all output wire_values;
+    Wire_format.Writer.write_values output wire_values;
     Byte_output.contents output
 
   type deserialization_error =
@@ -99,14 +99,14 @@ module Message = struct
    fun bytes field_deserializers ->
     let open Result.Let_syntax in
     let input = Byte_input.create bytes in
-    Wire_format.Reader.read_all input
+    Wire_format.Reader.read_values input
     >>= Field.deserialize field_deserializers (module Int)
 
   let stringify : (string * Field.value) list -> string =
    fun fields ->
     let wire_values = Field.to_wire_values fields in
     let output = Byte_output.create () in
-    Text_format.Writer.append_all output wire_values;
+    Text_format.Writer.write_values output wire_values;
     Byte_output.contents output
 
   type unstringification_error =
@@ -120,6 +120,6 @@ module Message = struct
    fun bytes field_deserializers ->
     let open Result.Let_syntax in
     let input = Byte_input.create bytes in
-    Text_format.Reader.read_all input
+    Text_format.Reader.read_values input
     >>= Field.deserialize field_deserializers (module String)
 end
