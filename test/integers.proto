@@ -7,3 +7,11 @@ message Int32 {
 message Int64 {
   int64 field = 1;
 }
+
+message Sint32 {
+  sint32 field = 1;
+}
+
+message Sint64 {
+  sint64 field = 1;
+}

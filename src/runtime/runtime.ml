@@ -80,39 +80,58 @@ module Field = struct
       | false -> Ok ())
     | String -> Ok ()
 
-  let zigzag_encode i = Int64.((i asr 63) lxor (i lsl 1))
+  type encoding_type =
+    | Text
+    | Wire
 
-  let zigzag_decode i = Int64.((i lsr 1) lxor -(i land one))
+  let zigzag_encode encoding_type i =
+    match encoding_type with
+    | Text -> i
+    | Wire -> Int64.((i asr 63) lxor (i lsl 1))
 
-  let encode_value : type v. v typ -> v -> wire_value =
-   fun typ value ->
+  let zigzag_decode encoding_type i =
+    match encoding_type with
+    | Text -> i
+    | Wire -> Int64.((i lsr 1) lxor -(i land one))
+
+  let encode_value : type v. v typ -> v -> encoding_type -> wire_value =
+   fun typ value encoding_type ->
     match typ with
     | I32 -> Varint (value |> Int64.of_int)
     | I64 -> Varint (value |> Int64.of_int)
-    | S32 -> Varint (value |> Int64.of_int |> zigzag_encode)
-    | S64 -> Varint (value |> Int64.of_int |> zigzag_encode)
+    | S32 -> Varint (value |> Int64.of_int |> zigzag_encode encoding_type)
+    | S64 -> Varint (value |> Int64.of_int |> zigzag_encode encoding_type)
     | U32 -> Varint (value |> Int64.of_int)
     | U64 -> Varint (value |> Int64.of_int)
     | String -> Length_delimited value
 
-  let make_encoder : type v. v typ -> v -> encoder =
-   fun typ value () ->
+  let make_encoder : type v. v typ -> v -> encoding_type -> encoder =
+   fun typ value encoding_type () ->
     let open Result.Let_syntax in
-    validate typ value >>| fun () -> encode_value typ value
+    validate typ value >>| fun () -> encode_value typ value encoding_type
 
   let decode_value
-      : type v. v typ -> wire_value -> (v, [> wire_value_mapping_error]) Result.t
+      : type v.
+        v typ ->
+        wire_value ->
+        encoding_type ->
+        (v, [> wire_value_mapping_error]) Result.t
     =
-   fun typ wire_value ->
+   fun typ wire_value encoding_type ->
     let decode_int
         : int typ -> wire_value -> (int, [> wire_value_mapping_error]) Result.t
       =
      fun typ wire_value ->
       match wire_value with
-      | Varint i -> (
-        match Int64.to_int i with
-        | None -> Error (`Integer_outside_int_type_range i)
-        | Some i -> Ok i)
+      | Varint int64 -> (
+          let int64 =
+            match typ with
+            | S32 | S64 -> zigzag_decode encoding_type int64
+            | _ -> int64
+          in
+          match Int64.to_int int64 with
+          | None -> Error (`Integer_outside_int_type_range int64)
+          | Some i -> Ok i)
       | Length_delimited _ ->
           Error
             (`Wrong_wire_type_for_int_field (typ, Types.wire_value_to_type wire_value))
@@ -142,13 +161,14 @@ module Field = struct
         | Error e -> Error (relax_encoding_error e))
     |> Result.all
 
-  let make_cell : type v. v typ -> v cell =
+  let make_cell : type v. v typ -> encoding_type -> v cell =
+   fun typ encoding_type ->
     let make_int_cell : int typ -> int cell =
      fun typ ->
       let value = ref 0 in
       let decode wire_value =
         let open Result.Let_syntax in
-        decode_value typ wire_value >>= fun v ->
+        decode_value typ wire_value encoding_type >>= fun v ->
         value := v;
         validate typ v
       in
@@ -159,21 +179,20 @@ module Field = struct
       let value = ref "" in
       let decode wire_value =
         let open Result.Let_syntax in
-        decode_value typ wire_value >>= fun v ->
+        decode_value typ wire_value encoding_type >>= fun v ->
         value := v;
         validate typ v
       in
       {value; decode}
     in
-    fun typ ->
-      match typ with
-      | I32 -> make_int_cell typ
-      | I64 -> make_int_cell typ
-      | S32 -> make_int_cell typ
-      | S64 -> make_int_cell typ
-      | U32 -> make_int_cell typ
-      | U64 -> make_int_cell typ
-      | String -> make_string_cell typ
+    match typ with
+    | I32 -> make_int_cell typ
+    | I64 -> make_int_cell typ
+    | S32 -> make_int_cell typ
+    | S64 -> make_int_cell typ
+    | U32 -> make_int_cell typ
+    | U64 -> make_int_cell typ
+    | String -> make_string_cell typ
 
   let deserialize field_deserializers key_module wire_records =
     let wire_records =

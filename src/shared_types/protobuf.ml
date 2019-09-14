@@ -1,6 +1,8 @@
 type field_data_type =
   | Int32
   | Int64
+  | Sint32
+  | Sint64
   | String
 
 module Field = struct

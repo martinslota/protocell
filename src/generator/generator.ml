@@ -92,11 +92,15 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     | Protobuf.String -> "String"
     | Int32 -> "I32"
     | Int64 -> "I64"
+    | Sint32 -> "S32"
+    | Sint64 -> "S64"
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String -> "string"
     | Int32 -> "int"
     | Int64 -> "int"
+    | Sint32 -> "int"
+    | Sint64 -> "int"
   in
   let type_declaration =
     fields
@@ -118,7 +122,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
         fields
         |> List.map ~f:(fun Protobuf.Field.{name; number; data_type} ->
                Printf.sprintf
-                 "%d, F'.make_encoder F'.%s %s"
+                 "%d, F'.make_encoder F'.%s %s F'.Wire"
                  number
                  (type_to_constructor data_type)
                  name)
@@ -136,7 +140,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.make_cell F'.%s in"
+               "let %s = F'.make_cell F'.%s F'.Wire in"
                name
                (type_to_constructor data_type))
       |> Code.lines
@@ -178,7 +182,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
         fields
         |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
                Printf.sprintf
-                 {|"%s", F'.make_encoder F'.%s %s|}
+                 {|"%s", F'.make_encoder F'.%s %s F'.Text|}
                  name
                  (type_to_constructor data_type)
                  name)
@@ -196,7 +200,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.make_cell F'.%s in"
+               "let %s = F'.make_cell F'.%s F'.Text in"
                name
                (type_to_constructor data_type))
       |> Code.lines

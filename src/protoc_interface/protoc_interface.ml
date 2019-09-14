@@ -41,6 +41,8 @@ module Protobuf = struct
     | Some Type_string -> String
     | Some Type_int32 -> Int32
     | Some Type_int64 -> Int64
+    | Some Type_sint32 -> Sint32
+    | Some Type_sint64 -> Sint64
     | Some _ -> failwith "Unknown field type"
 
   let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
