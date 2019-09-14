@@ -90,13 +90,8 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
  fun ~options {name; fields} ->
   let type_to_constructor : Protobuf.field_data_type -> string = function
     | Protobuf.String -> "String"
-    | Int32 -> "Int32"
-    | Int64 -> "Int64"
-  in
-  let type_to_snake_case : Protobuf.field_data_type -> string = function
-    | String -> "string"
-    | Int32 -> "int_32"
-    | Int64 -> "int_64"
+    | Int32 -> "I32"
+    | Int64 -> "I64"
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String -> "string"
@@ -110,7 +105,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     |> Code.make_record_type ~options "t"
   in
   let serialize_code =
-    Code.make_let "serialize" "t -> string"
+    Code.make_let "serialize" "t -> (string, [> M'.serialization_error]) result"
     @@
     let argument =
       fields
@@ -122,7 +117,11 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       let serialization_items =
         fields
         |> List.map ~f:(fun Protobuf.Field.{name; number; data_type} ->
-               Printf.sprintf "%d, F'.%s %s" number (type_to_constructor data_type) name)
+               Printf.sprintf
+                 "%d, F'.make_encoder F'.%s %s"
+                 number
+                 (type_to_constructor data_type)
+                 name)
         |> Code.make_list
       in
       Code.(block [serialization_items; line "|> M'.serialize"])
@@ -130,16 +129,16 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     Code.make_lambda argument body
   in
   let deserialize_code =
-    Code.make_let "deserialize" "string -> (t, M'.deserialization_error) result"
+    Code.make_let "deserialize" "string -> (t, [> M'.deserialization_error]) result"
     @@
     let argument = "input'" in
     let decoder_declarations =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.%s_cell () in"
+               "let %s = F'.make_cell F'.%s in"
                name
-               (type_to_snake_case data_type))
+               (type_to_constructor data_type))
       |> Code.lines
     in
     let result_match =
@@ -166,7 +165,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     Code.make_lambda argument body
   in
   let stringify_code =
-    Code.make_let "stringify" "t -> string"
+    Code.make_let "stringify" "t -> (string, [> M'.stringification_error]) result"
     @@
     let argument =
       fields
@@ -179,7 +178,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
         fields
         |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
                Printf.sprintf
-                 {|"%s", F'.%s %s|}
+                 {|"%s", F'.make_encoder F'.%s %s|}
                  name
                  (type_to_constructor data_type)
                  name)
@@ -190,16 +189,16 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     Code.make_lambda argument body
   in
   let unstringify_code =
-    Code.make_let "unstringify" "string -> (t, M'.unstringification_error) result"
+    Code.make_let "unstringify" "string -> (t, [> M'.unstringification_error]) result"
     @@
     let argument = "input'" in
     let decoder_declarations =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.%s_cell () in"
+               "let %s = F'.make_cell F'.%s in"
                name
-               (type_to_snake_case data_type))
+               (type_to_constructor data_type))
       |> Code.lines
     in
     let result_match =

@@ -1,7 +1,7 @@
 open Core
 module Message_name = Sanity_pc.Message_name
 
-module Suite = Utils.Suite (struct
+module Tests = struct
   include Message_name
 
   let name = Caml.__MODULE__
@@ -20,4 +20,6 @@ module Suite = Utils.Suite (struct
           \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
       };
     ]
-end)
+end
+
+let tests = Utils.suite (module Tests)

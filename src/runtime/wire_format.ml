@@ -4,13 +4,9 @@ type wire_value = Types.wire_value =
   | Varint of int64
   | Length_delimited of string
 
-type wire_type =
+type wire_type = Types.wire_type =
   | Varint_type
   | Length_delimited_type
-
-let wire_value_to_type = function
-  | Varint _ -> Varint_type
-  | Length_delimited _ -> Length_delimited_type
 
 let wire_type_to_id = function
   | Varint_type -> 0
@@ -39,7 +35,7 @@ module Writer = struct
   let write_varint output value = value |> Int64.of_int |> write_varint_64 output
 
   let write_value buffer field_number wire_value =
-    let wire_type = wire_value_to_type wire_value in
+    let wire_type = Types.wire_value_to_type wire_value in
     let wire_type_id = wire_type_to_id wire_type in
     let wire_descriptor = (field_number lsl 3) lor wire_type_id in
     write_varint buffer wire_descriptor;
