@@ -69,7 +69,8 @@ module Field = struct
     match typ with
     | I32 -> validate_i32 I32 value
     | S32 -> validate_i32 S32 value
-    | I64 | S64 -> Ok ()
+    | I64 -> Ok ()
+    | S64 -> Ok ()
     | U32 -> (
       match value < 0 || value > max_uint_32_value with
       | true -> Error (`Integer_outside_field_type_range (typ, value))
