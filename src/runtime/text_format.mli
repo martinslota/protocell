@@ -1,7 +1,13 @@
 open Base
 
+type value =
+  | Integer of int64
+  | String of string
+
+type t = (string * value) list
+
 module Writer : sig
-  val write_values : Byte_output.t -> (string * Types.wire_value) list -> unit
+  val write_values : Byte_output.t -> t -> unit
 end
 
 module Reader : sig
@@ -11,7 +17,5 @@ module Reader : sig
     | `Identifier_expected
     | Byte_input.error ]
 
-  val read_values
-    :  Byte_input.t ->
-    ((string * Types.wire_value) list, [> error]) Result.t
+  val read_values : Byte_input.t -> (t, [> error]) Result.t
 end

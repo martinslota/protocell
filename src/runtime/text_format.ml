@@ -1,14 +1,16 @@
 open Base
 
-type wire_value = Types.wire_value =
-  | Varint of int64
-  | Length_delimited of string
+type value =
+  | Integer of int64
+  | String of string
+
+type t = (string * value) list
 
 module Writer = struct
   let write_value output value =
     match value with
-    | Varint int -> Int64.to_string int |> Byte_output.write_bytes output
-    | Length_delimited string ->
+    | Integer int -> Int64.to_string int |> Byte_output.write_bytes output
+    | String string ->
         Byte_output.write_byte output '"';
         Byte_output.write_bytes output (String.escaped string);
         Byte_output.write_byte output '"'
@@ -98,9 +100,9 @@ module Reader = struct
     | Identifier key :: Key_value_separator :: Identifier number_string :: rest -> (
       match Int64.of_string number_string with
       | exception _ -> Error (`Invalid_number_string number_string)
-      | int -> Ok (key, Varint int, rest))
+      | int -> Ok (key, Integer int, rest))
     | Identifier key :: Key_value_separator :: String string :: rest ->
-        Ok (key, Length_delimited string, rest)
+        Ok (key, String string, rest)
     | _ -> Error `Identifier_expected
 
   let read_key_value_pairs tokens =

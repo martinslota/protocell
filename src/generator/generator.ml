@@ -118,17 +118,19 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       |> Printf.sprintf "{ %s }"
     in
     let body =
-      let serialization_items =
-        fields
-        |> List.map ~f:(fun Protobuf.Field.{name; number; data_type} ->
-               Printf.sprintf
-                 "%d, F'.make_encoder F'.%s %s F'.Wire"
-                 number
-                 (type_to_constructor data_type)
-                 name)
-        |> Code.make_list
-      in
-      Code.(block [serialization_items; line "|> M'.serialize"])
+      Code.(
+        block
+          [
+            line "M'.serialize";
+            fields
+            |> List.map ~f:(fun Protobuf.Field.{name; number; data_type} ->
+                   Printf.sprintf
+                     {|W'.validate_and_encode %d F'.%s %s|}
+                     number
+                     (type_to_constructor data_type)
+                     name)
+            |> make_list;
+          ])
     in
     Code.make_lambda argument body
   in
@@ -140,7 +142,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.make_cell F'.%s F'.Wire in"
+               "let %s = W'.allocate F'.%s in"
                name
                (type_to_constructor data_type))
       |> Code.lines
@@ -153,14 +155,14 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
                argument |> Printf.sprintf "M'.deserialize %s" |> line;
                fields
                |> List.map ~f:(fun Protobuf.Field.{name; number; _} ->
-                      Printf.sprintf "%d, %s.decode" number name)
+                      Printf.sprintf "%d, W'.cloak %s" number name)
                |> make_list;
              ])
           [
             ( "Ok ()",
               fields
               |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                     Printf.sprintf "%s = !(%s.value)" name name)
+                     Printf.sprintf "%s = W'.read %s" name name)
               |> make_record ~prefix:"Ok " );
             "Error _ as error", lines ["error"];
           ])
@@ -178,17 +180,19 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       |> Printf.sprintf "{ %s }"
     in
     let body =
-      let serialization_items =
-        fields
-        |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
-               Printf.sprintf
-                 {|"%s", F'.make_encoder F'.%s %s F'.Text|}
-                 name
-                 (type_to_constructor data_type)
-                 name)
-        |> Code.make_list
-      in
-      Code.(block [serialization_items; line "|> M'.stringify"])
+      Code.(
+        block
+          [
+            line "M'.stringify";
+            fields
+            |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
+                   Printf.sprintf
+                     {|T'.validate_and_encode "%s" F'.%s %s|}
+                     name
+                     (type_to_constructor data_type)
+                     name)
+            |> make_list;
+          ])
     in
     Code.make_lambda argument body
   in
@@ -200,7 +204,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       fields
       |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
              Printf.sprintf
-               "let %s = F'.make_cell F'.%s F'.Text in"
+               "let %s = T'.allocate F'.%s in"
                name
                (type_to_constructor data_type))
       |> Code.lines
@@ -213,14 +217,14 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
                argument |> Printf.sprintf "M'.unstringify %s" |> line;
                fields
                |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                      Printf.sprintf "\"%s\", %s.decode" name name)
+                      Printf.sprintf "\"%s\", T'.cloak %s" name name)
                |> make_list;
              ])
           [
             ( "Ok ()",
               fields
               |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                     Printf.sprintf "%s = !(%s.value)" name name)
+                     Printf.sprintf "%s = T'.read %s" name name)
               |> make_record ~prefix:"Ok " );
             "Error _ as error", lines ["error"];
           ])
@@ -246,6 +250,8 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
         [
           line "module F' = Runtime.Field";
           line "module M' = Runtime.Message";
+          line "module T' = Runtime.Text_impl";
+          line "module W' = Runtime.Wire_impl";
           List.map messages ~f:(generate_message ~options) |> block ~indented:false;
         ])
     |> Code.emit
