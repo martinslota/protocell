@@ -96,29 +96,29 @@ module Wire : Serialization with type t = wire_value with type id = int = struct
   let encode_int (typ, int) =
     Varint
       (match typ with
-      | Field.I32 | I64 | U32 | U64 -> Int64.of_int int
+      | Field.I32 | I64 | U32 | U64 -> int |> Int64.of_int
       | S32 | S64 -> int |> Int64.of_int |> zigzag_encode)
 
-  let decode_int typ wire_value =
-    match wire_value with
+  let decode_int typ value =
+    match value with
     | Varint int64 -> (
         let int64 =
           match typ with
+          | Field.I32 | I64 | U32 | U64 -> int64
           | Field.S32 | S64 -> zigzag_decode int64
-          | _ -> int64
         in
         match Int64.to_int int64 with
         | None -> Error (`Integer_outside_int_type_range int64)
         | Some i -> Ok i)
     | Length_delimited _ ->
-        Error (`Wrong_value_sort_for_int_field (to_sort wire_value, typ))
+        Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
 
   let encode_string (_, string) = Length_delimited string
 
-  let decode_string typ wire_value =
-    match wire_value with
+  let decode_string typ value =
+    match value with
     | Length_delimited string -> Ok string
-    | Varint _ -> Error (`Wrong_value_sort_for_string_field (to_sort wire_value, typ))
+    | Varint _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
 end
 
 module Text : Serialization with type t = Text_format.value with type id = string =
@@ -139,20 +139,20 @@ struct
 
   let encode_int (_, int) = Text_format.Integer (Int64.of_int int)
 
-  let decode_int typ wire_value =
-    match wire_value with
+  let decode_int typ value =
+    match value with
     | Text_format.Integer int64 -> (
       match Int64.to_int int64 with
       | None -> Error (`Integer_outside_int_type_range int64)
       | Some i -> Ok i)
-    | String _ -> Error (`Wrong_value_sort_for_int_field (to_sort wire_value, typ))
+    | String _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
 
   let encode_string (_, string) = Text_format.String string
 
-  let decode_string typ wire_value =
-    match wire_value with
+  let decode_string typ value =
+    match value with
     | Text_format.String string -> Ok string
-    | Integer _ -> Error (`Wrong_value_sort_for_string_field (to_sort wire_value, typ))
+    | Integer _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
 end
 
 module type FormatImpl = sig
@@ -245,16 +245,12 @@ module Impl (F : Serialization) :
     let wire_records =
       Hashtbl.of_alist_multi ~growth_allowed:false (module F.Id) values
     in
-    match
-      List.map spots ~f:(fun (id, cloaked_spot) ->
-          match Hashtbl.find wire_records id with
-          | None -> Ok ()
-          | Some [] -> Ok ()
-          | Some (value :: _) -> decode_one value cloaked_spot)
-      |> Result.all_unit
-    with
-    | Error e -> Error e
-    | Ok () -> Ok ()
+    List.map spots ~f:(fun (id, cloaked_spot) ->
+        match Hashtbl.find wire_records id with
+        | None -> Ok ()
+        | Some [] -> Ok ()
+        | Some (value :: _) -> decode_one value cloaked_spot)
+    |> Result.all_unit
 end
 
 module Text_impl = Impl (Text)
