@@ -1,10 +1,41 @@
 open Base
 
-type value =
+type t =
   | Integer of int64
   | String of string
 
-type t = (string * value) list
+type sort =
+  | Integer_sort
+  | String_sort
+
+type id = string
+
+type records = (id * t) list
+
+module Id = String
+
+let to_sort = function
+  | Integer _ -> Integer_sort
+  | String _ -> String_sort
+
+module Encoding : Types.Encoding with type t := t with type sort := sort = struct
+  let encode_int value = Integer (value |> Field_value.unpack |> Int64.of_int)
+
+  let decode_int typ value =
+    match value with
+    | Integer int64 -> (
+      match Int64.to_int int64 with
+      | None -> Error (`Integer_outside_int_type_range int64)
+      | Some i -> Ok i)
+    | String _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
+
+  let encode_string value = String (Field_value.unpack value)
+
+  let decode_string typ value =
+    match value with
+    | String string -> Ok string
+    | Integer _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+end
 
 module Writer = struct
   let write_value output value =
@@ -15,13 +46,15 @@ module Writer = struct
         Byte_output.write_bytes output (String.escaped string);
         Byte_output.write_byte output '"'
 
-  let write_values output values =
-    List.iter values ~f:(fun (field_name, value) ->
+  let write output records =
+    List.iter records ~f:(fun (field_name, value) ->
         Byte_output.write_bytes output field_name;
         Byte_output.write_bytes output ": ";
         write_value output value;
         Byte_output.write_byte output '\n')
 end
+
+let write_records = Writer.write
 
 module Reader = struct
   type token =
@@ -121,7 +154,62 @@ module Reader = struct
     in
     collect [] tokens
 
-  let read_values input =
+  let read input =
     let open Result.Let_syntax in
     tokenize input >>= read_key_value_pairs
 end
+
+type read_error = Reader.error
+
+let read_records = Reader.read
+
+let encode : type v. v Field_value.t -> t =
+ fun value ->
+  let typ = Field_value.typ value in
+  match typ with
+  | I32 -> Encoding.encode_int value
+  | I64 -> Encoding.encode_int value
+  | S32 -> Encoding.encode_int value
+  | S64 -> Encoding.encode_int value
+  | U32 -> Encoding.encode_int value
+  | U64 -> Encoding.encode_int value
+  | String -> Encoding.encode_string value
+
+let decode_one : t -> Field_variable.cloaked -> (unit, _) Result.t =
+ fun value (Cloak spot) ->
+  let typ = Field_variable.typ spot in
+  let set_spot = Result.bind ~f:(fun value -> Field_variable.set spot value) in
+  match typ with
+  | I32 -> Encoding.decode_int typ value |> set_spot
+  | I64 -> Encoding.decode_int typ value |> set_spot
+  | S32 -> Encoding.decode_int typ value |> set_spot
+  | S64 -> Encoding.decode_int typ value |> set_spot
+  | U32 -> Encoding.decode_int typ value |> set_spot
+  | U64 -> Encoding.decode_int typ value |> set_spot
+  | String -> Encoding.decode_string typ value |> set_spot
+
+let decode_all values variables =
+  let wire_records = Hashtbl.of_alist_multi ~growth_allowed:false (module Id) values in
+  List.map variables ~f:(fun (id, cloaked_spot) ->
+      match Hashtbl.find wire_records id with
+      | None -> Ok ()
+      | Some [] -> Ok ()
+      | Some (value :: _) -> decode_one value cloaked_spot)
+  |> Result.all_unit
+
+type serialization_error = Field_value.validation_error
+
+let serialize fields =
+  Result.all fields
+  |> Result.map_error ~f:Field_value.relax_error
+  |> Result.map ~f:(fun values ->
+         let output = Byte_output.create () in
+         write_records output values; Byte_output.contents output)
+
+type deserialization_error =
+  [ read_error
+  | sort Types.decoding_error
+  | Field_value.validation_error ]
+
+let deserialize bytes decoders =
+  Byte_input.create bytes |> read_records |> Result.bind ~f:(Fn.flip decode_all decoders)

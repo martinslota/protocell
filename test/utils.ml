@@ -15,13 +15,13 @@ let execute_process_with_input ~prog ~args ~input =
 module type Serdes_testable = sig
   type t [@@deriving eq, show]
 
-  val serialize : t -> (string, [> Runtime.Message.serialization_error]) result
+  val serialize : t -> (string, [> Runtime.Wire_format.serialization_error]) result
 
-  val stringify : t -> (string, [> Runtime.Message.stringification_error]) result
+  val deserialize : string -> (t, [> Runtime.Wire_format.deserialization_error]) result
 
-  val deserialize : string -> (t, [> Runtime.Message.deserialization_error]) result
+  val stringify : t -> (string, [> Runtime.Text_format.serialization_error]) result
 
-  val unstringify : string -> (t, [> Runtime.Message.unstringification_error]) result
+  val unstringify : string -> (t, [> Runtime.Text_format.deserialization_error]) result
 
   val name : string
 

@@ -1,16 +1,62 @@
 open Base
 
-type wire_value = Types.wire_value =
+type t =
   | Varint of int64
   | Length_delimited of string
 
-type wire_type = Types.wire_type =
+type sort =
   | Varint_type
   | Length_delimited_type
 
-let wire_type_to_id = function
+type id = int
+
+type records = (id * t) list
+
+module Id = Int
+
+let to_sort = function
+  | Varint _ -> Varint_type
+  | Length_delimited _ -> Length_delimited_type
+
+let to_id = function
   | Varint_type -> 0
   | Length_delimited_type -> 2
+
+module Encoding : Types.Encoding with type t := t with type sort := sort = struct
+  let zigzag_encode i = Int64.((i asr 63) lxor (i lsl 1))
+
+  let zigzag_decode i = Int64.((i lsr 1) lxor -(i land one))
+
+  let encode_int value =
+    let typ = Field_value.typ value in
+    let int = Field_value.unpack value in
+    Varint
+      (match typ with
+      | I32 | I64 | U32 | U64 -> int |> Int64.of_int
+      | S32 | S64 -> int |> Int64.of_int |> zigzag_encode)
+
+  let decode_int typ value =
+    match value with
+    | Varint int64 -> (
+        let int64 =
+          match typ with
+          | Field_value.I32 | I64 | U32 | U64 -> int64
+          | S32 | S64 -> zigzag_decode int64
+        in
+        match Int64.to_int int64 with
+        | None -> Error (`Integer_outside_int_type_range int64)
+        | Some i -> Ok i)
+    | Length_delimited _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
+
+  let encode_string value =
+    let value = Field_value.unpack value in
+    Length_delimited value
+
+  let decode_string typ value =
+    match value with
+    | Length_delimited string -> Ok string
+    | Varint _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+end
 
 module Writer = struct
   let seven_bit_mask = Int64.of_int 0b0111_1111
@@ -35,9 +81,9 @@ module Writer = struct
   let write_varint output value = value |> Int64.of_int |> write_varint_64 output
 
   let write_value buffer field_number wire_value =
-    let wire_type = Types.wire_value_to_type wire_value in
-    let wire_type_id = wire_type_to_id wire_type in
-    let wire_descriptor = (field_number lsl 3) lor wire_type_id in
+    let sort = to_sort wire_value in
+    let id = to_id sort in
+    let wire_descriptor = (field_number lsl 3) lor id in
     write_varint buffer wire_descriptor;
     match wire_value with
     | Varint int -> write_varint_64 buffer int
@@ -46,10 +92,12 @@ module Writer = struct
         write_varint buffer length;
         Byte_output.write_bytes buffer bytes
 
-  let write_values output values =
-    List.iter values ~f:(fun (field_number, wire_value) ->
+  let write output records =
+    List.iter records ~f:(fun (field_number, wire_value) ->
         write_value output field_number wire_value)
 end
+
+let write_records = Writer.write
 
 module Reader = struct
   type error =
@@ -97,7 +145,7 @@ module Reader = struct
         Error (`Invalid_string_length string_length)
     | string_length -> Byte_input.read_bytes input string_length
 
-  let read_values input =
+  let read input =
     let rec collect_all () =
       let open Result.Let_syntax in
       match Byte_input.has_more_bytes input with
@@ -117,3 +165,61 @@ module Reader = struct
     in
     collect_all () |> Result.all
 end
+
+type read_error_t = Reader.error
+
+type read_error = read_error_t
+
+let read_records = Reader.read
+
+let encode : type v. v Field_value.t -> t =
+ fun value ->
+  let typ = Field_value.typ value in
+  match typ with
+  | I32 -> Encoding.encode_int value
+  | I64 -> Encoding.encode_int value
+  | S32 -> Encoding.encode_int value
+  | S64 -> Encoding.encode_int value
+  | U32 -> Encoding.encode_int value
+  | U64 -> Encoding.encode_int value
+  | String -> Encoding.encode_string value
+
+let decode_one : t -> Field_variable.cloaked -> (unit, _) Result.t =
+ fun value (Field_variable.Cloak spot) ->
+  let open Result.Let_syntax in
+  let typ = Field_variable.typ spot in
+  let set_spot value = Field_variable.set spot value in
+  match typ with
+  | I32 -> Encoding.decode_int typ value >>= set_spot
+  | I64 -> Encoding.decode_int typ value >>= set_spot
+  | S32 -> Encoding.decode_int typ value >>= set_spot
+  | S64 -> Encoding.decode_int typ value >>= set_spot
+  | U32 -> Encoding.decode_int typ value >>= set_spot
+  | U64 -> Encoding.decode_int typ value >>= set_spot
+  | String -> Encoding.decode_string typ value >>= set_spot
+
+let decode_all values spots =
+  let wire_records = Hashtbl.of_alist_multi ~growth_allowed:false (module Id) values in
+  List.map spots ~f:(fun (id, cloaked_spot) ->
+      match Hashtbl.find wire_records id with
+      | None -> Ok ()
+      | Some [] -> Ok ()
+      | Some (value :: _) -> decode_one value cloaked_spot)
+  |> Result.all_unit
+
+type serialization_error = Field_value.validation_error
+
+let serialize fields =
+  Result.all fields
+  |> Result.map_error ~f:Field_value.relax_error
+  |> Result.map ~f:(fun values ->
+         let output = Byte_output.create () in
+         write_records output values; Byte_output.contents output)
+
+type deserialization_error =
+  [ read_error
+  | sort Types.decoding_error
+  | Field_value.validation_error ]
+
+let deserialize bytes decoders =
+  Byte_input.create bytes |> read_records |> Result.bind ~f:(Fn.flip decode_all decoders)
