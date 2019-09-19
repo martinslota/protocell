@@ -10,7 +10,20 @@ type sort =
 
 type id = string
 
-type records = (id * t) list
+type serialization_error = Field_value.validation_error
+
+type parsed_message = (id, t list) Hashtbl.t
+
+type parse_error =
+  [ `Unexpected_character of char
+  | `Invalid_number_string of string
+  | `Identifier_expected
+  | Byte_input.error ]
+
+type deserialization_error =
+  [ parse_error
+  | sort Types.decoding_error
+  | Field_value.validation_error ]
 
 module Id = String
 
@@ -46,15 +59,12 @@ module Writer = struct
         Byte_output.write_bytes output (String.escaped string);
         Byte_output.write_byte output '"'
 
-  let write output records =
-    List.iter records ~f:(fun (field_name, value) ->
-        Byte_output.write_bytes output field_name;
-        Byte_output.write_bytes output ": ";
-        write_value output value;
-        Byte_output.write_byte output '\n')
+  let write_field output (field_name, value) =
+    Byte_output.write_bytes output field_name;
+    Byte_output.write_bytes output ": ";
+    write_value output value;
+    Byte_output.write_byte output '\n'
 end
-
-let write_records = Writer.write
 
 module Reader = struct
   type token =
@@ -122,12 +132,6 @@ module Reader = struct
     in
     collect []
 
-  type error =
-    [ `Unexpected_character of char
-    | `Invalid_number_string of string
-    | `Identifier_expected
-    | Byte_input.error ]
-
   let read_key_value_pair tokens =
     match tokens with
     | Identifier key :: Key_value_separator :: Identifier number_string :: rest -> (
@@ -159,10 +163,6 @@ module Reader = struct
     tokenize input >>= read_key_value_pairs
 end
 
-type read_error = Reader.error
-
-let read_records = Reader.read
-
 let encode : type v. v Field_value.t -> t =
  fun value ->
   let typ = Field_value.typ value in
@@ -175,41 +175,31 @@ let encode : type v. v Field_value.t -> t =
   | U64 -> Encoding.encode_int value
   | String -> Encoding.encode_string value
 
-let decode_one : t -> Field_variable.cloaked -> (unit, _) Result.t =
- fun value (Cloak spot) ->
-  let typ = Field_variable.typ spot in
-  let set_spot = Result.bind ~f:(fun value -> Field_variable.set spot value) in
+let serialize_field id typ value output =
+  let open Result.Let_syntax in
+  Field_value.create typ value >>| encode >>| fun value ->
+  Writer.write_field output (id, value)
+
+let deserialize_message input =
+  let open Result.Let_syntax in
+  Reader.read input >>| fun records ->
+  Hashtbl.of_alist_multi ~growth_allowed:false (module Id) records
+
+let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
+ fun value typ ->
   match typ with
-  | I32 -> Encoding.decode_int typ value |> set_spot
-  | I64 -> Encoding.decode_int typ value |> set_spot
-  | S32 -> Encoding.decode_int typ value |> set_spot
-  | S64 -> Encoding.decode_int typ value |> set_spot
-  | U32 -> Encoding.decode_int typ value |> set_spot
-  | U64 -> Encoding.decode_int typ value |> set_spot
-  | String -> Encoding.decode_string typ value |> set_spot
+  | I32 -> Encoding.decode_int typ value
+  | I64 -> Encoding.decode_int typ value
+  | S32 -> Encoding.decode_int typ value
+  | S64 -> Encoding.decode_int typ value
+  | U32 -> Encoding.decode_int typ value
+  | U64 -> Encoding.decode_int typ value
+  | String -> Encoding.decode_string typ value
 
-let decode_all values variables =
-  let wire_records = Hashtbl.of_alist_multi ~growth_allowed:false (module Id) values in
-  List.map variables ~f:(fun (id, cloaked_spot) ->
-      match Hashtbl.find wire_records id with
-      | None -> Ok ()
-      | Some [] -> Ok ()
-      | Some (value :: _) -> decode_one value cloaked_spot)
-  |> Result.all_unit
-
-type serialization_error = Field_value.validation_error
-
-let serialize fields =
-  Result.all fields
-  |> Result.map_error ~f:Field_value.relax_error
-  |> Result.map ~f:(fun values ->
-         let output = Byte_output.create () in
-         write_records output values; Byte_output.contents output)
-
-type deserialization_error =
-  [ read_error
-  | sort Types.decoding_error
-  | Field_value.validation_error ]
-
-let deserialize bytes decoders =
-  Byte_input.create bytes |> read_records |> Result.bind ~f:(Fn.flip decode_all decoders)
+let decode_field id typ records =
+  let open Result.Let_syntax in
+  match Hashtbl.find records id with
+  | None -> Ok (Field_value.default typ)
+  | Some [] -> Ok (Field_value.default typ)
+  | Some (value :: _) ->
+      decode_value value typ >>= Field_value.create typ >>| Field_value.unpack

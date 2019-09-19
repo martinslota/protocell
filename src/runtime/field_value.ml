@@ -13,6 +13,15 @@ type 'v t = 'v typ * 'v
 
 type validation_error = [`Integer_outside_field_type_range of int typ * int]
 
+let default : type v. v typ -> v = function
+  | I32 -> 0
+  | I64 -> 0
+  | S32 -> 0
+  | S64 -> 0
+  | U32 -> 0
+  | U64 -> 0
+  | String -> ""
+
 let max_uint_32_value =
   match Int32.(to_int max_value) with
   | None -> Int.max_value
@@ -40,9 +49,6 @@ let create : type v. v typ -> v -> (v t, [> validation_error]) Result.t =
     | true -> Error (`Integer_outside_field_type_range (typ, value))
     | false -> Ok (typ, value))
   | String -> Ok (typ, value)
-
-let create_and_transform tag typ value transform =
-  create typ value |> Result.map ~f:(fun value -> tag, transform value)
 
 let typ (typ, _) = typ
 

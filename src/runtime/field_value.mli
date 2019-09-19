@@ -13,14 +13,9 @@ type _ typ =
 
 type validation_error = [`Integer_outside_field_type_range of int typ * int]
 
-val create : 'v typ -> 'v -> ('v t, [> validation_error]) Result.t
+val default : 'v typ -> 'v
 
-val create_and_transform
-  :  'tag ->
-  'v typ ->
-  'v ->
-  ('v t -> 'w) ->
-  ('tag * 'w, [> validation_error]) Result.t
+val create : 'v typ -> 'v -> ('v t, [> validation_error]) Result.t
 
 val typ : 'v t -> 'v typ
 

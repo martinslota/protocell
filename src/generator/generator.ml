@@ -18,7 +18,7 @@ module Code = struct
 
   let block ?(indented = true) contents = Block {indented; contents}
 
-  let lines strings = strings |> List.map ~f:line |> block
+  let lines ?(indented = true) strings = strings |> List.map ~f:line |> block ~indented
 
   let make_list elements =
     block [line "["; elements |> List.map ~f:(fun e -> e ^ ";") |> lines; line "]"]
@@ -108,8 +108,12 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
            name, type_to_ocaml_type data_type)
     |> Code.make_record_type ~options "t"
   in
-  let serialize_code =
-    Code.make_let "serialize" "t -> (string, [> W'.serialization_error]) result"
+  let generate_serialization_function function_name format_module_name field_to_ocaml_id =
+    Code.make_let
+      function_name
+      (Printf.sprintf
+         "t -> (string, [> %s.serialization_error]) result"
+         format_module_name)
     @@
     let argument =
       fields
@@ -121,116 +125,77 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
       Code.(
         block
           [
-            line "W'.serialize";
-            fields
-            |> List.map ~f:(fun Protobuf.Field.{name; number; data_type} ->
-                   Printf.sprintf
-                     {|F'.create_and_transform %d F'.%s %s W'.encode|}
-                     number
-                     (type_to_constructor data_type)
-                     name)
-            |> make_list;
+            line "let (>>=) = Runtime.Result.(>>=) in";
+            line "let o' = Runtime.Byte_output.create () in";
+            List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
+                Printf.sprintf
+                  {|(%s.serialize_field %s F'.%s %s o') >>= fun () ->|}
+                  format_module_name
+                  (field_to_ocaml_id field)
+                  (type_to_constructor data_type)
+                  name)
+            |> lines ~indented:false;
+            line "Ok (Runtime.Byte_output.contents o')";
           ])
     in
     Code.make_lambda argument body
+  in
+  let generate_deserialization_function function_name format_module_name
+      field_to_ocaml_id
+    =
+    Code.make_let
+      function_name
+      (Printf.sprintf
+         "string -> (t, [> %s.deserialization_error]) result"
+         format_module_name)
+    @@
+    let argument = "input'" in
+    let _decoder_declarations =
+      fields
+      |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
+             Printf.sprintf
+               "let %s = S'.allocate F'.%s in"
+               name
+               (type_to_constructor data_type))
+      |> Code.lines
+    in
+    let result_match =
+      Code.(
+        block
+          [
+            line "let (>>=) = Runtime.Result.(>>=) in";
+            line (Printf.sprintf "Ok (Runtime.Byte_input.create %s) >>=" argument);
+            line
+              (Printf.sprintf "%s.deserialize_message >>= fun m' ->" format_module_name);
+            List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
+                Printf.sprintf
+                  "%s.decode_field %s F'.%s m' >>= fun %s ->"
+                  format_module_name
+                  (field_to_ocaml_id field)
+                  (type_to_constructor data_type)
+                  name)
+            |> lines ~indented:false;
+            fields
+            |> List.map ~f:(fun Protobuf.Field.{name; _} -> Printf.sprintf "%s" name)
+            |> make_record ~prefix:"Ok ";
+          ])
+    in
+    let body = [result_match] |> Code.block ~indented:false in
+    Code.make_lambda argument body
+  in
+  let field_number_to_ocaml_id Protobuf.Field.{number; _} = Printf.sprintf "%d" number in
+  let serialize_code =
+    generate_serialization_function "serialize" "W'" field_number_to_ocaml_id
   in
   let deserialize_code =
-    Code.make_let "deserialize" "string -> (t, [> W'.deserialization_error]) result"
-    @@
-    let argument = "input'" in
-    let decoder_declarations =
-      fields
-      |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
-             Printf.sprintf
-               "let %s = S'.allocate F'.%s in"
-               name
-               (type_to_constructor data_type))
-      |> Code.lines
-    in
-    let result_match =
-      Code.(
-        make_match
-          (block
-             [
-               argument |> Printf.sprintf "W'.deserialize %s" |> line;
-               fields
-               |> List.map ~f:(fun Protobuf.Field.{name; number; _} ->
-                      Printf.sprintf "%d, S'.cloak %s" number name)
-               |> make_list;
-             ])
-          [
-            ( "Ok ()",
-              fields
-              |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                     Printf.sprintf "%s = S'.unpack %s" name name)
-              |> make_record ~prefix:"Ok " );
-            "Error _ as error", lines ["error"];
-          ])
-    in
-    let body = [decoder_declarations; result_match] |> Code.block ~indented:false in
-    Code.make_lambda argument body
+    generate_deserialization_function "deserialize" "W'" field_number_to_ocaml_id
   in
+  let field_name_to_ocaml_id Protobuf.Field.{name; _} = Printf.sprintf {|"%s"|} name in
   let stringify_code =
-    Code.make_let "stringify" "t -> (string, [> T'.serialization_error]) result"
-    @@
-    let argument =
-      fields
-      |> List.map ~f:(fun Protobuf.Field.{name; _} -> name)
-      |> String.concat ~sep:"; "
-      |> Printf.sprintf "{ %s }"
-    in
-    let body =
-      Code.(
-        block
-          [
-            line "T'.serialize";
-            fields
-            |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
-                   Printf.sprintf
-                     {|F'.create_and_transform "%s" F'.%s %s T'.encode|}
-                     name
-                     (type_to_constructor data_type)
-                     name)
-            |> make_list;
-          ])
-    in
-    Code.make_lambda argument body
+    generate_serialization_function "stringify" "T'" field_name_to_ocaml_id
   in
   let unstringify_code =
-    Code.make_let "unstringify" "string -> (t, [> T'.deserialization_error]) result"
-    @@
-    let argument = "input'" in
-    let decoder_declarations =
-      fields
-      |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
-             Printf.sprintf
-               "let %s = S'.allocate F'.%s in"
-               name
-               (type_to_constructor data_type))
-      |> Code.lines
-    in
-    let result_match =
-      Code.(
-        make_match
-          (block
-             [
-               argument |> Printf.sprintf "T'.deserialize %s" |> line;
-               fields
-               |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                      Printf.sprintf "\"%s\", S'.cloak %s" name name)
-               |> make_list;
-             ])
-          [
-            ( "Ok ()",
-              fields
-              |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                     Printf.sprintf "%s = S'.unpack %s" name name)
-              |> make_record ~prefix:"Ok " );
-            "Error _ as error", lines ["error"];
-          ])
-    in
-    let body = [decoder_declarations; result_match] |> Code.block ~indented:false in
-    Code.make_lambda argument body
+    generate_deserialization_function "unstringify" "T'" field_name_to_ocaml_id
   in
   Code.make_module
     name
@@ -249,7 +214,6 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
       make_file
         [
           line "module F' = Runtime.Field_value";
-          line "module S' = Runtime.Field_variable";
           line "module T' = Runtime.Text_format";
           line "module W' = Runtime.Wire_format";
           List.map messages ~f:(generate_message ~options) |> block ~indented:false;
