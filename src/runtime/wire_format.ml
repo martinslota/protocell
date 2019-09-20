@@ -18,7 +18,7 @@ type serialization_error = Field_value.validation_error
 
 type parse_error =
   [ `Unknown_wire_type of int
-  | `Varint_out_of_bounds of int64
+  | `Integer_outside_int_type_range of int64
   | `Varint_too_long
   | `Invalid_string_length of int
   | Byte_input.error ]
@@ -38,11 +38,24 @@ let to_sort = function
   | Length_delimited _ -> Length_delimited_type
   | Fixed_32_bits _ -> Fixed_32_bits_type
 
-let to_id = function
+let sort_to_id = function
   | Varint_type -> 0
   | Fixed_64_bits_type -> 1
   | Length_delimited_type -> 2
   | Fixed_32_bits_type -> 5
+
+let sort_of_id = function
+  | 0 -> Some Varint_type
+  | 1 -> Some Fixed_64_bits_type
+  | 2 -> Some Length_delimited_type
+  | 5 -> Some Fixed_32_bits_type
+  | _ -> None
+
+let sort_to_string = function
+  | Varint_type -> "Varint"
+  | Fixed_64_bits_type -> "64-bit"
+  | Length_delimited_type -> "Length-delimited"
+  | Fixed_32_bits_type -> "32-bit"
 
 module Encoding : Types.Encoding with type t := t with type sort := sort = struct
   let encode_string value =
@@ -184,7 +197,7 @@ module Writer = struct
 
   let write_value buffer field_number wire_value =
     let sort = to_sort wire_value in
-    let id = to_id sort in
+    let id = sort_to_id sort in
     let wire_descriptor = (field_number lsl 3) lor id in
     write_varint buffer wire_descriptor;
     match wire_value with
@@ -238,7 +251,7 @@ module Reader = struct
     match read_varint_64 input with
     | Ok value -> (
       match Int64.to_int value with
-      | None -> Error (`Varint_out_of_bounds value)
+      | None -> Error (`Integer_outside_int_type_range value)
       | Some value -> Ok value)
     | Error _ as error -> error
 
@@ -255,26 +268,29 @@ module Reader = struct
     EndianString.LittleEndian.get_int32 bytes 0
 
   let read input =
-    let rec collect_all () =
+    let rec collect_all acc =
       let open Result.Let_syntax in
       match Byte_input.has_more_bytes input with
-      | false -> []
+      | false -> List.rev acc
       | true ->
           let wire_record =
             read_varint input >>= fun wire_descriptor ->
             let wire_type = wire_descriptor land 0x7 in
             let field_number = wire_descriptor lsr 3 in
-            (match wire_type with
-            | 0 -> read_varint_64 input >>| fun int -> Varint int
-            | 1 -> read_fixed_64 input >>| fun int -> Fixed_64_bits int
-            | 2 -> read_string input >>| fun bytes -> Length_delimited bytes
-            | 5 -> read_fixed_32 input >>| fun int -> Fixed_32_bits int
-            | _ -> Error (`Unknown_wire_type wire_type))
+            (match sort_of_id wire_type with
+            | Some Varint_type -> read_varint_64 input >>| fun int -> Varint int
+            | Some Fixed_64_bits_type ->
+                read_fixed_64 input >>| fun int -> Fixed_64_bits int
+            | Some Length_delimited_type ->
+                read_string input >>| fun bytes -> Length_delimited bytes
+            | Some Fixed_32_bits_type ->
+                read_fixed_32 input >>| fun int -> Fixed_32_bits int
+            | None -> Error (`Unknown_wire_type wire_type))
             >>| fun wire_value -> field_number, wire_value
           in
-          wire_record :: collect_all ()
+          collect_all (wire_record :: acc)
     in
-    collect_all () |> Result.all
+    collect_all [] |> Result.all
 end
 
 let encode : type v. v Field_value.t -> t =

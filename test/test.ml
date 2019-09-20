@@ -13,4 +13,6 @@ let () =
       Integers.fixed64_tests;
       Integers.sfixed32_tests;
       Integers.sfixed64_tests;
+      Floats.float_tests;
+      Floats.double_tests;
     ]

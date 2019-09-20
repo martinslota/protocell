@@ -10,7 +10,7 @@ type serialization_error = Field_value.validation_error
 
 type parse_error =
   [ `Unknown_wire_type of int
-  | `Varint_out_of_bounds of int64
+  | `Integer_outside_int_type_range of int64
   | `Varint_too_long
   | `Invalid_string_length of int
   | Byte_input.error ]
@@ -21,6 +21,8 @@ type deserialization_error =
   | Field_value.validation_error ]
 
 type parsed_message
+
+val sort_to_string : sort -> string
 
 val serialize_field
   :  id ->

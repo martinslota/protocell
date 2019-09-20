@@ -20,6 +20,8 @@ type _ typ =
 
 type validation_error = [`Integer_outside_field_type_range of int typ * int]
 
+val typ_to_string : 'v typ -> string
+
 val default : 'v typ -> 'v
 
 val create : 'v typ -> 'v -> ('v t, [> validation_error]) Result.t

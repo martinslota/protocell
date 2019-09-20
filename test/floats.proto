@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message Float {
+  float field = 1;
+}
+
+message Double {
+  double field = 1;
+}

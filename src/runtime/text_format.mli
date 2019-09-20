@@ -21,6 +21,8 @@ type deserialization_error =
 
 type parsed_message
 
+val sort_to_string : sort -> string
+
 val serialize_field
   :  id ->
   'v Field_value.typ ->

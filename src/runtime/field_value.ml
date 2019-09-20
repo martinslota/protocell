@@ -20,6 +20,22 @@ type 'v t = 'v typ * 'v
 
 type validation_error = [`Integer_outside_field_type_range of int typ * int]
 
+let typ_to_string : type v. v typ -> string = function
+  | String_t -> "string"
+  | Int32_t -> "int32"
+  | Int64_t -> "int64"
+  | Sint32_t -> "sint32"
+  | Sint64_t -> "sint64"
+  | Uint32_t -> "uint32"
+  | Uint64_t -> "uint64"
+  | Fixed32_t -> "fixed32"
+  | Fixed64_t -> "fixed64"
+  | Sfixed32_t -> "sfixed32"
+  | Sfixed64_t -> "sfixed64"
+  | Float_t -> "float"
+  | Double_t -> "double"
+  | Bool_t -> "bool"
+
 let default : type v. v typ -> v = function
   | String_t -> ""
   | Int32_t -> 0

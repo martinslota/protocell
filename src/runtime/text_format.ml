@@ -37,6 +37,12 @@ let to_sort = function
   | Float _ -> Float_sort
   | Bool _ -> Bool_sort
 
+let sort_to_string = function
+  | String_sort -> "String"
+  | Integer_sort -> "Integer"
+  | Float_sort -> "Float"
+  | Bool_sort -> "Boolean"
+
 module Encoding : Types.Encoding with type t := t with type sort := sort = struct
   let encode_string value = String (Field_value.unpack value)
 
@@ -59,7 +65,10 @@ module Encoding : Types.Encoding with type t := t with type sort := sort = struc
 
   let decode_float typ value =
     match value with
-    | Float float -> Ok float
+    | Float float -> (
+      match typ with
+      | Field_value.Float_t -> Ok (float |> Int32.bits_of_float |> Int32.float_of_bits)
+      | Field_value.Double_t -> Ok float)
     | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ))
 
   let encode_bool value = Bool (value |> Field_value.unpack)
