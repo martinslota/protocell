@@ -89,18 +89,38 @@ end
 let generate_message : options:options -> Protobuf.Message.t -> Code.t =
  fun ~options {name; fields} ->
   let type_to_constructor : Protobuf.field_data_type -> string = function
-    | Protobuf.String -> "String"
-    | Int32 -> "I32"
-    | Int64 -> "I64"
-    | Sint32 -> "S32"
-    | Sint64 -> "S64"
+    | Protobuf.String_t -> "String_t"
+    | Int32_t -> "Int32_t"
+    | Int64_t -> "Int64_t"
+    | Sint32_t -> "Sint32_t"
+    | Sint64_t -> "Sint64_t"
+    | Uint32_t -> "Uint32_t"
+    | Uint64_t -> "Uint64_t"
+    | Fixed32_t -> "Fixed32_t"
+    | Fixed64_t -> "Fixed64_t"
+    | Sfixed32_t -> "Sfixed32_t"
+    | Sfixed64_t -> "Sfixed64_t"
+    | Float_t -> "Float_t"
+    | Double_t -> "Double_t"
+    | Bool_t -> "Bool_t"
+    | _ -> failwith "TODO"
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
-    | String -> "string"
-    | Int32 -> "int"
-    | Int64 -> "int"
-    | Sint32 -> "int"
-    | Sint64 -> "int"
+    | String_t -> "string"
+    | Int32_t -> "int"
+    | Int64_t -> "int"
+    | Sint32_t -> "int"
+    | Sint64_t -> "int"
+    | Uint32_t -> "int"
+    | Uint64_t -> "int"
+    | Fixed32_t -> "int"
+    | Fixed64_t -> "int"
+    | Sfixed32_t -> "int"
+    | Sfixed64_t -> "int"
+    | Float_t -> "float"
+    | Double_t -> "float"
+    | Bool_t -> "bool"
+    | _ -> failwith "TODO"
   in
   let type_declaration =
     fields

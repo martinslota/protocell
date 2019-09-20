@@ -3,8 +3,14 @@ let () =
     "Protocell test suite"
     [
       Sanity.tests;
-      Integers.int_32_tests;
-      Integers.int_64_tests;
-      Integers.sint_32_tests;
-      Integers.sint_64_tests;
+      Integers.int32_tests;
+      Integers.int64_tests;
+      Integers.sint32_tests;
+      Integers.sint64_tests;
+      Integers.uint32_tests;
+      Integers.uint64_tests;
+      Integers.fixed32_tests;
+      Integers.fixed64_tests;
+      Integers.sfixed32_tests;
+      Integers.sfixed64_tests;
     ]

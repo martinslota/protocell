@@ -22,78 +22,74 @@ module type Serdes_testable = sig
   val stringify : t -> (string, [> Runtime.Text_format.serialization_error]) result
 
   val unstringify : string -> (t, [> Runtime.Text_format.deserialization_error]) result
-
-  val name : string
-
-  val protobuf_type_name : string
-
-  val values_to_test : t list
 end
 
-(* FIXME take instead the protobuf message module, name of file, name of the message and the values; generate just the alcotest "success" cases without name *)
-(* FIXME consider other generators that assert errors generated; perhaps just in the generated code? *)
-let suite (module T : Serdes_testable) =
+let suite (type t) (module T : Serdes_testable with type t = t) name protobuf_type_name
+    values_to_test
+  =
   let t_testable : T.t Alcotest.testable = Alcotest.testable T.pp T.equal in
-  let protobuf_file_name = T.name |> String.lowercase |> Printf.sprintf "%s.proto" in
-  let serdes_test value () =
+  let protobuf_file_name = name |> String.lowercase |> Printf.sprintf "%s.proto" in
+  let wire_format_roundtrip value () =
     let open Result.Let_syntax in
     match value |> T.serialize >>= T.deserialize with
-    (* FIXME improve messages *)
-    | Ok actual -> Alcotest.(check t_testable "WTF?" value actual)
-    | Error _ -> Alcotest.fail "Serdes code failed"
+    | Ok actual ->
+        Alcotest.(check t_testable "serialize |> deserialize mismatch" value actual)
+    | Error _ -> Alcotest.fail "serialize |> deserialize failure"
   in
-  let stringification_test value () =
+  let text_format_roundtrip value () =
     let open Result.Let_syntax in
     match value |> T.stringify >>= T.unstringify with
-    (* FIXME improve messages *)
-    | Ok actual -> Alcotest.(check t_testable "WTF?" value actual)
-    | Error _ -> Alcotest.fail "Stringification code failed"
+    | Ok actual ->
+        Alcotest.(check t_testable "stringify |> unstringify mismatch" value actual)
+    | Error _ -> Alcotest.fail "stringify |> unstringify failure"
   in
-  let protoc_serdes_test value () =
+  let deserialize_protoc_wire_output value () =
     let open Result.Let_syntax in
     match
       T.stringify value
       >>= (fun input ->
             execute_process_with_input
               ~prog:"protoc"
-              ~args:
-                [Printf.sprintf "--encode=%s" T.protobuf_type_name; protobuf_file_name]
+              ~args:[Printf.sprintf "--encode=%s" protobuf_type_name; protobuf_file_name]
               ~input)
       >>= T.deserialize
     with
-    | Error _ -> Alcotest.fail "Deserialization error"
-    | Ok actual -> Alcotest.(check t_testable "WTF?" value actual)
+    | Ok actual ->
+        Alcotest.(
+          check t_testable "stringify |> protoc |> deserialize mismatch" value actual)
+    | Error _ -> Alcotest.fail "stringify |> protoc |> deserialize failure"
   in
-  let protoc_serdes_test2 value () =
+  let serialize_protoc_wire_input value () =
     let open Result.Let_syntax in
     match
       T.serialize value
       >>= (fun input ->
             execute_process_with_input
               ~prog:"protoc"
-              ~args:
-                [Printf.sprintf "--decode=%s" T.protobuf_type_name; protobuf_file_name]
+              ~args:[Printf.sprintf "--decode=%s" protobuf_type_name; protobuf_file_name]
               ~input)
       >>= T.unstringify
     with
-    | Error _ -> Alcotest.fail "Unstrigification error"
-    | Ok actual -> Alcotest.(check t_testable "WTF?" value actual)
+    | Ok actual ->
+        Alcotest.(
+          check t_testable "serialize |> protoc |> unstringify mismatch" value actual)
+    | Error _ -> Alcotest.fail "serialize |> protoc |> unstringify failure"
   in
-  let value_count = List.length T.values_to_test in
+  let value_count = List.length values_to_test in
   let make_tests title test_fn =
-    List.mapi T.values_to_test ~f:(fun index value ->
+    List.mapi values_to_test ~f:(fun index value ->
         let test_name = Printf.sprintf "%s (%d/%d)" title (index + 1) value_count in
         Alcotest.test_case test_name `Quick @@ test_fn value)
   in
-  ( T.protobuf_type_name,
+  ( protobuf_type_name,
     [
-      make_tests "Serialize and deserialize using generated code" serdes_test;
-      make_tests "Stringify and unstringify using generated code" stringification_test;
+      make_tests "Serialize and deserialize using generated code" wire_format_roundtrip;
+      make_tests "Stringify and unstringify using generated code" text_format_roundtrip;
       make_tests
         "Serialize using protoc, deserialize using generated code"
-        protoc_serdes_test;
+        deserialize_protoc_wire_output;
       make_tests
         "Serialize using generated code, deserialize using protoc"
-        protoc_serdes_test2;
+        serialize_protoc_wire_input;
     ]
     |> List.concat )

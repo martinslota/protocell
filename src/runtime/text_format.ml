@@ -1,12 +1,16 @@
 open Base
 
 type t =
-  | Integer of int64
   | String of string
+  | Integer of int64
+  | Float of float
+  | Bool of bool
 
 type sort =
-  | Integer_sort
   | String_sort
+  | Integer_sort
+  | Float_sort
+  | Bool_sort
 
 type id = string
 
@@ -28,10 +32,19 @@ type deserialization_error =
 module Id = String
 
 let to_sort = function
-  | Integer _ -> Integer_sort
   | String _ -> String_sort
+  | Integer _ -> Integer_sort
+  | Float _ -> Float_sort
+  | Bool _ -> Bool_sort
 
 module Encoding : Types.Encoding with type t := t with type sort := sort = struct
+  let encode_string value = String (Field_value.unpack value)
+
+  let decode_string typ value =
+    match value with
+    | String string -> Ok string
+    | _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+
   let encode_int value = Integer (value |> Field_value.unpack |> Int64.of_int)
 
   let decode_int typ value =
@@ -40,24 +53,33 @@ module Encoding : Types.Encoding with type t := t with type sort := sort = struc
       match Int64.to_int int64 with
       | None -> Error (`Integer_outside_int_type_range int64)
       | Some i -> Ok i)
-    | String _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
+    | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
 
-  let encode_string value = String (Field_value.unpack value)
+  let encode_float value = Float (value |> Field_value.unpack)
 
-  let decode_string typ value =
+  let decode_float typ value =
     match value with
-    | String string -> Ok string
-    | Integer _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+    | Float float -> Ok float
+    | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ))
+
+  let encode_bool value = Bool (value |> Field_value.unpack)
+
+  let decode_bool typ value =
+    match value with
+    | Bool bool -> Ok bool
+    | _ -> Error (`Wrong_value_sort_for_bool_field (to_sort value, typ))
 end
 
 module Writer = struct
   let write_value output value =
     match value with
-    | Integer int -> Int64.to_string int |> Byte_output.write_bytes output
     | String string ->
         Byte_output.write_byte output '"';
         Byte_output.write_bytes output (String.escaped string);
         Byte_output.write_byte output '"'
+    | Integer int -> Int64.to_string int |> Byte_output.write_bytes output
+    | Float float -> Float.to_string float |> Byte_output.write_bytes output
+    | Bool bool -> Bool.to_string bool |> Byte_output.write_bytes output
 
   let write_field output (field_name, value) =
     Byte_output.write_bytes output field_name;
@@ -89,6 +111,7 @@ module Reader = struct
     || is_digit character
     || Char.equal character '_'
     || Char.equal character '-'
+    || Char.equal character '.'
 
   let tokenize input =
     let read_rest input character condition =
@@ -134,10 +157,17 @@ module Reader = struct
 
   let read_key_value_pair tokens =
     match tokens with
-    | Identifier key :: Key_value_separator :: Identifier number_string :: rest -> (
-      match Int64.of_string number_string with
-      | exception _ -> Error (`Invalid_number_string number_string)
-      | int -> Ok (key, Integer int, rest))
+    | Identifier key :: Key_value_separator :: Identifier literal :: rest -> (
+      match literal with
+      | "true" -> Ok (key, Bool true, rest)
+      | "false" -> Ok (key, Bool false, rest)
+      | _ -> (
+        match Int64.of_string literal with
+        | int -> Ok (key, Integer int, rest)
+        | exception _ -> (
+          match Float.of_string literal with
+          | float -> Ok (key, Float float, rest)
+          | exception _ -> Error (`Invalid_number_string literal))))
     | Identifier key :: Key_value_separator :: String string :: rest ->
         Ok (key, String string, rest)
     | _ -> Error `Identifier_expected
@@ -165,15 +195,23 @@ end
 
 let encode : type v. v Field_value.t -> t =
  fun value ->
-  let typ = Field_value.typ value in
+  let module F = Field_value in
+  let typ = F.typ value in
   match typ with
-  | I32 -> Encoding.encode_int value
-  | I64 -> Encoding.encode_int value
-  | S32 -> Encoding.encode_int value
-  | S64 -> Encoding.encode_int value
-  | U32 -> Encoding.encode_int value
-  | U64 -> Encoding.encode_int value
-  | String -> Encoding.encode_string value
+  | F.String_t -> Encoding.encode_string value
+  | F.Int32_t -> Encoding.encode_int value
+  | F.Int64_t -> Encoding.encode_int value
+  | F.Sint32_t -> Encoding.encode_int value
+  | F.Sint64_t -> Encoding.encode_int value
+  | F.Uint32_t -> Encoding.encode_int value
+  | F.Uint64_t -> Encoding.encode_int value
+  | F.Fixed32_t -> Encoding.encode_int value
+  | F.Fixed64_t -> Encoding.encode_int value
+  | F.Sfixed32_t -> Encoding.encode_int value
+  | F.Sfixed64_t -> Encoding.encode_int value
+  | F.Float_t -> Encoding.encode_float value
+  | F.Double_t -> Encoding.encode_float value
+  | F.Bool_t -> Encoding.encode_bool value
 
 let serialize_field id typ value output =
   let open Result.Let_syntax in
@@ -187,14 +225,22 @@ let deserialize_message input =
 
 let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
  fun value typ ->
+  let module F = Field_value in
   match typ with
-  | I32 -> Encoding.decode_int typ value
-  | I64 -> Encoding.decode_int typ value
-  | S32 -> Encoding.decode_int typ value
-  | S64 -> Encoding.decode_int typ value
-  | U32 -> Encoding.decode_int typ value
-  | U64 -> Encoding.decode_int typ value
-  | String -> Encoding.decode_string typ value
+  | F.String_t -> Encoding.decode_string typ value
+  | F.Int32_t -> Encoding.decode_int typ value
+  | F.Int64_t -> Encoding.decode_int typ value
+  | F.Sint32_t -> Encoding.decode_int typ value
+  | F.Sint64_t -> Encoding.decode_int typ value
+  | F.Uint32_t -> Encoding.decode_int typ value
+  | F.Uint64_t -> Encoding.decode_int typ value
+  | F.Fixed32_t -> Encoding.decode_int typ value
+  | F.Fixed64_t -> Encoding.decode_int typ value
+  | F.Sfixed32_t -> Encoding.decode_int typ value
+  | F.Sfixed64_t -> Encoding.decode_int typ value
+  | F.Float_t -> Encoding.decode_float typ value
+  | F.Double_t -> Encoding.decode_float typ value
+  | F.Bool_t -> Encoding.decode_bool typ value
 
 let decode_field id typ records =
   let open Result.Let_syntax in

@@ -1,14 +1,10 @@
 open Core
-module Message_name = Sanity_pc.Message_name
 
-module Tests = struct
-  include Message_name
-
-  let name = Caml.__MODULE__
-
-  let protobuf_type_name = "Message_name"
-
-  let values_to_test =
+let tests =
+  Utils.suite
+    (module Sanity_pc.Message_name)
+    Caml.__MODULE__
+    "Message_name"
     [
       {int_field = 42; string_field = "hey there!"};
       {int_field = -1; string_field = ""};
@@ -20,6 +16,3 @@ module Tests = struct
           \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
       };
     ]
-end
-
-let tests = Utils.suite (module Tests)

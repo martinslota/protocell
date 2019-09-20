@@ -2,11 +2,15 @@ open Base
 
 type t =
   | Varint of int64
+  | Fixed_64_bits of int64
   | Length_delimited of string
+  | Fixed_32_bits of int32
 
 type sort =
   | Varint_type
+  | Fixed_64_bits_type
   | Length_delimited_type
+  | Fixed_32_bits_type
 
 type id = int
 
@@ -30,38 +34,17 @@ module Id = Int
 
 let to_sort = function
   | Varint _ -> Varint_type
+  | Fixed_64_bits _ -> Fixed_64_bits_type
   | Length_delimited _ -> Length_delimited_type
+  | Fixed_32_bits _ -> Fixed_32_bits_type
 
 let to_id = function
   | Varint_type -> 0
+  | Fixed_64_bits_type -> 1
   | Length_delimited_type -> 2
+  | Fixed_32_bits_type -> 5
 
 module Encoding : Types.Encoding with type t := t with type sort := sort = struct
-  let zigzag_encode i = Int64.((i asr 63) lxor (i lsl 1))
-
-  let zigzag_decode i = Int64.((i lsr 1) lxor -(i land one))
-
-  let encode_int value =
-    let typ = Field_value.typ value in
-    let int = Field_value.unpack value in
-    Varint
-      (match typ with
-      | I32 | I64 | U32 | U64 -> int |> Int64.of_int
-      | S32 | S64 -> int |> Int64.of_int |> zigzag_encode)
-
-  let decode_int typ value =
-    match value with
-    | Varint int64 -> (
-        let int64 =
-          match typ with
-          | Field_value.I32 | I64 | U32 | U64 -> int64
-          | S32 | S64 -> zigzag_decode int64
-        in
-        match Int64.to_int int64 with
-        | None -> Error (`Integer_outside_int_type_range int64)
-        | Some i -> Ok i)
-    | Length_delimited _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
-
   let encode_string value =
     let value = Field_value.unpack value in
     Length_delimited value
@@ -69,7 +52,112 @@ module Encoding : Types.Encoding with type t := t with type sort := sort = struc
   let decode_string typ value =
     match value with
     | Length_delimited string -> Ok string
-    | Varint _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+    | _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+
+  let zigzag_encode_64 i = Int64.((i asr 63) lxor (i lsl 1))
+
+  let zigzag_decode_64 i = Int64.((i lsr 1) lxor -(i land one))
+
+  let max_int32_as_int64 = Int32.(max_value |> to_int64)
+
+  let two_to_the_power_of_32_as_int64 = Int64.(one lsl 32)
+
+  let two_to_the_power_of_32_minus_one_as_int64 =
+    Int64.(two_to_the_power_of_32_as_int64 - one)
+
+  let encode_int value =
+    let module F = Field_value in
+    let typ = F.typ value in
+    let int = F.unpack value in
+    match typ with
+    | F.Int32_t | F.Int64_t | F.Uint32_t | F.Uint64_t -> Varint (int |> Int64.of_int)
+    | F.Sint32_t | F.Sint64_t -> Varint (int |> Int64.of_int |> zigzag_encode_64)
+    | F.Fixed32_t ->
+        Fixed_32_bits
+          (let int64 = Int64.of_int int in
+           let encoded_if_needed =
+             match Int64.(int64 > max_int32_as_int64) with
+             (* encode as the corresponding int32 value (two's complement) *)
+             | true -> Int64.(int64 - two_to_the_power_of_32_as_int64)
+             | false -> int64
+           in
+           Int32.of_int64_exn encoded_if_needed)
+    | F.Fixed64_t -> Fixed_64_bits (int |> Int64.of_int)
+    | F.Sfixed32_t -> Fixed_32_bits (int |> Int32.of_int_exn)
+    | F.Sfixed64_t -> Fixed_64_bits (int |> Int64.of_int)
+
+  let decode_int typ value =
+    let decode_64_bit_int int64 =
+      match Int64.to_int int64 with
+      | None -> Error (`Integer_outside_int_type_range int64)
+      | Some i -> Ok i
+    in
+    let decode_64_bit_sint = Fn.compose decode_64_bit_int zigzag_decode_64 in
+    let decode_32_bit_int int32 =
+      match Int32.to_int int32 with
+      | None -> Error (`Integer_outside_int_type_range (Int64.of_int32 int32))
+      | Some i -> Ok i
+    in
+    let decode_32_bit_uint int32 =
+      let int64 =
+        Int64.(of_int32 int32 land two_to_the_power_of_32_minus_one_as_int64)
+      in
+      decode_64_bit_int int64
+    in
+    let module F = Field_value in
+    match typ with
+    | F.Int32_t | F.Int64_t | F.Uint32_t | F.Uint64_t -> (
+      match value with
+      | Varint int64 -> decode_64_bit_int int64
+      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+    | F.Sint32_t | F.Sint64_t -> (
+      match value with
+      | Varint int64 -> decode_64_bit_sint int64
+      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+    | F.Fixed32_t -> (
+      match value with
+      | Fixed_32_bits int32 -> decode_32_bit_uint int32
+      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+    | F.Fixed64_t -> (
+      match value with
+      | Fixed_64_bits int64 -> decode_64_bit_int int64
+      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+    | F.Sfixed32_t -> (
+      match value with
+      | Fixed_32_bits int32 -> decode_32_bit_int int32
+      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+    | F.Sfixed64_t -> (
+      match value with
+      | Fixed_64_bits int64 -> decode_64_bit_int int64
+      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+
+  let encode_float value =
+    let module F = Field_value in
+    let typ = F.typ value in
+    let float = F.unpack value in
+    match typ with
+    | F.Float_t -> Fixed_32_bits (Int32.bits_of_float float)
+    | F.Double_t -> Fixed_64_bits (Int64.bits_of_float float)
+
+  let decode_float typ value =
+    match typ with
+    | Field_value.Float_t -> (
+      match value with
+      | Fixed_32_bits int32 -> Ok (Int32.float_of_bits int32)
+      | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ)))
+    | Field_value.Double_t -> (
+      match value with
+      | Fixed_64_bits int64 -> Ok (Int64.float_of_bits int64)
+      | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ)))
+
+  let encode_bool value =
+    let bool = Field_value.unpack value in
+    Varint (if bool then Int64.one else Int64.zero)
+
+  let decode_bool typ value =
+    match value with
+    | Varint int64 -> Ok Int64.(int64 <> zero)
+    | _ -> Error (`Wrong_value_sort_for_bool_field (to_sort value, typ))
 end
 
 module Writer = struct
@@ -101,10 +189,18 @@ module Writer = struct
     write_varint buffer wire_descriptor;
     match wire_value with
     | Varint int -> write_varint_64 buffer int
+    | Fixed_64_bits int64 ->
+        let bytes = Bytes.create 8 in
+        EndianBytes.LittleEndian.set_int64 bytes 0 int64;
+        Byte_output.write_bytes' buffer bytes
     | Length_delimited bytes ->
         let length = String.length bytes in
         write_varint buffer length;
         Byte_output.write_bytes buffer bytes
+    | Fixed_32_bits int32 ->
+        let bytes = Bytes.create 4 in
+        EndianBytes.LittleEndian.set_int32 bytes 0 int32;
+        Byte_output.write_bytes' buffer bytes
 
   let write_field output (field_name, value) = write_value output field_name value
 end
@@ -133,6 +229,11 @@ module Reader = struct
     in
     add_varint_bits ~value:Int64.zero ~offset:0
 
+  let read_fixed_64 input =
+    let open Result.Let_syntax in
+    Byte_input.read_bytes input 8 >>| fun bytes ->
+    EndianString.LittleEndian.get_int64 bytes 0
+
   let read_varint input =
     match read_varint_64 input with
     | Ok value -> (
@@ -148,6 +249,11 @@ module Reader = struct
         Error (`Invalid_string_length string_length)
     | string_length -> Byte_input.read_bytes input string_length
 
+  let read_fixed_32 input =
+    let open Result.Let_syntax in
+    Byte_input.read_bytes input 4 >>| fun bytes ->
+    EndianString.LittleEndian.get_int32 bytes 0
+
   let read input =
     let rec collect_all () =
       let open Result.Let_syntax in
@@ -160,7 +266,9 @@ module Reader = struct
             let field_number = wire_descriptor lsr 3 in
             (match wire_type with
             | 0 -> read_varint_64 input >>| fun int -> Varint int
+            | 1 -> read_fixed_64 input >>| fun int -> Fixed_64_bits int
             | 2 -> read_string input >>| fun bytes -> Length_delimited bytes
+            | 5 -> read_fixed_32 input >>| fun int -> Fixed_32_bits int
             | _ -> Error (`Unknown_wire_type wire_type))
             >>| fun wire_value -> field_number, wire_value
           in
@@ -171,15 +279,23 @@ end
 
 let encode : type v. v Field_value.t -> t =
  fun value ->
-  let typ = Field_value.typ value in
+  let module F = Field_value in
+  let typ = F.typ value in
   match typ with
-  | I32 -> Encoding.encode_int value
-  | I64 -> Encoding.encode_int value
-  | S32 -> Encoding.encode_int value
-  | S64 -> Encoding.encode_int value
-  | U32 -> Encoding.encode_int value
-  | U64 -> Encoding.encode_int value
-  | String -> Encoding.encode_string value
+  | F.String_t -> Encoding.encode_string value
+  | F.Int32_t -> Encoding.encode_int value
+  | F.Int64_t -> Encoding.encode_int value
+  | F.Sint32_t -> Encoding.encode_int value
+  | F.Sint64_t -> Encoding.encode_int value
+  | F.Uint32_t -> Encoding.encode_int value
+  | F.Uint64_t -> Encoding.encode_int value
+  | F.Fixed32_t -> Encoding.encode_int value
+  | F.Fixed64_t -> Encoding.encode_int value
+  | F.Sfixed32_t -> Encoding.encode_int value
+  | F.Sfixed64_t -> Encoding.encode_int value
+  | F.Float_t -> Encoding.encode_float value
+  | F.Double_t -> Encoding.encode_float value
+  | F.Bool_t -> Encoding.encode_bool value
 
 let serialize_field id typ value output =
   let open Result.Let_syntax in
@@ -191,16 +307,24 @@ let deserialize_message input =
   Reader.read input >>| fun records ->
   Hashtbl.of_alist_multi ~growth_allowed:false (module Id) records
 
-let decode_one : type v. t -> v Field_value.typ -> (v, _) Result.t =
+let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
  fun value typ ->
+  let module F = Field_value in
   match typ with
-  | I32 -> Encoding.decode_int typ value
-  | I64 -> Encoding.decode_int typ value
-  | S32 -> Encoding.decode_int typ value
-  | S64 -> Encoding.decode_int typ value
-  | U32 -> Encoding.decode_int typ value
-  | U64 -> Encoding.decode_int typ value
-  | String -> Encoding.decode_string typ value
+  | F.String_t -> Encoding.decode_string typ value
+  | F.Int32_t -> Encoding.decode_int typ value
+  | F.Int64_t -> Encoding.decode_int typ value
+  | F.Sint32_t -> Encoding.decode_int typ value
+  | F.Sint64_t -> Encoding.decode_int typ value
+  | F.Uint32_t -> Encoding.decode_int typ value
+  | F.Uint64_t -> Encoding.decode_int typ value
+  | F.Fixed32_t -> Encoding.decode_int typ value
+  | F.Fixed64_t -> Encoding.decode_int typ value
+  | F.Sfixed32_t -> Encoding.decode_int typ value
+  | F.Sfixed64_t -> Encoding.decode_int typ value
+  | F.Float_t -> Encoding.decode_float typ value
+  | F.Double_t -> Encoding.decode_float typ value
+  | F.Bool_t -> Encoding.decode_bool typ value
 
 let decode_field id typ records =
   let open Result.Let_syntax in
@@ -208,4 +332,4 @@ let decode_field id typ records =
   | None -> Ok (Field_value.default typ)
   | Some [] -> Ok (Field_value.default typ)
   | Some (value :: _) ->
-      decode_one value typ >>= Field_value.create typ >>| Field_value.unpack
+      decode_value value typ >>= Field_value.create typ >>| Field_value.unpack

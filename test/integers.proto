@@ -15,3 +15,27 @@ message Sint32 {
 message Sint64 {
   sint64 field = 1;
 }
+
+message Uint32 {
+  uint32 field = 1;
+}
+
+message Uint64 {
+  uint64 field = 1;
+}
+
+message Fixed32 {
+  fixed32 field = 1;
+}
+
+message Fixed64 {
+  fixed64 field = 1;
+}
+
+message Sfixed32 {
+  sfixed32 field = 1;
+}
+
+message Sfixed64 {
+  sfixed64 field = 1;
+}

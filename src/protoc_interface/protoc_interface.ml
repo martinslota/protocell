@@ -38,12 +38,29 @@ module Protobuf = struct
       : Descriptor.field_descriptor_proto_type option -> field_data_type
     = function
     | None -> failwith "No field type"
-    | Some Type_string -> String
-    | Some Type_int32 -> Int32
-    | Some Type_int64 -> Int64
-    | Some Type_sint32 -> Sint32
-    | Some Type_sint64 -> Sint64
-    | Some _ -> failwith "Unknown field type"
+    | Some Type_string -> String_t
+    | Some Type_int32 -> Int32_t
+    | Some Type_int64 -> Int64_t
+    | Some Type_sint32 -> Sint32_t
+    | Some Type_sint64 -> Sint64_t
+    | Some Type_uint32 -> Uint32_t
+    | Some Type_uint64 -> Uint64_t
+    | Some Type_fixed32 -> Fixed32_t
+    | Some Type_fixed64 -> Fixed64_t
+    | Some Type_sfixed32 -> Sfixed32_t
+    | Some Type_sfixed64 -> Sfixed64_t
+    | Some Type_float -> Float_t
+    | Some Type_double -> Double_t
+    | Some Type_bool -> Bool_t
+    | Some Type_message -> Message_t
+    | Some Type_bytes -> Bytes_t
+    | Some Type_enum -> Enum_t
+    | Some field_type ->
+        failwith
+          (Caml.Format.asprintf
+             "Unsupported field type %a"
+             Descriptor.pp_field_descriptor_proto_type
+             field_type)
 
   let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
    fun {name; number; type_; _} ->

@@ -6,4 +6,6 @@ let write_byte = Buffer.add_char
 
 let write_bytes = Buffer.add_string
 
+let write_bytes' = Buffer.add_bytes
+
 let contents = Buffer.contents

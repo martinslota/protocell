@@ -1,9 +1,21 @@
 type field_data_type =
-  | Int32
-  | Int64
-  | Sint32
-  | Sint64
-  | String
+  | String_t
+  | Int32_t
+  | Int64_t
+  | Sint32_t
+  | Sint64_t
+  | Uint32_t
+  | Uint64_t
+  | Fixed32_t
+  | Fixed64_t
+  | Sfixed32_t
+  | Sfixed64_t
+  | Float_t
+  | Double_t
+  | Bool_t
+  | Message_t
+  | Bytes_t
+  | Enum_t
 
 module Field = struct
   type t = {
