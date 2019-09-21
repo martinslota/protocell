@@ -1,5 +1,14 @@
 syntax = "proto3";
 
+message Sanity {
+  int32 int_field = 7;
+  repeated string string_field = 42;
+}
+
+message String {
+  string field = 1;
+}
+
 message Int32 {
   int32 field = 1;
 }
@@ -38,4 +47,16 @@ message Sfixed32 {
 
 message Sfixed64 {
   sfixed64 field = 1;
+}
+
+message Float {
+  float field = 1;
+}
+
+message Double {
+  double field = 1;
+}
+
+message Bool {
+  bool field = 1;
 }

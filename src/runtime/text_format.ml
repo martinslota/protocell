@@ -69,6 +69,11 @@ module Encoding : Types.Encoding with type t := t with type sort := sort = struc
       match typ with
       | Field_value.Float_t -> Ok (float |> Int32.bits_of_float |> Int32.float_of_bits)
       | Field_value.Double_t -> Ok float)
+    | Integer int -> (
+        let float = Float.of_int64 int in
+        match typ with
+        | Field_value.Float_t -> Ok (float |> Int32.bits_of_float |> Int32.float_of_bits)
+        | Field_value.Double_t -> Ok float)
     | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ))
 
   let encode_bool value = Bool (value |> Field_value.unpack)
@@ -121,6 +126,7 @@ module Reader = struct
     || Char.equal character '_'
     || Char.equal character '-'
     || Char.equal character '.'
+    || Char.equal character '+'
 
   let tokenize input =
     let read_rest input character condition =

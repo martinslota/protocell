@@ -102,11 +102,11 @@ let text_error_to_string = function
   | #Runtime.Text_format.deserialization_error as e ->
       text_format_deserialization_error_to_string e
 
-let suite (type t) (module T : Serdes_testable with type t = t) name protobuf_type_name
+let suite (type t) (module T : Serdes_testable with type t = t) protobuf_type_name
     values_to_test
   =
   let t_testable : T.t Alcotest.testable = Alcotest.testable T.pp T.equal in
-  let protobuf_file_name = name |> String.lowercase |> Printf.sprintf "%s.proto" in
+  let protobuf_file_name = "test.proto" in
   let wire_format_roundtrip value () =
     let open Result.Let_syntax in
     match value |> T.serialize >>= T.deserialize with

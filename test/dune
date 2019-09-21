@@ -10,10 +10,10 @@
    (WITH_DERIVERS eq,show))))
 
 (rule
- (targets sanity_pc.ml integers_pc.ml floats_pc.ml)
+ (targets test_pc.ml)
  (deps
   (:plugin ../src/protocell/protocell.exe)
-  (:proto sanity.proto integers.proto floats.proto))
+  (:proto test.proto))
  (action
   (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
 
@@ -21,6 +21,6 @@
  (name runtest)
  (deps
   (:test test.exe)
-  sanity.proto)
+  test.proto)
  (action
   (run %{test} --color=always)))
