@@ -13,7 +13,7 @@ type field_data_type =
   | Float_t
   | Double_t
   | Bool_t
-  | Message_t
+  | Message_t of string
   | Bytes_t
   | Enum_t
 
@@ -28,6 +28,7 @@ end
 module Message = struct
   type t = {
     name : string;
+    messages : t list;
     fields : Field.t list;
   }
 end

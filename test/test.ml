@@ -1,24 +1,6 @@
 open Core
 module P = Test_pc
 
-module Sanity = struct
-  let tests =
-    Utils.suite
-      (module P.Sanity)
-      "Sanity"
-      [
-        {int_field = 42; string_field = "hey there!"};
-        {int_field = -1; string_field = ""};
-        {
-          int_field = 0;
-          string_field =
-            {|\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-            "a rather problematic string"
-          \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
-        };
-      ]
-end
-
 module Strings = struct
   let tests =
     Utils.suite (module P.String) "String"
@@ -131,11 +113,34 @@ module Bools = struct
     @@ List.map [true; false] ~f:(fun field -> P.Bool.{field})
 end
 
+module Messages = struct
+  let two_fields_tests =
+    Utils.suite
+      (module P.TwoFields)
+      "TwoFields"
+      [
+        {int_field = 42; string_field = "hey there!"};
+        {int_field = -1; string_field = ""};
+        {
+          int_field = 0;
+          string_field =
+            {|\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+            "a rather problematic string"
+          \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
+        };
+      ]
+
+  let with_nested_submessage_tests =
+    Utils.suite
+      (module P.WithNestedSubmessage)
+      "WithNestedSubmessage"
+      [P.WithNestedSubmessage.{field = Some Nested.{field = "something"}}]
+end
+
 let () =
   Alcotest.run
     "Protocell test suite"
     [
-      Sanity.tests;
       Strings.tests;
       Integers.int32_tests;
       Integers.int64_tests;
@@ -149,4 +154,7 @@ let () =
       Integers.sfixed64_tests;
       Floats.float_tests;
       Floats.double_tests;
+      Bools.tests;
+      Messages.two_fields_tests;
+      Messages.with_nested_submessage_tests;
     ]

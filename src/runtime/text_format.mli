@@ -12,6 +12,7 @@ type parse_error =
   [ `Unexpected_character of char
   | `Invalid_number_string of string
   | `Identifier_expected
+  | `Nested_message_unfinished
   | Byte_input.error ]
 
 type deserialization_error =
@@ -30,6 +31,13 @@ val serialize_field
   Byte_output.t ->
   (unit, [> serialization_error]) Result.t
 
+val serialize_user_field
+  :  id ->
+  ('a -> (string, ([> serialization_error] as 'b)) Result.t) ->
+  'a option ->
+  Byte_output.t ->
+  (unit, 'b) Result.t
+
 val deserialize_message : Byte_input.t -> (parsed_message, [> parse_error]) Result.t
 
 val decode_field
@@ -37,3 +45,9 @@ val decode_field
   'v Field_value.typ ->
   parsed_message ->
   ('v, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+
+val decode_user_field
+  :  id ->
+  (string -> ('a, ([> deserialization_error] as 'b)) Result.t) ->
+  parsed_message ->
+  ('a option, 'b) Result.t

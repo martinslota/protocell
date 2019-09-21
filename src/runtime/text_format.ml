@@ -5,12 +5,14 @@ type t =
   | Integer of int64
   | Float of float
   | Bool of bool
+  | Message of string
 
 type sort =
   | String_sort
   | Integer_sort
   | Float_sort
   | Bool_sort
+  | Message_sort
 
 type id = string
 
@@ -22,6 +24,7 @@ type parse_error =
   [ `Unexpected_character of char
   | `Invalid_number_string of string
   | `Identifier_expected
+  | `Nested_message_unfinished
   | Byte_input.error ]
 
 type deserialization_error =
@@ -36,12 +39,14 @@ let to_sort = function
   | Integer _ -> Integer_sort
   | Float _ -> Float_sort
   | Bool _ -> Bool_sort
+  | Message _ -> Message_sort
 
 let sort_to_string = function
   | String_sort -> "String"
   | Integer_sort -> "Integer"
   | Float_sort -> "Float"
   | Bool_sort -> "Boolean"
+  | Message_sort -> "Message"
 
 module Encoding : Types.Encoding with type t := t with type sort := sort = struct
   let encode_string value = String (Field_value.unpack value)
@@ -94,10 +99,16 @@ module Writer = struct
     | Integer int -> Int64.to_string int |> Byte_output.write_bytes output
     | Float float -> Float.to_string float |> Byte_output.write_bytes output
     | Bool bool -> Bool.to_string bool |> Byte_output.write_bytes output
+    | Message encoding ->
+        Byte_output.write_bytes output "{\n";
+        Byte_output.write_bytes output encoding;
+        Byte_output.write_bytes output "\n}\n"
 
-  let write_field output (field_name, value) =
-    Byte_output.write_bytes output field_name;
-    Byte_output.write_bytes output ": ";
+  let write_field output (id, value) =
+    Byte_output.write_bytes output id;
+    (match value with
+    | Message _ -> ()
+    | _ -> Byte_output.write_bytes output ": ");
     write_value output value;
     Byte_output.write_byte output '\n'
 end
@@ -110,6 +121,14 @@ module Reader = struct
     | Key_value_separator
     | Open_message
     | Close_message
+
+  let token_to_string = function
+    | Whitespace s -> s
+    | Identifier s -> s
+    | String s -> Printf.sprintf "\"%s\"" s
+    | Key_value_separator -> ":"
+    | Open_message -> "{"
+    | Close_message -> "}"
 
   let is_whitespace character =
     List.exists [' '; '\t'; '\r'; '\n'] ~f:(Char.equal character)
@@ -170,7 +189,7 @@ module Reader = struct
     in
     collect []
 
-  let read_key_value_pair tokens =
+  let rec read_key_value_pair tokens =
     match tokens with
     | Identifier key :: Key_value_separator :: Identifier literal :: rest -> (
       match literal with
@@ -185,9 +204,22 @@ module Reader = struct
           | exception _ -> Error (`Invalid_number_string literal))))
     | Identifier key :: Key_value_separator :: String string :: rest ->
         Ok (key, String string, rest)
+    | Identifier key :: Open_message :: rest ->
+        let rec consume_message acc tokens =
+          match tokens with
+          | Close_message :: rest ->
+              Ok
+                ( key,
+                  Message
+                    (List.rev acc |> List.map ~f:token_to_string |> String.concat ~sep:""),
+                  rest )
+          | [] -> Error `Nested_message_unfinished
+          | token :: rest -> consume_message (token :: acc) rest
+        in
+        consume_message [] rest
     | _ -> Error `Identifier_expected
 
-  let read_key_value_pairs tokens =
+  and read_key_value_pairs tokens =
     let rec collect accumulator tokens =
       match tokens with
       | [] -> Ok (List.rev accumulator)
@@ -233,6 +265,14 @@ let serialize_field id typ value output =
   Field_value.create typ value >>| encode >>| fun value ->
   Writer.write_field output (id, value)
 
+let serialize_user_field id serializer value output =
+  let open Result.Let_syntax in
+  match value with
+  | None -> Ok ()
+  | Some value ->
+      serializer value >>| fun encoding ->
+      Writer.write_field output (id, Message encoding)
+
 let deserialize_message input =
   let open Result.Let_syntax in
   Reader.read input >>| fun records ->
@@ -264,3 +304,11 @@ let decode_field id typ records =
   | Some [] -> Ok (Field_value.default typ)
   | Some (value :: _) ->
       decode_value value typ >>= Field_value.create typ >>| Field_value.unpack
+
+let decode_user_field id deserializer records =
+  let open Result.Let_syntax in
+  match Hashtbl.find records id with
+  | None -> Ok None
+  | Some [] -> Ok None
+  | Some (Message encoding :: _) -> deserializer encoding >>| fun x -> Some x
+  | Some (value :: _) -> Error (`Wrong_value_sort_for_user_field (to_sort value))

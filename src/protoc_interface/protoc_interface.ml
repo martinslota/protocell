@@ -34,10 +34,10 @@ end
 module Protobuf = struct
   include Shared_types.Protobuf
 
-  let field_type_of_request
-      : Descriptor.field_descriptor_proto_type option -> field_data_type
-    = function
-    | None -> failwith "No field type"
+  let field_type_of_request : Descriptor.field_descriptor_proto -> field_data_type =
+   fun {type_; type_name; _} ->
+    match type_ with
+    | None -> Message_t (String.of_protobuf type_name)
     | Some Type_string -> String_t
     | Some Type_int32 -> Int32_t
     | Some Type_int64 -> Int64_t
@@ -52,7 +52,7 @@ module Protobuf = struct
     | Some Type_float -> Float_t
     | Some Type_double -> Double_t
     | Some Type_bool -> Bool_t
-    | Some Type_message -> Message_t
+    | Some Type_message -> Message_t (String.of_protobuf type_name)
     | Some Type_bytes -> Bytes_t
     | Some Type_enum -> Enum_t
     | Some field_type ->
@@ -63,16 +63,20 @@ module Protobuf = struct
              field_type)
 
   let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
-   fun {name; number; type_; _} ->
+   fun ({name; number; _} as field) ->
     {
       name = String.of_protobuf name;
       number = Int.of_protobuf number;
-      data_type = field_type_of_request type_;
+      data_type = field_type_of_request field;
     }
 
-  let message_of_request : Descriptor.descriptor_proto -> Message.t =
-   fun {name; field; _} ->
-    {name = String.of_protobuf name; fields = List.map ~f:field_of_request field}
+  let rec message_of_request : Descriptor.descriptor_proto -> Message.t =
+   fun {name; field; nested_type; _} ->
+    {
+      name = String.of_protobuf name;
+      messages = List.map nested_type ~f:message_of_request;
+      fields = List.map field ~f:field_of_request;
+    }
 
   let file_of_request : Descriptor.file_descriptor_proto -> File.t =
    fun {name; message_type; _} ->

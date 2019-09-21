@@ -1,10 +1,5 @@
 syntax = "proto3";
 
-message Sanity {
-  int32 int_field = 7;
-  repeated string string_field = 42;
-}
-
 message String {
   string field = 1;
 }
@@ -59,4 +54,17 @@ message Double {
 
 message Bool {
   bool field = 1;
+}
+
+message TwoFields {
+  int32 int_field = 7;
+  string string_field = 42;
+}
+
+message WithNestedSubmessage {
+  Nested field = 1;
+
+  message Nested {
+    string field = 1;
+  }
 }

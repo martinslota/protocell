@@ -61,6 +61,10 @@ let wire_format_deserialization_error_to_string error =
   | `Wrong_value_sort_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
   | `Wrong_value_sort_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
   | `Wrong_value_sort_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
+  | `Wrong_value_sort_for_user_field sort ->
+      Printf.sprintf
+        "Message field type cannot accept value type %s"
+        (Runtime.Wire_format.sort_to_string sort)
   | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
 
 let process_error_to_string = function
@@ -76,6 +80,7 @@ let text_format_parse_error_to_string = function
   | `Unexpected_character char -> Printf.sprintf "Unexpected character: %c" char
   | `Invalid_number_string string -> Printf.sprintf "Invalid number string: %s" string
   | `Identifier_expected -> "Identifier expected"
+  | `Nested_message_unfinished -> "Nested message unfinished"
   | #Runtime.Byte_input.error as e -> byte_input_error_to_string e
 
 let text_format_deserialization_error_to_string error =
@@ -92,6 +97,10 @@ let text_format_deserialization_error_to_string error =
   | `Wrong_value_sort_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
   | `Wrong_value_sort_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
   | `Wrong_value_sort_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
+  | `Wrong_value_sort_for_user_field sort ->
+      Printf.sprintf
+        "Message field type cannot accept value type %s"
+        (Runtime.Text_format.sort_to_string sort)
   | `Integer_outside_int_type_range int64 ->
       Printf.sprintf "Varint value %s outside OCaml int type range"
       @@ Int64.to_string int64

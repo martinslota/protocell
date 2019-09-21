@@ -318,6 +318,14 @@ let serialize_field id typ value output =
   Field_value.create typ value >>| encode >>| fun value ->
   Writer.write_field output (id, value)
 
+let serialize_user_field id serializer value output =
+  let open Result.Let_syntax in
+  match value with
+  | None -> Ok ()
+  | Some value ->
+      serializer value >>| fun encoding ->
+      Writer.write_field output (id, Length_delimited encoding)
+
 let deserialize_message input =
   let open Result.Let_syntax in
   Reader.read input >>| fun records ->
@@ -349,3 +357,11 @@ let decode_field id typ records =
   | Some [] -> Ok (Field_value.default typ)
   | Some (value :: _) ->
       decode_value value typ >>= Field_value.create typ >>| Field_value.unpack
+
+let decode_user_field id deserializer records =
+  let open Result.Let_syntax in
+  match Hashtbl.find records id with
+  | None -> Ok None
+  | Some [] -> Ok None
+  | Some (Length_delimited encoding :: _) -> deserializer encoding >>| fun x -> Some x
+  | Some (value :: _) -> Error (`Wrong_value_sort_for_user_field (to_sort value))

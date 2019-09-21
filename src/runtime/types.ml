@@ -5,6 +5,7 @@ type 'sort decoding_error =
   | `Wrong_value_sort_for_int_field of 'sort * int Field_value.typ
   | `Wrong_value_sort_for_float_field of 'sort * float Field_value.typ
   | `Wrong_value_sort_for_bool_field of 'sort * bool Field_value.typ
+  | `Wrong_value_sort_for_user_field of 'sort
   | `Integer_outside_int_type_range of int64 ]
 
 type 'v value = 'v Field_value.t

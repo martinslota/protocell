@@ -66,7 +66,13 @@ module Code = struct
     block [argument |> Printf.sprintf "fun %s ->" |> line; body]
 
   let make_module name items =
-    let items = List.intersperse items ~sep:(line "") in
+    let items =
+      items
+      |> List.filter ~f:(function
+             | Block {contents = []; _} -> false
+             | _ -> true)
+      |> List.intersperse ~sep:(line "")
+    in
     block ~indented:false
     @@ List.concat
          [[name |> Printf.sprintf "module %s = struct" |> line]; items; [line "end"]]
@@ -86,25 +92,8 @@ module Code = struct
     append buffer ~indent:"" code; Buffer.contents buffer
 end
 
-let generate_message : options:options -> Protobuf.Message.t -> Code.t =
- fun ~options {name; fields} ->
-  let type_to_constructor : Protobuf.field_data_type -> string = function
-    | Protobuf.String_t -> "String_t"
-    | Int32_t -> "Int32_t"
-    | Int64_t -> "Int64_t"
-    | Sint32_t -> "Sint32_t"
-    | Sint64_t -> "Sint64_t"
-    | Uint32_t -> "Uint32_t"
-    | Uint64_t -> "Uint64_t"
-    | Fixed32_t -> "Fixed32_t"
-    | Fixed64_t -> "Fixed64_t"
-    | Sfixed32_t -> "Sfixed32_t"
-    | Sfixed64_t -> "Sfixed64_t"
-    | Float_t -> "Float_t"
-    | Double_t -> "Double_t"
-    | Bool_t -> "Bool_t"
-    | _ -> failwith "TODO"
-  in
+let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
+ fun ~options {name; messages; fields} ->
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String_t -> "string"
     | Int32_t -> "int"
@@ -120,13 +109,34 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
     | Float_t -> "float"
     | Double_t -> "float"
     | Bool_t -> "bool"
+    | Message_t name ->
+        Printf.sprintf "%s.t option" @@ List.last_exn @@ String.split ~on:'.' name
     | _ -> failwith "TODO"
   in
+  let messages = List.map messages ~f:(generate_message ~options) |> Code.block in
   let type_declaration =
     fields
     |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
            name, type_to_ocaml_type data_type)
     |> Code.make_record_type ~options "t"
+  in
+  let type_to_constructor : Protobuf.field_data_type -> string = function
+    | Protobuf.String_t -> "String_t"
+    | Int32_t -> "Int32_t"
+    | Int64_t -> "Int64_t"
+    | Sint32_t -> "Sint32_t"
+    | Sint64_t -> "Sint64_t"
+    | Uint32_t -> "Uint32_t"
+    | Uint64_t -> "Uint64_t"
+    | Fixed32_t -> "Fixed32_t"
+    | Fixed64_t -> "Fixed64_t"
+    | Sfixed32_t -> "Sfixed32_t"
+    | Sfixed64_t -> "Sfixed64_t"
+    | Float_t -> "Float_t"
+    | Double_t -> "Double_t"
+    | Bool_t -> "Bool_t"
+    | Message_t name -> Printf.sprintf "%s" @@ List.last_exn @@ String.split ~on:'.' name
+    | _ -> failwith "TODO"
   in
   let generate_serialization_function function_name format_module_name field_to_ocaml_id =
     Code.make_let
@@ -148,12 +158,22 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
             line "let (>>=) = Runtime.Result.(>>=) in";
             line "let o' = Runtime.Byte_output.create () in";
             List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
-                Printf.sprintf
-                  {|(%s.serialize_field %s F'.%s %s o') >>= fun () ->|}
-                  format_module_name
-                  (field_to_ocaml_id field)
-                  (type_to_constructor data_type)
-                  name)
+                match data_type with
+                | Message_t _ ->
+                    Printf.sprintf
+                      {|(%s.serialize_user_field %s %s.%s %s o') >>= fun () ->|}
+                      format_module_name
+                      (field_to_ocaml_id field)
+                      (type_to_constructor data_type)
+                      function_name
+                      name
+                | _ ->
+                    Printf.sprintf
+                      {|(%s.serialize_field %s F'.%s %s o') >>= fun () ->|}
+                      format_module_name
+                      (field_to_ocaml_id field)
+                      (type_to_constructor data_type)
+                      name)
             |> lines ~indented:false;
             line "Ok (Runtime.Byte_output.contents o')";
           ])
@@ -188,12 +208,22 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
             line
               (Printf.sprintf "%s.deserialize_message >>= fun m' ->" format_module_name);
             List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
-                Printf.sprintf
-                  "%s.decode_field %s F'.%s m' >>= fun %s ->"
-                  format_module_name
-                  (field_to_ocaml_id field)
-                  (type_to_constructor data_type)
-                  name)
+                match data_type with
+                | Message_t _ ->
+                    Printf.sprintf
+                      {|(%s.decode_user_field %s %s.%s m') >>= fun %s ->|}
+                      format_module_name
+                      (field_to_ocaml_id field)
+                      (type_to_constructor data_type)
+                      function_name
+                      name
+                | _ ->
+                    Printf.sprintf
+                      "%s.decode_field %s F'.%s m' >>= fun %s ->"
+                      format_module_name
+                      (field_to_ocaml_id field)
+                      (type_to_constructor data_type)
+                      name)
             |> lines ~indented:false;
             fields
             |> List.map ~f:(fun Protobuf.Field.{name; _} -> Printf.sprintf "%s" name)
@@ -220,6 +250,7 @@ let generate_message : options:options -> Protobuf.Message.t -> Code.t =
   Code.make_module
     name
     [
+      messages;
       type_declaration;
       serialize_code;
       deserialize_code;
