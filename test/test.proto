@@ -68,3 +68,15 @@ message WithNestedSubmessage {
     string field = 1;
   }
 }
+
+message MutualReferences {
+  Nested1 field = 1;
+
+  message Nested1 {
+    Nested2 field1 = 1;
+  }
+
+  message Nested2 {
+    Nested1 field2 = 1;
+  }
+}

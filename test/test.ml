@@ -135,6 +135,20 @@ module Messages = struct
       (module P.WithNestedSubmessage)
       "WithNestedSubmessage"
       [P.WithNestedSubmessage.{field = Some Nested.{field = "something"}}]
+
+  let mutual_references_tests =
+    Utils.suite
+      (module P.MutualReferences)
+      "MutualReferences"
+      [
+        P.MutualReferences.{field = Some Nested1.{field1 = None}};
+        P.MutualReferences.
+          {
+            field =
+              Some
+                Nested1.{field1 = Some Nested2.{field2 = Some Nested1.{field1 = None}}};
+          };
+      ]
 end
 
 let () =
@@ -157,4 +171,5 @@ let () =
       Bools.tests;
       Messages.two_fields_tests;
       Messages.with_nested_submessage_tests;
+      Messages.mutual_references_tests;
     ]

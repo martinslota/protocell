@@ -100,17 +100,17 @@ module Writer = struct
     | Float float -> Float.to_string float |> Byte_output.write_bytes output
     | Bool bool -> Bool.to_string bool |> Byte_output.write_bytes output
     | Message encoding ->
-        Byte_output.write_bytes output "{\n";
+        Byte_output.write_bytes output "{ ";
         Byte_output.write_bytes output encoding;
-        Byte_output.write_bytes output "\n}\n"
+        Byte_output.write_byte output '}'
 
   let write_field output (id, value) =
     Byte_output.write_bytes output id;
     (match value with
-    | Message _ -> ()
+    | Message _ -> Byte_output.write_bytes output " "
     | _ -> Byte_output.write_bytes output ": ");
     write_value output value;
-    Byte_output.write_byte output '\n'
+    Byte_output.write_byte output ' '
 end
 
 module Reader = struct
@@ -205,18 +205,22 @@ module Reader = struct
     | Identifier key :: Key_value_separator :: String string :: rest ->
         Ok (key, String string, rest)
     | Identifier key :: Open_message :: rest ->
-        let rec consume_message acc tokens =
-          match tokens with
-          | Close_message :: rest ->
+        let rec consume_message acc inner_open_count tokens =
+          match tokens, inner_open_count with
+          | Open_message :: rest, _ ->
+              consume_message (Open_message :: acc) (Int.succ inner_open_count) rest
+          | Close_message :: rest, 0 ->
               Ok
                 ( key,
                   Message
                     (List.rev acc |> List.map ~f:token_to_string |> String.concat ~sep:""),
                   rest )
-          | [] -> Error `Nested_message_unfinished
-          | token :: rest -> consume_message (token :: acc) rest
+          | Close_message :: rest, _ ->
+              consume_message (Close_message :: acc) (Int.pred inner_open_count) rest
+          | [], _ -> Error `Nested_message_unfinished
+          | token :: rest, _ -> consume_message (token :: acc) inner_open_count rest
         in
-        consume_message [] rest
+        consume_message [] 0 rest
     | _ -> Error `Identifier_expected
 
   and read_key_value_pairs tokens =

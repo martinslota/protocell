@@ -14,6 +14,12 @@ module Code = struct
     contents : t list;
   }
 
+  type module_ = {
+    module_name : string;
+    signature : t list;
+    implementation : t list;
+  }
+
   let line string = Line string
 
   let block ?(indented = true) contents = Block {indented; contents}
@@ -52,8 +58,7 @@ module Code = struct
     |> List.concat
     |> block
 
-  let make_let name type_annotation code =
-    block [Printf.sprintf "let %s : %s =" name type_annotation |> line; code]
+  let make_let name code = block [Printf.sprintf "let %s =" name |> line; code]
 
   let make_match expression cases =
     let cases =
@@ -65,17 +70,38 @@ module Code = struct
   let make_lambda argument body =
     block [argument |> Printf.sprintf "fun %s ->" |> line; body]
 
-  let make_module name items =
-    let items =
-      items
-      |> List.filter ~f:(function
-             | Block {contents = []; _} -> false
-             | _ -> true)
-      |> List.intersperse ~sep:(line "")
+  let add_vertical_space items =
+    items
+    |> List.filter ~f:(function
+           | Block {contents = []; _} -> false
+           | _ -> true)
+    |> List.intersperse ~sep:(line "")
+
+  let make_recursive_modules ~with_implementation (modules : module_ list) =
+    let rec modules_code is_first acc = function
+      | [] -> List.rev acc
+      | {module_name; signature; implementation} :: rest ->
+          let prefix =
+            match is_first with
+            | true -> [Printf.sprintf "module rec %s : sig" module_name]
+            | false -> [""; Printf.sprintf "and %s : sig" module_name]
+          in
+          let code =
+            List.concat
+              [
+                List.map prefix ~f:line;
+                add_vertical_space signature;
+                (match with_implementation with
+                | true ->
+                    List.concat
+                      [[line "end = struct"]; add_vertical_space implementation]
+                | false -> []);
+                [line "end"];
+              ]
+          in
+          modules_code false (block ~indented:false code :: acc) rest
     in
-    block ~indented:false
-    @@ List.concat
-         [[name |> Printf.sprintf "module %s = struct" |> line]; items; [line "end"]]
+    modules_code true [] modules
 
   let make_file items =
     let items = List.intersperse items ~sep:(line "") in
@@ -92,8 +118,13 @@ module Code = struct
     append buffer ~indent:"" code; Buffer.contents buffer
 end
 
-let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
+let rec generate_message : options:options -> Protobuf.Message.t -> Code.module_ =
  fun ~options {name; messages; fields} ->
+  let determine_module_name name =
+    match String.is_prefix ~prefix:"." name with
+    | true -> String.subo ~pos:1 name
+    | false -> name
+  in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String_t -> "string"
     | Int32_t -> "int"
@@ -109,11 +140,10 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
     | Float_t -> "float"
     | Double_t -> "float"
     | Bool_t -> "bool"
-    | Message_t name ->
-        Printf.sprintf "%s.t option" @@ List.last_exn @@ String.split ~on:'.' name
+    | Message_t name -> determine_module_name name |> Printf.sprintf "%s.t option"
     | _ -> failwith "TODO"
   in
-  let messages = List.map messages ~f:(generate_message ~options) |> Code.block in
+  let messages = List.map messages ~f:(generate_message ~options) in
   let type_declaration =
     fields
     |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
@@ -135,15 +165,11 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
     | Float_t -> "Float_t"
     | Double_t -> "Double_t"
     | Bool_t -> "Bool_t"
-    | Message_t name -> Printf.sprintf "%s" @@ List.last_exn @@ String.split ~on:'.' name
+    | Message_t name -> determine_module_name name
     | _ -> failwith "TODO"
   in
   let generate_serialization_function function_name format_module_name field_to_ocaml_id =
-    Code.make_let
-      function_name
-      (Printf.sprintf
-         "t -> (string, [> %s.serialization_error]) result"
-         format_module_name)
+    Code.make_let function_name
     @@
     let argument =
       fields
@@ -155,7 +181,6 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
       Code.(
         block
           [
-            line "let (>>=) = Runtime.Result.(>>=) in";
             line "let o' = Runtime.Byte_output.create () in";
             List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
                 match data_type with
@@ -183,11 +208,7 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
   let generate_deserialization_function function_name format_module_name
       field_to_ocaml_id
     =
-    Code.make_let
-      function_name
-      (Printf.sprintf
-         "string -> (t, [> %s.deserialization_error]) result"
-         format_module_name)
+    Code.make_let function_name
     @@
     let argument = "input'" in
     let _decoder_declarations =
@@ -203,7 +224,6 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
       Code.(
         block
           [
-            line "let (>>=) = Runtime.Result.(>>=) in";
             line (Printf.sprintf "Ok (Runtime.Byte_input.create %s) >>=" argument);
             line
               (Printf.sprintf "%s.deserialize_message >>= fun m' ->" format_module_name);
@@ -247,16 +267,30 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.t =
   let unstringify_code =
     generate_deserialization_function "unstringify" "T'" field_name_to_ocaml_id
   in
-  Code.make_module
-    name
+  let signature =
+    Code.
+      [
+        messages |> Code.make_recursive_modules ~with_implementation:false |> Code.block;
+        type_declaration;
+        block [line "val serialize : t -> (string, [> W'.serialization_error]) result"];
+        block
+          [line "val deserialize : string -> (t, [> W'.deserialization_error]) result"];
+        block [line "val stringify : t -> (string, [> T'.serialization_error]) result"];
+        block
+          [line "val unstringify : string -> (t, [> T'.deserialization_error]) result"];
+      ]
+  in
+  let implementation =
     [
-      messages;
+      messages |> Code.make_recursive_modules ~with_implementation:true |> Code.block;
       type_declaration;
       serialize_code;
       deserialize_code;
       stringify_code;
       unstringify_code;
     ]
+  in
+  {module_name = name; signature; implementation}
 
 let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
  fun ~options {name; messages} ->
@@ -264,10 +298,13 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
     Code.(
       make_file
         [
+          line "let (>>=) = Runtime.Result.(>>=)";
           line "module F' = Runtime.Field_value";
           line "module T' = Runtime.Text_format";
           line "module W' = Runtime.Wire_format";
-          List.map messages ~f:(generate_message ~options) |> block ~indented:false;
+          List.map messages ~f:(generate_message ~options)
+          |> Code.make_recursive_modules ~with_implementation:true
+          |> block ~indented:false;
         ])
     |> Code.emit
   in
