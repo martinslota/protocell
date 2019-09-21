@@ -2,6 +2,7 @@ open Base
 
 type _ typ =
   | String_t : string typ
+  | Bytes_t : string typ
   | Int32_t : int typ
   | Int64_t : int typ
   | Sint32_t : int typ
@@ -22,6 +23,7 @@ type validation_error = [`Integer_outside_field_type_range of int typ * int]
 
 let typ_to_string : type v. v typ -> string = function
   | String_t -> "string"
+  | Bytes_t -> "bytes"
   | Int32_t -> "int32"
   | Int64_t -> "int64"
   | Sint32_t -> "sint32"
@@ -38,6 +40,7 @@ let typ_to_string : type v. v typ -> string = function
 
 let default : type v. v typ -> v = function
   | String_t -> ""
+  | Bytes_t -> ""
   | Int32_t -> 0
   | Int64_t -> 0
   | Sint32_t -> 0
@@ -79,6 +82,7 @@ let create : type v. v typ -> v -> (v t, [> validation_error]) Result.t =
   in
   match typ with
   | String_t -> Ok (typ, value)
+  | Bytes_t -> Ok (typ, value)
   | Int32_t -> validate_i32 Int32_t value
   | Int64_t -> Ok (typ, value)
   | Sint32_t -> validate_i32 Sint32_t value

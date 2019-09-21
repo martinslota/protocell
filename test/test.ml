@@ -7,6 +7,12 @@ module Strings = struct
     @@ List.map ["just a string"] ~f:(fun field -> P.String.{field})
 end
 
+module Bytes = struct
+  let tests =
+    Utils.suite (module P.Bytes) "Bytes"
+    @@ List.map ["just some bytes"] ~f:(fun field -> P.Bytes.{field})
+end
+
 module Integers = struct
   let common_non_negative_test_values =
     [
@@ -125,8 +131,8 @@ module Messages = struct
           int_field = 0;
           string_field =
             {|\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-            "a rather problematic string"
-          \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
+               "a rather problematic string"
+              \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|};
         };
       ]
 
@@ -151,11 +157,20 @@ module Messages = struct
       ]
 end
 
+module Enums = struct
+  let tests =
+    Utils.suite
+      (module P.WithEnum)
+      "WithEnum"
+      [P.WithEnum.{field = DAY}; P.WithEnum.{field = NIGHT}]
+end
+
 let () =
   Alcotest.run
     "Protocell test suite"
     [
       Strings.tests;
+      Bytes.tests;
       Integers.int32_tests;
       Integers.int64_tests;
       Integers.sint32_tests;
@@ -172,4 +187,5 @@ let () =
       Messages.two_fields_tests;
       Messages.with_nested_submessage_tests;
       Messages.mutual_references_tests;
+      Enums.tests;
     ]

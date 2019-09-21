@@ -6,6 +6,8 @@ type 'sort decoding_error =
   | `Wrong_value_sort_for_float_field of 'sort * float Field_value.typ
   | `Wrong_value_sort_for_bool_field of 'sort * bool Field_value.typ
   | `Wrong_value_sort_for_user_field of 'sort
+  | `Wrong_value_sort_for_enum_field of 'sort
+  | `Unrecognized_enum_value
   | `Integer_outside_int_type_range of int64 ]
 
 type 'v value = 'v Field_value.t

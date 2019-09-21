@@ -4,6 +4,7 @@ type 'v t
 
 type _ typ =
   | String_t : string typ
+  | Bytes_t : string typ
   | Int32_t : int typ
   | Int64_t : int typ
   | Sint32_t : int typ

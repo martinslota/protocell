@@ -3,13 +3,13 @@ open Base
 module Int = struct
   include Int
 
-  let of_protobuf = Option.value ~default:0
+  let of_protobuf = Option.value_exn
 end
 
 module String = struct
   include String
 
-  let of_protobuf = Option.value ~default:""
+  let of_protobuf = Option.value_exn
 end
 
 module Plugin = struct
@@ -39,6 +39,7 @@ module Protobuf = struct
     match type_ with
     | None -> Message_t (String.of_protobuf type_name)
     | Some Type_string -> String_t
+    | Some Type_bytes -> Bytes_t
     | Some Type_int32 -> Int32_t
     | Some Type_int64 -> Int64_t
     | Some Type_sint32 -> Sint32_t
@@ -53,14 +54,21 @@ module Protobuf = struct
     | Some Type_double -> Double_t
     | Some Type_bool -> Bool_t
     | Some Type_message -> Message_t (String.of_protobuf type_name)
-    | Some Type_bytes -> Bytes_t
-    | Some Type_enum -> Enum_t
+    | Some Type_enum -> Enum_t (String.of_protobuf type_name)
     | Some field_type ->
         failwith
           (Caml.Format.asprintf
              "Unsupported field type %a"
              Descriptor.pp_field_descriptor_proto_type
              field_type)
+
+  let enum_of_request : Descriptor.enum_descriptor_proto -> Enum.t =
+   fun {name; value; _} ->
+    let values =
+      List.map value ~f:(fun {name; number; _} ->
+          String.of_protobuf name, String.of_protobuf number)
+    in
+    {name = String.of_protobuf name; values}
 
   let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
    fun ({name; number; _} as field) ->
@@ -71,15 +79,16 @@ module Protobuf = struct
     }
 
   let rec message_of_request : Descriptor.descriptor_proto -> Message.t =
-   fun {name; field; nested_type; _} ->
+   fun {name; field; nested_type; enum_type; _} ->
     {
       name = String.of_protobuf name;
+      enums = List.map enum_type ~f:enum_of_request;
       messages = List.map nested_type ~f:message_of_request;
       fields = List.map field ~f:field_of_request;
     }
 
   let file_of_request : Descriptor.file_descriptor_proto -> File.t =
-   fun {name; message_type; _} ->
+   fun {name; enum_type; message_type; _} ->
     let name = String.of_protobuf name in
     let base_name =
       match String.chop_suffix name ~suffix:".proto" with
@@ -87,7 +96,9 @@ module Protobuf = struct
       | Some stem -> stem
     in
     let name = Printf.sprintf "%s_pc.ml" base_name in
-    {name; messages = List.map ~f:message_of_request message_type}
+    let enums = List.map ~f:enum_of_request enum_type in
+    let messages = List.map ~f:message_of_request message_type in
+    {name; enums; messages}
 
   let of_request : Plugin.code_generator_request -> t =
    fun {proto_file; _} -> {files = List.map ~f:file_of_request proto_file}

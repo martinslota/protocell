@@ -6,6 +6,7 @@ type t =
   | Float of float
   | Bool of bool
   | Message of string
+  | Enum of string
 
 type sort =
   | String_sort
@@ -13,6 +14,7 @@ type sort =
   | Float_sort
   | Bool_sort
   | Message_sort
+  | Enum_sort
 
 type id = string
 
@@ -40,6 +42,7 @@ let to_sort = function
   | Float _ -> Float_sort
   | Bool _ -> Bool_sort
   | Message _ -> Message_sort
+  | Enum _ -> Enum_sort
 
 let sort_to_string = function
   | String_sort -> "String"
@@ -47,6 +50,7 @@ let sort_to_string = function
   | Float_sort -> "Float"
   | Bool_sort -> "Boolean"
   | Message_sort -> "Message"
+  | Enum_sort -> "Enum"
 
 module Encoding : Types.Encoding with type t := t with type sort := sort = struct
   let encode_string value = String (Field_value.unpack value)
@@ -103,6 +107,7 @@ module Writer = struct
         Byte_output.write_bytes output "{ ";
         Byte_output.write_bytes output encoding;
         Byte_output.write_byte output '}'
+    | Enum name -> Byte_output.write_bytes output name
 
   let write_field output (id, value) =
     Byte_output.write_bytes output id;
@@ -201,7 +206,7 @@ module Reader = struct
         | exception _ -> (
           match Float.of_string literal with
           | float -> Ok (key, Float float, rest)
-          | exception _ -> Error (`Invalid_number_string literal))))
+          | exception _ -> Ok (key, Enum literal, rest))))
     | Identifier key :: Key_value_separator :: String string :: rest ->
         Ok (key, String string, rest)
     | Identifier key :: Open_message :: rest ->
@@ -250,6 +255,7 @@ let encode : type v. v Field_value.t -> t =
   let typ = F.typ value in
   match typ with
   | F.String_t -> Encoding.encode_string value
+  | F.Bytes_t -> Encoding.encode_string value
   | F.Int32_t -> Encoding.encode_int value
   | F.Int64_t -> Encoding.encode_int value
   | F.Sint32_t -> Encoding.encode_int value
@@ -277,6 +283,10 @@ let serialize_user_field id serializer value output =
       serializer value >>| fun encoding ->
       Writer.write_field output (id, Message encoding)
 
+let serialize_enum_field id to_string value output =
+  let open Result.Let_syntax in
+  return @@ Writer.write_field output (id, Enum (to_string value))
+
 let deserialize_message input =
   let open Result.Let_syntax in
   Reader.read input >>| fun records ->
@@ -287,6 +297,7 @@ let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
   let module F = Field_value in
   match typ with
   | F.String_t -> Encoding.decode_string typ value
+  | F.Bytes_t -> Encoding.decode_string typ value
   | F.Int32_t -> Encoding.decode_int typ value
   | F.Int64_t -> Encoding.decode_int typ value
   | F.Sint32_t -> Encoding.decode_int typ value
@@ -316,3 +327,11 @@ let decode_user_field id deserializer records =
   | Some [] -> Ok None
   | Some (Message encoding :: _) -> deserializer encoding >>| fun x -> Some x
   | Some (value :: _) -> Error (`Wrong_value_sort_for_user_field (to_sort value))
+
+let decode_enum_field id of_string default records =
+  match Hashtbl.find records id with
+  | None -> Ok (default ())
+  | Some [] -> Ok (default ())
+  | Some (Enum name :: _) ->
+      of_string name |> Result.of_option ~error:`Unrecognized_enum_value
+  | Some (value :: _) -> Error (`Wrong_value_sort_for_enum_field (to_sort value))

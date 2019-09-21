@@ -1,5 +1,6 @@
 type field_data_type =
   | String_t
+  | Bytes_t
   | Int32_t
   | Int64_t
   | Sint32_t
@@ -14,8 +15,14 @@ type field_data_type =
   | Double_t
   | Bool_t
   | Message_t of string
-  | Bytes_t
-  | Enum_t
+  | Enum_t of string
+
+module Enum = struct
+  type t = {
+    name : string;
+    values : (string * int) list;
+  }
+end
 
 module Field = struct
   type t = {
@@ -28,6 +35,7 @@ end
 module Message = struct
   type t = {
     name : string;
+    enums : Enum.t list;
     messages : t list;
     fields : Field.t list;
   }
@@ -36,6 +44,7 @@ end
 module File = struct
   type t = {
     name : string;
+    enums : Enum.t list;
     messages : Message.t list;
   }
 end

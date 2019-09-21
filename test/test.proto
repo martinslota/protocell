@@ -4,6 +4,10 @@ message String {
   string field = 1;
 }
 
+message Bytes {
+  bytes field = 1;
+}
+
 message Int32 {
   int32 field = 1;
 }
@@ -79,4 +83,20 @@ message MutualReferences {
   message Nested2 {
     Nested1 field2 = 1;
   }
+}
+
+message WithEnum {
+  enum TimeOfDay {
+    DAY = 0;
+    NIGHT = 1;
+  }
+  TimeOfDay field = 1;
+}
+
+enum E {
+  A = 0;
+  B = 1;
+  C = 2;
+  D = 2;
+  option allow_alias = true;
 }

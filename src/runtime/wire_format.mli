@@ -33,10 +33,17 @@ val serialize_field
 
 val serialize_user_field
   :  id ->
-  ('a -> (string, ([> serialization_error] as 'b)) Result.t) ->
-  'a option ->
+  ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
+  'v option ->
   Byte_output.t ->
-  (unit, 'b) Result.t
+  (unit, 'e) Result.t
+
+val serialize_enum_field
+  :  id ->
+  ('v -> int) ->
+  'v ->
+  Byte_output.t ->
+  (unit, [> serialization_error]) Result.t
 
 val deserialize_message : Byte_input.t -> (parsed_message, [> parse_error]) Result.t
 
@@ -48,6 +55,13 @@ val decode_field
 
 val decode_user_field
   :  id ->
-  (string -> ('a, ([> deserialization_error] as 'b)) Result.t) ->
+  (string -> ('v, ([> deserialization_error] as 'b)) Result.t) ->
   parsed_message ->
-  ('a option, 'b) Result.t
+  ('v option, 'b) Result.t
+
+val decode_enum_field
+  :  id ->
+  (int -> 'v option) ->
+  (unit -> 'v) ->
+  parsed_message ->
+  ('v, [> deserialization_error]) Result.t
