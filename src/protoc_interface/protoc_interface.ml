@@ -70,10 +70,78 @@ module Protobuf = struct
     in
     {name = String.of_protobuf name; values}
 
+  let ocaml_keywords =
+    Hash_set.of_list
+      (module String)
+      [
+        "and";
+        "as";
+        "assert";
+        "asr";
+        "begin";
+        "class";
+        "constraint";
+        "do";
+        "done";
+        "downto";
+        "else";
+        "end";
+        "exception";
+        "external";
+        "false";
+        "for";
+        "fun";
+        "function";
+        "functor";
+        "if";
+        "in";
+        "include";
+        "inherit";
+        "initializer";
+        "land";
+        "lazy";
+        "let";
+        "lor";
+        "lsl";
+        "lsr";
+        "lxor";
+        "match";
+        "method";
+        "mod";
+        "module";
+        "mutable";
+        "new";
+        "nonrec";
+        "object";
+        "of";
+        "open";
+        "or";
+        "private";
+        "rec";
+        "sig";
+        "struct";
+        "then";
+        "to";
+        "true";
+        "try";
+        "type";
+        "val";
+        "virtual";
+        "when";
+        "while";
+        "with";
+        "parser";
+        "value";
+      ]
+
   let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
    fun ({name; number; _} as field) ->
     {
-      name = String.of_protobuf name;
+      name =
+        (let name = String.uncapitalize @@ String.of_protobuf name in
+         match Hash_set.mem ocaml_keywords name with
+         | true -> Printf.sprintf "%s'" name
+         | false -> name);
       number = Int.of_protobuf number;
       data_type = field_type_of_request field;
     }
@@ -88,7 +156,7 @@ module Protobuf = struct
     }
 
   let file_of_request : Descriptor.file_descriptor_proto -> File.t =
-   fun {name; enum_type; message_type; _} ->
+   fun {name; package; enum_type; message_type; _} ->
     let name = String.of_protobuf name in
     let base_name =
       match String.chop_suffix name ~suffix:".proto" with
@@ -98,7 +166,7 @@ module Protobuf = struct
     let name = Printf.sprintf "%s_pc.ml" base_name in
     let enums = List.map ~f:enum_of_request enum_type in
     let messages = List.map ~f:message_of_request message_type in
-    {name; enums; messages}
+    {name; package; enums; messages}
 
   let of_request : Plugin.code_generator_request -> t =
    fun {proto_file; _} -> {files = List.map ~f:file_of_request proto_file}
@@ -109,6 +177,7 @@ module Generated_code = struct
 
   let file_to_response : File.t -> Plugin.code_generator_response_file =
    fun {name; contents} ->
+    let name = String.tr ~target:'/' ~replacement:'_' name in
     {name = Some name; insertion_point = None; content = Some contents}
 
   let to_response : t -> Plugin.code_generator_response =

@@ -44,6 +44,7 @@ end
 module File = struct
   type t = {
     name : string;
+    package : string option;
     enums : Enum.t list;
     messages : Message.t list;
   }

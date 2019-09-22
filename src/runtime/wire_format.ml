@@ -57,7 +57,7 @@ let sort_to_string = function
   | Length_delimited_type -> "Length-delimited"
   | Fixed_32_bits_type -> "32-bit"
 
-module Encoding : Types.Encoding with type t := t with type sort := sort = struct
+module Encoding : Types.Encoding with type t := t and type sort := sort = struct
   let encode_string value =
     let value = Field_value.unpack value in
     Length_delimited value

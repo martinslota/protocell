@@ -158,7 +158,10 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
     List.dedup_and_sort values ~compare:(fun (_, id1) (_, id2) -> id1 - id2)
   in
   let implementation =
-    let default_value = List.find_exn values ~f:(fun (_, id) -> id = 0) in
+    let default_value =
+      List.find values ~f:(fun (_, id) -> id = 0)
+      |> Option.value ~default:(List.hd_exn values)
+    in
     let to_int_function =
       List.concat
         Code.
@@ -216,12 +219,15 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
   in
   {module_name = name; signature; implementation}
 
-let rec generate_message : options:options -> Protobuf.Message.t -> Code.module_ =
- fun ~options {name; enums; messages; fields} ->
+let rec generate_message
+    : options:options -> string option -> Protobuf.Message.t -> Code.module_
+  =
+ fun ~options package {name; enums; messages; fields} ->
   let determine_module_name name =
-    match String.is_prefix ~prefix:"." name with
-    | true -> String.subo ~pos:1 name
-    | false -> name
+    let prefix =
+      package |> Option.map ~f:(Printf.sprintf ".%s.") |> Option.value ~default:"."
+    in
+    String.chop_prefix ~prefix name |> Option.value ~default:name
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String_t -> "string"
@@ -243,7 +249,7 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.module_
     | Enum_t name -> determine_module_name name |> Printf.sprintf "%s.t"
   in
   let enums = List.map enums ~f:(generate_enum ~options) in
-  let messages = List.map messages ~f:(generate_message ~options) in
+  let messages = List.map messages ~f:(generate_message package ~options) in
   let type_declaration =
     fields
     |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
@@ -423,7 +429,7 @@ let rec generate_message : options:options -> Protobuf.Message.t -> Code.module_
   {module_name = name; signature; implementation}
 
 let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
- fun ~options {name; enums; messages} ->
+ fun ~options {name; package; enums; messages} ->
   let contents =
     Code.(
       make_file
@@ -436,7 +442,7 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
           List.map enums ~f:(generate_enum ~options)
           |> Code.make_modules ~recursive:false ~with_implementation:true
           |> block ~indented:false;
-          List.map messages ~f:(generate_message ~options)
+          List.map messages ~f:(generate_message ~options package)
           |> Code.make_modules ~recursive:true ~with_implementation:true
           |> block ~indented:false;
         ])
