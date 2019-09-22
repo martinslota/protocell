@@ -135,7 +135,7 @@ module Protobuf = struct
       ]
 
   let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
-   fun ({name; number; _} as field) ->
+   fun ({name; number; label; _} as field) ->
     {
       name =
         (let name = String.uncapitalize @@ String.of_protobuf name in
@@ -144,6 +144,10 @@ module Protobuf = struct
          | false -> name);
       number = Int.of_protobuf number;
       data_type = field_type_of_request field;
+      repeated =
+        (match label with
+        | Some Descriptor.Label_repeated -> true
+        | _ -> false);
     }
 
   let rec message_of_request : Descriptor.descriptor_proto -> Message.t =

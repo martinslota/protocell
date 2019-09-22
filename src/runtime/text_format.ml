@@ -231,7 +231,7 @@ module Reader = struct
   and read_key_value_pairs tokens =
     let rec collect accumulator tokens =
       match tokens with
-      | [] -> Ok (List.rev accumulator)
+      | [] -> Ok (accumulator)
       | _ -> (
         match read_key_value_pair tokens with
         | Ok (key, value, tokens) -> collect ((key, value) :: accumulator) tokens
@@ -275,17 +275,30 @@ let serialize_field id typ value output =
   Field_value.create typ value >>| encode >>| fun value ->
   Writer.write_field output (id, value)
 
-let serialize_user_field id serializer value output =
+let serialize_repeated_field id typ values output =
+  List.map values ~f:(fun value -> serialize_field id typ value output)
+  |> Result.all_unit
+
+let serialize_user_value id serializer value output =
   let open Result.Let_syntax in
+  serializer value >>| fun encoding -> Writer.write_field output (id, Message encoding)
+
+let serialize_user_field id serializer value output =
   match value with
   | None -> Ok ()
-  | Some value ->
-      serializer value >>| fun encoding ->
-      Writer.write_field output (id, Message encoding)
+  | Some value -> serialize_user_value id serializer value output
+
+let serialize_repeated_user_field id serializer values output =
+  List.map values ~f:(fun value -> serialize_user_value id serializer value output)
+  |> Result.all_unit
 
 let serialize_enum_field id to_string value output =
   let open Result.Let_syntax in
   return @@ Writer.write_field output (id, Enum (to_string value))
+
+let serialize_repeated_enum_field id to_string values output =
+  List.map values ~f:(fun value -> serialize_enum_field id to_string value output)
+  |> Result.all_unit
 
 let deserialize_message input =
   let open Result.Let_syntax in
@@ -312,26 +325,55 @@ let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
   | F.Double_t -> Encoding.decode_float typ value
   | F.Bool_t -> Encoding.decode_bool typ value
 
-let decode_field id typ records =
+let decode_field_value typ value =
   let open Result.Let_syntax in
+  decode_value value typ >>= Field_value.create typ >>| Field_value.unpack
+
+let decode_field id typ records =
   match Hashtbl.find records id with
   | None -> Ok (Field_value.default typ)
-  | Some [] -> Ok (Field_value.default typ)
-  | Some (value :: _) ->
-      decode_value value typ >>= Field_value.create typ >>| Field_value.unpack
+  | Some values -> (
+    match List.last values with
+    | None -> Ok (Field_value.default typ)
+    | Some value -> decode_field_value typ value)
+
+let decode_repeated_field id typ records =
+  match Hashtbl.find records id with
+  | None -> Ok []
+  | Some values -> List.map values ~f:(decode_field_value typ) |> Result.all
+
+let decode_user_value deserializer value =
+  match value with
+  | Message encoding -> deserializer encoding
+  | _ as value -> Error (`Wrong_value_sort_for_user_field (to_sort value))
 
 let decode_user_field id deserializer records =
   let open Result.Let_syntax in
   match Hashtbl.find records id with
   | None -> Ok None
-  | Some [] -> Ok None
-  | Some (Message encoding :: _) -> deserializer encoding >>| fun x -> Some x
-  | Some (value :: _) -> Error (`Wrong_value_sort_for_user_field (to_sort value))
+  | Some values -> (
+    match List.last values with
+    | None -> Ok None
+    | Some value -> decode_user_value deserializer value >>| Option.some)
+
+let decode_repeated_user_field id deserializer records =
+  match Hashtbl.find records id with
+  | None -> Ok []
+  | Some values -> List.map values ~f:(decode_user_value deserializer) |> Result.all
+
+let decode_enum_value of_string = function
+  | Enum name -> of_string name |> Result.of_option ~error:`Unrecognized_enum_value
+  | _ as value -> Error (`Wrong_value_sort_for_enum_field (to_sort value))
 
 let decode_enum_field id of_string default records =
   match Hashtbl.find records id with
   | None -> Ok (default ())
-  | Some [] -> Ok (default ())
-  | Some (Enum name :: _) ->
-      of_string name |> Result.of_option ~error:`Unrecognized_enum_value
-  | Some (value :: _) -> Error (`Wrong_value_sort_for_enum_field (to_sort value))
+  | Some values -> (
+    match List.last values with
+    | None -> Ok (default ())
+    | Some value -> decode_enum_value of_string value)
+
+let decode_repeated_enum_field id of_string _default records =
+  match Hashtbl.find records id with
+  | None -> Ok []
+  | Some values -> List.map values ~f:(decode_enum_value of_string) |> Result.all

@@ -31,6 +31,13 @@ val serialize_field
   Byte_output.t ->
   (unit, [> serialization_error]) Result.t
 
+val serialize_repeated_field
+  :  id ->
+  'v Field_value.typ ->
+  'v list ->
+  Byte_output.t ->
+  (unit, [> serialization_error]) Result.t
+
 val serialize_user_field
   :  id ->
   ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
@@ -38,10 +45,24 @@ val serialize_user_field
   Byte_output.t ->
   (unit, 'e) Result.t
 
+val serialize_repeated_user_field
+  :  id ->
+  ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
+  'v list ->
+  Byte_output.t ->
+  (unit, 'e) Result.t
+
 val serialize_enum_field
   :  id ->
   ('v -> int) ->
   'v ->
+  Byte_output.t ->
+  (unit, [> serialization_error]) Result.t
+
+val serialize_repeated_enum_field
+  :  id ->
+  ('v -> int) ->
+  'v list ->
   Byte_output.t ->
   (unit, [> serialization_error]) Result.t
 
@@ -53,11 +74,23 @@ val decode_field
   parsed_message ->
   ('v, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
 
+val decode_repeated_field
+  :  id ->
+  'v Field_value.typ ->
+  parsed_message ->
+  ('v list, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+
 val decode_user_field
   :  id ->
-  (string -> ('v, ([> deserialization_error] as 'b)) Result.t) ->
+  (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
   parsed_message ->
-  ('v option, 'b) Result.t
+  ('v option, 'e) Result.t
+
+val decode_repeated_user_field
+  :  id ->
+  (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
+  parsed_message ->
+  ('v list, 'e) Result.t
 
 val decode_enum_field
   :  id ->
@@ -65,3 +98,10 @@ val decode_enum_field
   (unit -> 'v) ->
   parsed_message ->
   ('v, [> deserialization_error]) Result.t
+
+val decode_repeated_enum_field
+  :  id ->
+  (int -> 'v option) ->
+  (unit -> 'v) ->
+  parsed_message ->
+  ('v list, [> deserialization_error]) Result.t

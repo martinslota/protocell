@@ -165,6 +165,20 @@ module Enums = struct
       [P.WithEnum.{field = DAY}; P.WithEnum.{field = NIGHT}]
 end
 
+module Repeated = struct
+  let repeated_string_tests =
+    Utils.suite
+      (module P.RepeatedString)
+      "RepeatedString"
+      [P.RepeatedString.{field = ["aaa"; "bbb"]}]
+
+  let repeated_int64_tests =
+    Utils.suite
+      (module P.RepeatedInt64)
+      "RepeatedInt64"
+      [P.RepeatedInt64.{field = [1; 2; 3]}]
+end
+
 let () =
   Alcotest.run
     "Protocell test suite"
@@ -188,4 +202,6 @@ let () =
       Messages.with_nested_submessage_tests;
       Messages.mutual_references_tests;
       Enums.tests;
+      Repeated.repeated_string_tests;
+      Repeated.repeated_int64_tests;
     ]

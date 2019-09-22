@@ -271,7 +271,7 @@ module Reader = struct
     let rec collect_all acc =
       let open Result.Let_syntax in
       match Byte_input.has_more_bytes input with
-      | false -> List.rev acc
+      | false -> acc
       | true ->
           let wire_record =
             read_varint input >>= fun wire_descriptor ->
@@ -314,23 +314,61 @@ let encode : type v. v Field_value.t -> t =
   | F.Double_t -> Encoding.encode_float value
   | F.Bool_t -> Encoding.encode_bool value
 
+let encode_repeated : type v. v Field_value.typ -> v Field_value.t list -> t list =
+ fun typ values ->
+  let module F = Field_value in
+  match typ with
+  | F.String_t -> List.map values ~f:Encoding.encode_string
+  | F.Bytes_t -> List.map values ~f:Encoding.encode_string
+  | F.Int32_t -> List.map values ~f:Encoding.encode_int
+  | F.Int64_t -> List.map values ~f:Encoding.encode_int
+  | F.Sint32_t -> List.map values ~f:Encoding.encode_int
+  | F.Sint64_t -> List.map values ~f:Encoding.encode_int
+  | F.Uint32_t -> List.map values ~f:Encoding.encode_int
+  | F.Uint64_t -> List.map values ~f:Encoding.encode_int
+  | F.Fixed32_t -> List.map values ~f:Encoding.encode_int
+  | F.Fixed64_t -> List.map values ~f:Encoding.encode_int
+  | F.Sfixed32_t -> List.map values ~f:Encoding.encode_int
+  | F.Sfixed64_t -> List.map values ~f:Encoding.encode_int
+  | F.Float_t -> List.map values ~f:Encoding.encode_float
+  | F.Double_t -> List.map values ~f:Encoding.encode_float
+  | F.Bool_t -> List.map values ~f:Encoding.encode_bool
+
 let serialize_field id typ value output =
   let open Result.Let_syntax in
   Field_value.create typ value >>| encode >>| fun value ->
   Writer.write_field output (id, value)
 
-let serialize_user_field id serializer value output =
+let serialize_repeated_field id typ values output =
   let open Result.Let_syntax in
+  values
+  |> List.map ~f:(Field_value.create typ)
+  |> Result.all
+  >>| encode_repeated typ
+  >>| List.iter ~f:(fun value -> Writer.write_field output (id, value))
+
+let serialize_user_value id serializer value output =
+  let open Result.Let_syntax in
+  serializer value >>| fun encoding ->
+  Writer.write_field output (id, Length_delimited encoding)
+
+let serialize_user_field id serializer value output =
   match value with
   | None -> Ok ()
-  | Some value ->
-      serializer value >>| fun encoding ->
-      Writer.write_field output (id, Length_delimited encoding)
+  | Some value -> serialize_user_value id serializer value output
+
+let serialize_repeated_user_field id serializer values output =
+  List.map values ~f:(fun value -> serialize_user_value id serializer value output)
+  |> Result.all_unit
 
 let serialize_enum_field id to_int value output =
   let open Result.Let_syntax in
   Field_value.(create Int64_t @@ to_int value) >>| encode >>| fun value ->
   Writer.write_field output (id, value)
+
+let serialize_repeated_enum_field id to_int values output =
+  List.map values ~f:(fun value -> serialize_enum_field id to_int value output)
+  |> Result.all_unit
 
 let deserialize_message input =
   let open Result.Let_syntax in
@@ -357,28 +395,58 @@ let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
   | F.Double_t -> Encoding.decode_float typ value
   | F.Bool_t -> Encoding.decode_bool typ value
 
-let decode_field id typ records =
+let decode_field_value typ value =
   let open Result.Let_syntax in
+  decode_value value typ >>= Field_value.create typ >>| Field_value.unpack
+
+let decode_field id typ records =
   match Hashtbl.find records id with
   | None -> Ok (Field_value.default typ)
-  | Some [] -> Ok (Field_value.default typ)
-  | Some (value :: _) ->
-      decode_value value typ >>= Field_value.create typ >>| Field_value.unpack
+  | Some values -> (
+    match List.last values with
+    | None -> Ok (Field_value.default typ)
+    | Some value -> decode_field_value typ value)
+
+let decode_repeated_field id typ records =
+  match Hashtbl.find records id with
+  | None -> Ok []
+  | Some values -> List.map values ~f:(decode_field_value typ) |> Result.all
+
+let decode_user_value deserializer value =
+  match value with
+  | Length_delimited encoding -> deserializer encoding
+  | _ as value -> Error (`Wrong_value_sort_for_user_field (to_sort value))
 
 let decode_user_field id deserializer records =
   let open Result.Let_syntax in
   match Hashtbl.find records id with
   | None -> Ok None
-  | Some [] -> Ok None
-  | Some (Length_delimited encoding :: _) -> deserializer encoding >>| fun x -> Some x
-  | Some (value :: _) -> Error (`Wrong_value_sort_for_user_field (to_sort value))
+  | Some values -> (
+    match List.last values with
+    | None -> Ok None
+    | Some value -> decode_user_value deserializer value >>| Option.some)
+
+let decode_repeated_user_field id deserializer records =
+  match Hashtbl.find records id with
+  | None -> Ok []
+  | Some values -> List.map values ~f:(decode_user_value deserializer) |> Result.all
+
+let decode_enum_value of_int = function
+  | Varint int -> (
+    match Int64.to_int int with
+    | None -> Error (`Integer_outside_int_type_range int)
+    | Some int -> of_int int |> Result.of_option ~error:`Unrecognized_enum_value)
+  | _ as value -> Error (`Wrong_value_sort_for_enum_field (to_sort value))
 
 let decode_enum_field id of_int default records =
   match Hashtbl.find records id with
   | None -> Ok (default ())
-  | Some [] -> Ok (default ())
-  | Some (Varint int :: _) -> (
-    match Int64.to_int int with
-    | None -> Error (`Integer_outside_int_type_range int)
-    | Some int -> of_int int |> Result.of_option ~error:`Unrecognized_enum_value)
-  | Some (value :: _) -> Error (`Wrong_value_sort_for_enum_field (to_sort value))
+  | Some values -> (
+    match List.last values with
+    | None -> Ok (default ())
+    | Some value -> decode_enum_value of_int value)
+
+let decode_repeated_enum_field id of_int _default records =
+  match Hashtbl.find records id with
+  | None -> Ok []
+  | Some values -> List.map values ~f:(decode_enum_value of_int) |> Result.all

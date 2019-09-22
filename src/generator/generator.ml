@@ -252,8 +252,13 @@ let rec generate_message
   let messages = List.map messages ~f:(generate_message package ~options) in
   let type_declaration =
     fields
-    |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
-           name, type_to_ocaml_type data_type)
+    |> List.map ~f:(fun Protobuf.Field.{name; data_type; repeated; _} ->
+           let suffix =
+             match repeated with
+             | true -> " list"
+             | false -> ""
+           in
+           name, Printf.sprintf "%s%s" (type_to_ocaml_type data_type) suffix)
     |> Code.make_record_type ~options "t"
   in
   let type_to_constructor : Protobuf.field_data_type -> string = function
@@ -275,6 +280,10 @@ let rec generate_message
     | Message_t name -> determine_module_name name
     | Enum_t name -> determine_module_name name
   in
+  let fn_name_part_of_repeated = function
+    | true -> "_repeated"
+    | false -> ""
+  in
   let generate_serialization_function function_name format_module_name field_to_ocaml_id
       serialized_enum_type
     =
@@ -291,28 +300,33 @@ let rec generate_message
         block
           [
             line "let o' = Runtime.Byte_output.create () in";
-            List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
+            List.map
+              fields
+              ~f:(fun (Protobuf.Field.{name; data_type; repeated; _} as field) ->
                 match data_type with
                 | Message_t _ ->
                     Printf.sprintf
-                      {|(%s.serialize_user_field %s %s.%s %s o') >>= fun () ->|}
+                      {|(%s.serialize%s_user_field %s %s.%s %s o') >>= fun () ->|}
                       format_module_name
+                      (fn_name_part_of_repeated repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       function_name
                       name
                 | Enum_t _ ->
                     Printf.sprintf
-                      {|(%s.serialize_enum_field %s %s.to_%s %s o') >>= fun () ->|}
+                      {|(%s.serialize%s_enum_field %s %s.to_%s %s o') >>= fun () ->|}
                       format_module_name
+                      (fn_name_part_of_repeated repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       serialized_enum_type
                       name
                 | _ ->
                     Printf.sprintf
-                      {|(%s.serialize_field %s F'.%s %s o') >>= fun () ->|}
+                      {|(%s.serialize%s_field %s F'.%s %s o') >>= fun () ->|}
                       format_module_name
+                      (fn_name_part_of_repeated repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       name)
@@ -344,20 +358,24 @@ let rec generate_message
             line (Printf.sprintf "Ok (Runtime.Byte_input.create %s) >>=" argument);
             line
               (Printf.sprintf "%s.deserialize_message >>= fun m' ->" format_module_name);
-            List.map fields ~f:(fun (Protobuf.Field.{name; data_type; _} as field) ->
+            List.map
+              fields
+              ~f:(fun (Protobuf.Field.{name; data_type; repeated; _} as field) ->
                 match data_type with
                 | Message_t _ ->
                     Printf.sprintf
-                      {|(%s.decode_user_field %s %s.%s m') >>= fun %s ->|}
+                      {|(%s.decode%s_user_field %s %s.%s m') >>= fun %s ->|}
                       format_module_name
+                      (fn_name_part_of_repeated repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       function_name
                       name
                 | Enum_t _ ->
                     Printf.sprintf
-                      {|(%s.decode_enum_field %s %s.of_%s %s.default m') >>= fun %s ->|}
+                      {|(%s.decode%s_enum_field %s %s.of_%s %s.default m') >>= fun %s ->|}
                       format_module_name
+                      (fn_name_part_of_repeated repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       serialized_enum_type
@@ -365,8 +383,9 @@ let rec generate_message
                       name
                 | _ ->
                     Printf.sprintf
-                      "%s.decode_field %s F'.%s m' >>= fun %s ->"
+                      "%s.decode%s_field %s F'.%s m' >>= fun %s ->"
                       format_module_name
+                      (fn_name_part_of_repeated repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       name)

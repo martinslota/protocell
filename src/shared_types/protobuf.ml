@@ -29,6 +29,7 @@ module Field = struct
     name : string;
     number : int;
     data_type : field_data_type;
+    repeated : bool;
   }
 end
 

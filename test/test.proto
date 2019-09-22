@@ -93,6 +93,14 @@ message WithEnum {
   TimeOfDay field = 1;
 }
 
+message RepeatedString {
+  repeated string field = 1;
+}
+
+message RepeatedInt64 {
+  repeated int64 field = 1 [packed=false];
+}
+
 enum E {
   A = 0;
   B = 1;
