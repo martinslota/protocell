@@ -72,13 +72,13 @@ val decode_field
   :  id ->
   'v Field_value.typ ->
   parsed_message ->
-  ('v, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+  ('v, [> deserialization_error]) Result.t
 
 val decode_repeated_field
   :  id ->
   'v Field_value.typ ->
   parsed_message ->
-  ('v list, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+  ('v list, [> deserialization_error]) Result.t
 
 val decode_user_field
   :  id ->

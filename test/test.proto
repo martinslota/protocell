@@ -97,8 +97,12 @@ message RepeatedString {
   repeated string field = 1;
 }
 
-message RepeatedInt64 {
+message RepeatedInt64Unpacked {
   repeated int64 field = 1 [packed=false];
+}
+
+message RepeatedInt64Packed {
+  repeated int64 field = 1 [packed=true]; // this is the default in proto3
 }
 
 enum E {

@@ -172,11 +172,17 @@ module Repeated = struct
       "RepeatedString"
       [P.RepeatedString.{field = ["aaa"; "bbb"]}]
 
-  let repeated_int64_tests =
+  let repeated_int64_unpacked_tests =
     Utils.suite
-      (module P.RepeatedInt64)
-      "RepeatedInt64"
-      [P.RepeatedInt64.{field = [1; 2; 3]}]
+      (module P.RepeatedInt64Unpacked)
+      "RepeatedInt64Unpacked"
+      [P.RepeatedInt64Unpacked.{field = [1; 2; 3]}]
+
+  let repeated_int64_packed_tests =
+    Utils.suite
+      (module P.RepeatedInt64Packed)
+      "RepeatedInt64Packed"
+      [P.RepeatedInt64Packed.{field = [1; 2; 3]}]
 end
 
 let () =
@@ -203,5 +209,6 @@ let () =
       Messages.mutual_references_tests;
       Enums.tests;
       Repeated.repeated_string_tests;
-      Repeated.repeated_int64_tests;
+      Repeated.repeated_int64_unpacked_tests;
+      Repeated.repeated_int64_packed_tests;
     ]
