@@ -220,10 +220,10 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
   {module_name = name; signature; implementation}
 
 let rec generate_message
-    :  options:options -> string option -> (string, string) Hashtbl.t ->
+    :  options:options -> string option -> (string, string) Hashtbl.t -> string ->
     Protobuf.Message.t -> Code.module_
   =
- fun ~options package context {name; enums; messages; fields} ->
+ fun ~options package context syntax {name; enums; messages; fields} ->
   let determine_module_name name =
     match Hashtbl.find context name with
     | None ->
@@ -253,7 +253,9 @@ let rec generate_message
     | Enum_t name -> determine_module_name name |> Printf.sprintf "%s.t"
   in
   let enums = List.map enums ~f:(generate_enum ~options) in
-  let messages = List.map messages ~f:(generate_message package context ~options) in
+  let messages =
+    List.map messages ~f:(generate_message package context syntax ~options)
+  in
   let type_declaration =
     fields
     |> List.map ~f:(fun Protobuf.Field.{name; data_type; repeated; _} ->
@@ -261,9 +263,11 @@ let rec generate_message
              match repeated with
              | true -> " list"
              | false -> (
-               match data_type with
-               | Message_t _ -> " option"
-               | _ -> "")
+               match data_type, syntax with
+               | Message_t _, _ -> " option"
+               | _, "proto3" -> ""
+               | Enum_t _, _ -> ""
+               | _ -> " option")
            in
            name, Printf.sprintf "%s%s" (type_to_ocaml_type data_type) suffix)
     |> Code.make_record_type ~options "t"
@@ -287,9 +291,16 @@ let rec generate_message
     | Message_t name -> determine_module_name name
     | Enum_t name -> determine_module_name name
   in
-  let fn_name_part_of_repeated = function
+  let fn_name_part_of_repeated data_type repeated =
+    match repeated with
     | true -> "_repeated"
-    | false -> ""
+    | false -> (
+      match syntax with
+      | "proto3" -> ""
+      | _ -> (
+        match data_type with
+        | Protobuf.Message_t _ | Enum_t _ -> ""
+        | _ -> "_optional"))
   in
   let generate_serialization_function function_name format_module_name field_to_ocaml_id
       serialized_enum_type
@@ -315,7 +326,7 @@ let rec generate_message
                     Printf.sprintf
                       {|(%s.serialize%s_user_field %s %s.%s %s o') >>= fun () ->|}
                       format_module_name
-                      (fn_name_part_of_repeated repeated)
+                      (fn_name_part_of_repeated data_type repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       function_name
@@ -324,7 +335,7 @@ let rec generate_message
                     Printf.sprintf
                       {|(%s.serialize%s_enum_field %s %s.to_%s %s o') >>= fun () ->|}
                       format_module_name
-                      (fn_name_part_of_repeated repeated)
+                      (fn_name_part_of_repeated data_type repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       serialized_enum_type
@@ -333,7 +344,7 @@ let rec generate_message
                     Printf.sprintf
                       {|(%s.serialize%s_field %s F'.%s %s o') >>= fun () ->|}
                       format_module_name
-                      (fn_name_part_of_repeated repeated)
+                      (fn_name_part_of_repeated data_type repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       name)
@@ -373,7 +384,7 @@ let rec generate_message
                     Printf.sprintf
                       {|(%s.decode%s_user_field %s %s.%s m') >>= fun %s ->|}
                       format_module_name
-                      (fn_name_part_of_repeated repeated)
+                      (fn_name_part_of_repeated data_type repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       function_name
@@ -382,7 +393,7 @@ let rec generate_message
                     Printf.sprintf
                       {|(%s.decode%s_enum_field %s %s.of_%s %s.default m') >>= fun %s ->|}
                       format_module_name
-                      (fn_name_part_of_repeated repeated)
+                      (fn_name_part_of_repeated data_type repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       serialized_enum_type
@@ -392,7 +403,7 @@ let rec generate_message
                     Printf.sprintf
                       "%s.decode%s_field %s F'.%s m' >>= fun %s ->"
                       format_module_name
-                      (fn_name_part_of_repeated repeated)
+                      (fn_name_part_of_repeated data_type repeated)
                       (field_to_ocaml_id field)
                       (type_to_constructor data_type)
                       name)
@@ -455,7 +466,7 @@ let rec generate_message
   {module_name = name; signature; implementation}
 
 let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
- fun ~options {name; package; enums; messages; context; dependencies} ->
+ fun ~options {name; package; enums; messages; context; dependencies; syntax} ->
   let context = Hashtbl.of_alist_exn (module String) context in
   let contents =
     Code.(
@@ -472,7 +483,7 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
           List.map enums ~f:(generate_enum ~options)
           |> Code.make_modules ~recursive:false ~with_implementation:true
           |> block ~indented:false;
-          List.map messages ~f:(generate_message ~options package context)
+          List.map messages ~f:(generate_message ~options package context syntax)
           |> Code.make_modules ~recursive:true ~with_implementation:true
           |> block ~indented:false;
         ])

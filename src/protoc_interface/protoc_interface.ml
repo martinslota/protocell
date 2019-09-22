@@ -9,7 +9,7 @@ module Plugin = struct
 
   let error_response =
     let bytes_result =
-      CodeGeneratorResponse.serialize {error = "Protocell error"; file = []}
+      CodeGeneratorResponse.serialize {error = Some "Protocell error"; file = []}
     in
     Option.value_exn ~message:"Protocell: Fatal error" (Result.ok bytes_result)
 end
@@ -39,14 +39,17 @@ module Protobuf = struct
     | TYPE_FLOAT -> Float_t
     | TYPE_DOUBLE -> Double_t
     | TYPE_BOOL -> Bool_t
-    | TYPE_MESSAGE -> Message_t type_name
-    | TYPE_ENUM -> Enum_t type_name
+    | TYPE_MESSAGE -> Message_t (Option.value_exn type_name)
+    | TYPE_ENUM -> Enum_t (Option.value_exn type_name)
     | TYPE_GROUP -> failwith "Groups are not supported"
 
   let enum_of_request : Descriptor.EnumDescriptorProto.t -> Enum.t =
    fun {name; value'; _} ->
-    let values = List.map value' ~f:(fun {name; number; _} -> name, number) in
-    {name; values}
+    let values =
+      List.map value' ~f:(fun {name; number; _} ->
+          Option.value_exn name, Option.value_exn number)
+    in
+    {name = Option.value_exn name; values}
 
   let ocaml_keywords =
     Hash_set.of_list
@@ -116,11 +119,11 @@ module Protobuf = struct
    fun ({name; number; label; _} as field) ->
     {
       name =
-        (let name = String.uncapitalize name in
+        (let name = String.uncapitalize (Option.value_exn name) in
          match Hash_set.mem ocaml_keywords name with
          | true -> Printf.sprintf "%s'" name
          | false -> name);
-      number;
+      number = Option.value_exn number;
       data_type = field_type_of_request field;
       repeated =
         (match label with
@@ -131,14 +134,14 @@ module Protobuf = struct
   let rec message_of_request : Descriptor.DescriptorProto.t -> Message.t =
    fun {name; field; nested_type; enum_type; _} ->
     {
-      name;
+      name = Option.value_exn name;
       enums = List.map enum_type ~f:enum_of_request;
       messages = List.map nested_type ~f:message_of_request;
       fields = List.map field ~f:field_of_request;
     }
 
   let file_of_request : File.context -> Descriptor.FileDescriptorProto.t -> File.t =
-   fun context {name; package; enum_type; message_type; dependency; _} ->
+   fun context {name; package; enum_type; message_type; dependency; syntax; _} ->
     let ocaml_module_name name =
       let base_name =
         match String.chop_suffix name ~suffix:".proto" with
@@ -147,12 +150,7 @@ module Protobuf = struct
       in
       Printf.sprintf "%s_pc" base_name |> String.tr ~target:'/' ~replacement:'_'
     in
-    let name = Printf.sprintf "%s.ml" (ocaml_module_name name) in
-    let package =
-      match package with
-      | "" -> None
-      | _ -> Some package
-    in
+    let name = Printf.sprintf "%s.ml" (ocaml_module_name (Option.value_exn name)) in
     let enums = List.map ~f:enum_of_request enum_type in
     let messages = List.map ~f:message_of_request message_type in
     let full_enum_names prefix enums =
@@ -191,7 +189,15 @@ module Protobuf = struct
         ]
     in
     let dependencies = List.map dependency ~f:ocaml_module_name in
-    {name; package; enums; messages; context; dependencies}
+    {
+      name;
+      package;
+      enums;
+      messages;
+      context;
+      dependencies;
+      syntax = Option.value_exn syntax;
+    }
 
   let of_request : Plugin.CodeGeneratorRequest.t -> t =
    fun {proto_file; _} ->
@@ -207,8 +213,9 @@ module Generated_code = struct
   include Shared_types.Generated_code
 
   let file_to_response : File.t -> Plugin.CodeGeneratorResponse.File.t =
-   fun {name; contents} -> {name; insertion_point = ""; content = contents}
+   fun {name; contents} ->
+    {name = Some name; insertion_point = None; content = Some contents}
 
   let to_response : t -> Plugin.CodeGeneratorResponse.t =
-   fun files -> {error = ""; file = List.map ~f:file_to_response files}
+   fun files -> {error = None; file = List.map ~f:file_to_response files}
 end

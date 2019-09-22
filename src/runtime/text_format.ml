@@ -275,6 +275,11 @@ let serialize_field id typ value output =
   Field_value.create typ value >>| encode >>| fun value ->
   Writer.write_field output (id, value)
 
+let serialize_optional_field id typ value output =
+  match value with
+  | None -> Ok ()
+  | Some value -> serialize_field id typ value output
+
 let serialize_repeated_field id typ values output =
   List.map values ~f:(fun value -> serialize_field id typ value output)
   |> Result.all_unit
@@ -336,6 +341,15 @@ let decode_field id typ records =
     match List.hd values with
     | None -> Ok (Field_value.default typ)
     | Some value -> decode_field_value typ value)
+
+let decode_optional_field id typ records =
+  let open Result.Let_syntax in
+  match Hashtbl.find records id with
+  | None -> Ok None
+  | Some values -> (
+    match List.hd values with
+    | None -> Ok None
+    | Some value -> decode_field_value typ value >>| Option.some)
 
 let decode_repeated_field id typ records =
   match Hashtbl.find records id with

@@ -31,6 +31,13 @@ val serialize_field
   Byte_output.t ->
   (unit, [> serialization_error]) Result.t
 
+val serialize_optional_field
+  :  id ->
+  'v Field_value.typ ->
+  'v option ->
+  Byte_output.t ->
+  (unit, [> serialization_error]) Result.t
+
 val serialize_repeated_field
   :  id ->
   'v Field_value.typ ->
@@ -73,6 +80,12 @@ val decode_field
   'v Field_value.typ ->
   parsed_message ->
   ('v, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+
+val decode_optional_field
+  :  id ->
+  'v Field_value.typ ->
+  parsed_message ->
+  ('v option, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
 
 val decode_repeated_field
   :  id ->

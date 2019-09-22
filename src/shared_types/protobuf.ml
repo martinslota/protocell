@@ -54,6 +54,7 @@ module File = struct
     messages : Message.t list;
     context : context;
     dependencies : string list;
+    syntax : string;
   }
 end
 
