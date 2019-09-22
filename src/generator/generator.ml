@@ -220,14 +220,18 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
   {module_name = name; signature; implementation}
 
 let rec generate_message
-    : options:options -> string option -> Protobuf.Message.t -> Code.module_
+    :  options:options -> string option -> (string, string) Hashtbl.t ->
+    Protobuf.Message.t -> Code.module_
   =
- fun ~options package {name; enums; messages; fields} ->
+ fun ~options package context {name; enums; messages; fields} ->
   let determine_module_name name =
-    let prefix =
-      package |> Option.map ~f:(Printf.sprintf ".%s.") |> Option.value ~default:"."
-    in
-    String.chop_prefix ~prefix name |> Option.value ~default:name
+    match Hashtbl.find context name with
+    | None ->
+        let prefix =
+          package |> Option.map ~f:(Printf.sprintf ".%s.") |> Option.value ~default:"."
+        in
+        String.chop_prefix ~prefix name |> Option.value ~default:name
+    | Some module_name -> module_name
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String_t -> "string"
@@ -245,18 +249,21 @@ let rec generate_message
     | Float_t -> "float"
     | Double_t -> "float"
     | Bool_t -> "bool"
-    | Message_t name -> determine_module_name name |> Printf.sprintf "%s.t option"
+    | Message_t name -> determine_module_name name |> Printf.sprintf "%s.t"
     | Enum_t name -> determine_module_name name |> Printf.sprintf "%s.t"
   in
   let enums = List.map enums ~f:(generate_enum ~options) in
-  let messages = List.map messages ~f:(generate_message package ~options) in
+  let messages = List.map messages ~f:(generate_message package context ~options) in
   let type_declaration =
     fields
     |> List.map ~f:(fun Protobuf.Field.{name; data_type; repeated; _} ->
            let suffix =
              match repeated with
              | true -> " list"
-             | false -> ""
+             | false -> (
+               match data_type with
+               | Message_t _ -> " option"
+               | _ -> "")
            in
            name, Printf.sprintf "%s%s" (type_to_ocaml_type data_type) suffix)
     |> Code.make_record_type ~options "t"
@@ -448,7 +455,8 @@ let rec generate_message
   {module_name = name; signature; implementation}
 
 let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
- fun ~options {name; package; enums; messages} ->
+ fun ~options {name; package; enums; messages; context; dependencies} ->
+  let context = Hashtbl.of_alist_exn (module String) context in
   let contents =
     Code.(
       make_file
@@ -458,10 +466,13 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
           line "module F' = Runtime.Field_value";
           line "module T' = Runtime.Text_format";
           line "module W' = Runtime.Wire_format";
+          List.map dependencies ~f:(fun dependency ->
+              dependency |> String.capitalize |> Printf.sprintf "open %s" |> line)
+          |> block ~indented:false;
           List.map enums ~f:(generate_enum ~options)
           |> Code.make_modules ~recursive:false ~with_implementation:true
           |> block ~indented:false;
-          List.map messages ~f:(generate_message ~options package)
+          List.map messages ~f:(generate_message ~options package context)
           |> Code.make_modules ~recursive:true ~with_implementation:true
           |> block ~indented:false;
         ])

@@ -1,74 +1,52 @@
 open Base
 
-module Int = struct
-  include Int
-
-  let of_protobuf = Option.value_exn
-end
-
-module String = struct
-  include String
-
-  let of_protobuf = Option.value_exn
-end
-
 module Plugin = struct
-  include Plugin_types
-  include Plugin_pp
-  include Plugin_pb
+  include Google_protobuf_compiler_plugin_pc
 
-  let decode_request = Fn.compose decode_code_generator_request Pbrt.Decoder.of_bytes
+  let decode_request = CodeGeneratorRequest.deserialize
 
-  let encode_response response =
-    let encoder = Pbrt.Encoder.create () in
-    encode_code_generator_response response encoder;
-    Pbrt.Encoder.to_bytes encoder
+  let encode_response = CodeGeneratorResponse.serialize
+
+  let error_response =
+    let bytes_result =
+      CodeGeneratorResponse.serialize {error = "Protocell error"; file = []}
+    in
+    Option.value_exn ~message:"Protocell: Fatal error" (Result.ok bytes_result)
 end
 
 module Descriptor = struct
-  include Descriptor_types
-  include Descriptor_pp
-  include Descriptor_pb
+  include Google_protobuf_descriptor_pc
 end
 
 module Protobuf = struct
   include Shared_types.Protobuf
 
-  let field_type_of_request : Descriptor.field_descriptor_proto -> field_data_type =
-   fun {type_; type_name; _} ->
-    match type_ with
-    | None -> Message_t (String.of_protobuf type_name)
-    | Some Type_string -> String_t
-    | Some Type_bytes -> Bytes_t
-    | Some Type_int32 -> Int32_t
-    | Some Type_int64 -> Int64_t
-    | Some Type_sint32 -> Sint32_t
-    | Some Type_sint64 -> Sint64_t
-    | Some Type_uint32 -> Uint32_t
-    | Some Type_uint64 -> Uint64_t
-    | Some Type_fixed32 -> Fixed32_t
-    | Some Type_fixed64 -> Fixed64_t
-    | Some Type_sfixed32 -> Sfixed32_t
-    | Some Type_sfixed64 -> Sfixed64_t
-    | Some Type_float -> Float_t
-    | Some Type_double -> Double_t
-    | Some Type_bool -> Bool_t
-    | Some Type_message -> Message_t (String.of_protobuf type_name)
-    | Some Type_enum -> Enum_t (String.of_protobuf type_name)
-    | Some field_type ->
-        failwith
-          (Caml.Format.asprintf
-             "Unsupported field type %a"
-             Descriptor.pp_field_descriptor_proto_type
-             field_type)
+  let field_type_of_request : Descriptor.FieldDescriptorProto.t -> field_data_type =
+   fun {type'; type_name; _} ->
+    match type' with
+    | TYPE_STRING -> String_t
+    | TYPE_BYTES -> Bytes_t
+    | TYPE_INT32 -> Int32_t
+    | TYPE_INT64 -> Int64_t
+    | TYPE_SINT32 -> Sint32_t
+    | TYPE_SINT64 -> Sint64_t
+    | TYPE_UINT32 -> Uint32_t
+    | TYPE_UINT64 -> Uint64_t
+    | TYPE_FIXED32 -> Fixed32_t
+    | TYPE_FIXED64 -> Fixed64_t
+    | TYPE_SFIXED32 -> Sfixed32_t
+    | TYPE_SFIXED64 -> Sfixed64_t
+    | TYPE_FLOAT -> Float_t
+    | TYPE_DOUBLE -> Double_t
+    | TYPE_BOOL -> Bool_t
+    | TYPE_MESSAGE -> Message_t type_name
+    | TYPE_ENUM -> Enum_t type_name
+    | TYPE_GROUP -> failwith "Groups are not supported"
 
-  let enum_of_request : Descriptor.enum_descriptor_proto -> Enum.t =
-   fun {name; value; _} ->
-    let values =
-      List.map value ~f:(fun {name; number; _} ->
-          String.of_protobuf name, String.of_protobuf number)
-    in
-    {name = String.of_protobuf name; values}
+  let enum_of_request : Descriptor.EnumDescriptorProto.t -> Enum.t =
+   fun {name; value'; _} ->
+    let values = List.map value' ~f:(fun {name; number; _} -> name, number) in
+    {name; values}
 
   let ocaml_keywords =
     Hash_set.of_list
@@ -134,56 +112,103 @@ module Protobuf = struct
         "value";
       ]
 
-  let field_of_request : Descriptor.field_descriptor_proto -> Field.t =
+  let field_of_request : Descriptor.FieldDescriptorProto.t -> Field.t =
    fun ({name; number; label; _} as field) ->
     {
       name =
-        (let name = String.uncapitalize @@ String.of_protobuf name in
+        (let name = String.uncapitalize name in
          match Hash_set.mem ocaml_keywords name with
          | true -> Printf.sprintf "%s'" name
          | false -> name);
-      number = Int.of_protobuf number;
+      number;
       data_type = field_type_of_request field;
       repeated =
         (match label with
-        | Some Descriptor.Label_repeated -> true
+        | Descriptor.FieldDescriptorProto.Label.LABEL_REPEATED -> true
         | _ -> false);
     }
 
-  let rec message_of_request : Descriptor.descriptor_proto -> Message.t =
+  let rec message_of_request : Descriptor.DescriptorProto.t -> Message.t =
    fun {name; field; nested_type; enum_type; _} ->
     {
-      name = String.of_protobuf name;
+      name;
       enums = List.map enum_type ~f:enum_of_request;
       messages = List.map nested_type ~f:message_of_request;
       fields = List.map field ~f:field_of_request;
     }
 
-  let file_of_request : Descriptor.file_descriptor_proto -> File.t =
-   fun {name; package; enum_type; message_type; _} ->
-    let name = String.of_protobuf name in
-    let base_name =
-      match String.chop_suffix name ~suffix:".proto" with
-      | None -> name
-      | Some stem -> stem
+  let file_of_request : File.context -> Descriptor.FileDescriptorProto.t -> File.t =
+   fun context {name; package; enum_type; message_type; dependency; _} ->
+    let ocaml_module_name name =
+      let base_name =
+        match String.chop_suffix name ~suffix:".proto" with
+        | None -> name
+        | Some stem -> stem
+      in
+      Printf.sprintf "%s_pc" base_name |> String.tr ~target:'/' ~replacement:'_'
     in
-    let name = Printf.sprintf "%s_pc.ml" base_name in
+    let name = Printf.sprintf "%s.ml" (ocaml_module_name name) in
+    let package =
+      match package with
+      | "" -> None
+      | _ -> Some package
+    in
     let enums = List.map ~f:enum_of_request enum_type in
     let messages = List.map ~f:message_of_request message_type in
-    {name; package; enums; messages}
+    let full_enum_names prefix enums =
+      List.map enums ~f:(fun Enum.{name; _} -> Printf.sprintf "%s%s" prefix name)
+    in
+    let rec full_message_names accumulator to_process =
+      match to_process with
+      | [] -> accumulator
+      | (prefix, Message.{name; enums; messages; _}) :: rest ->
+          let accumulator = Printf.sprintf "%s%s" prefix name :: accumulator in
+          let prefix = Printf.sprintf "%s%s." prefix name in
+          let accumulator = List.concat [full_enum_names prefix enums; accumulator] in
+          let to_process =
+            List.concat [List.map messages ~f:(fun message -> prefix, message); rest]
+          in
+          full_message_names accumulator to_process
+    in
+    let all_names =
+      List.concat
+        [
+          full_enum_names "" enums;
+          full_message_names [] (List.map messages ~f:(fun message -> "", message));
+        ]
+    in
+    let package_prefix =
+      match package with
+      | None -> ""
+      | Some package -> Printf.sprintf "%s." package
+    in
+    let context =
+      List.concat
+        [
+          context;
+          all_names
+          |> List.map ~f:(fun name -> Printf.sprintf ".%s%s" package_prefix name, name);
+        ]
+    in
+    let dependencies = List.map dependency ~f:ocaml_module_name in
+    {name; package; enums; messages; context; dependencies}
 
-  let of_request : Plugin.code_generator_request -> t =
-   fun {proto_file; _} -> {files = List.map ~f:file_of_request proto_file}
+  let of_request : Plugin.CodeGeneratorRequest.t -> t =
+   fun {proto_file; _} ->
+    let _, files =
+      List.fold proto_file ~init:([], []) ~f:(fun (context, accumulator) proto ->
+          let f = file_of_request context proto in
+          f.context, f :: accumulator)
+    in
+    {files}
 end
 
 module Generated_code = struct
   include Shared_types.Generated_code
 
-  let file_to_response : File.t -> Plugin.code_generator_response_file =
-   fun {name; contents} ->
-    let name = String.tr ~target:'/' ~replacement:'_' name in
-    {name = Some name; insertion_point = None; content = Some contents}
+  let file_to_response : File.t -> Plugin.CodeGeneratorResponse.File.t =
+   fun {name; contents} -> {name; insertion_point = ""; content = contents}
 
-  let to_response : t -> Plugin.code_generator_response =
-   fun files -> {error = None; file = List.map ~f:file_to_response files}
+  let to_response : t -> Plugin.CodeGeneratorResponse.t =
+   fun files -> {error = ""; file = List.map ~f:file_to_response files}
 end

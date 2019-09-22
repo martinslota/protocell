@@ -27,8 +27,7 @@ release: ## Create a new release on Github. Prepare the release for publishing o
 .PHONY: generate-spec
 generate-spec: 
 	$(eval PROTOBUF_INCLUDE := $(shell find /usr -type d -path '*include/google/protobuf' | head -n 1 | xargs dirname | xargs dirname))
-	@dune exec -- ocaml-protoc -I $(PROTOBUF_INCLUDE) -int32_type int_t -int64_type int_t -ml_out $(PROTOC_INTERFACE_FOLDER) $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto
-	@dune exec -- ocaml-protoc -I $(PROTOBUF_INCLUDE) -int32_type int_t -int64_type int_t -ml_out $(PROTOC_INTERFACE_FOLDER) $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
+	@protoc --plugin=protoc-gen-ocaml=_build/default/src/protocell/protocell.exe --ocaml_out=src/protoc_interface $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
 
 .PHONY: help
 help: ## Display this help

@@ -10,3 +10,5 @@ src/protoc_interface/descriptor_pb.mli
 src/protoc_interface/descriptor_pb.ml
 src/protoc_interface/descriptor_pp.mli
 src/protoc_interface/descriptor_pp.ml
+src/protoc_interface/google_protobuf_compiler_plugin_pc.ml
+src/protoc_interface/google_protobuf_descriptor_pc.ml

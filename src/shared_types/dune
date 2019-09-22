@@ -1,2 +1,3 @@
 (library
- (name shared_types))
+ (name shared_types)
+ (libraries base))

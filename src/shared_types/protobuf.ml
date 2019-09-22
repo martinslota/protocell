@@ -1,3 +1,5 @@
+open Base
+
 type field_data_type =
   | String_t
   | Bytes_t
@@ -43,11 +45,15 @@ module Message = struct
 end
 
 module File = struct
+  type context = (string, string) List.Assoc.t
+
   type t = {
     name : string;
     package : string option;
     enums : Enum.t list;
     messages : Message.t list;
+    context : context;
+    dependencies : string list;
   }
 end
 

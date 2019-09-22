@@ -14,8 +14,8 @@ depends: [
   "core" {with-test & >= "v0.10"}
   "dune" {build}
   "ocaml" {>= "4.04.1"}
-  "ocaml-protoc"
   "ocplib-endian"
+  "ppx_deriving" {with-test}
   "stdio"
 ]
 synopsis: "A Protobuf plugin for OCaml"

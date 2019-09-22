@@ -14,13 +14,15 @@ let determine_options () =
 
 let () =
   let options = determine_options () in
-  In_channel.stdin
-  |> In_channel.input_all
-  |> Bytes.of_string
-  |> Plugin.decode_request
-  |> Protobuf.of_request
-  |> Generator.generate_files ~options
-  |> Generated_code.to_response
-  |> Plugin.encode_response
-  |> Bytes.to_string
-  |> Out_channel.(output_string stdout)
+  let open Result.Let_syntax in
+  match
+    In_channel.stdin
+    |> In_channel.input_all
+    |> Plugin.decode_request
+    >>| Protobuf.of_request
+    >>| Generator.generate_files ~options
+    >>| Generated_code.to_response
+    >>= Plugin.encode_response
+  with
+  | Ok bytes -> Out_channel.(output_string stdout bytes)
+  | Error _ -> Out_channel.(output_string stdout Plugin.error_response)
