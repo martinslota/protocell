@@ -32,7 +32,12 @@ module Field = struct
     number : int;
     data_type : field_data_type;
     repeated : bool;
+    oneof_index : int option;
   }
+end
+
+module Oneof = struct
+  type t = {name : string}
 end
 
 module Message = struct
@@ -41,6 +46,7 @@ module Message = struct
     enums : Enum.t list;
     messages : t list;
     fields : Field.t list;
+    oneofs : Oneof.t list;
   }
 end
 

@@ -116,7 +116,7 @@ module Protobuf = struct
       ]
 
   let field_of_request : Descriptor.FieldDescriptorProto.t -> Field.t =
-   fun ({name; number; label; _} as field) ->
+   fun ({name; number; label; oneof_index; _} as field) ->
     {
       name =
         (let name = String.uncapitalize (Option.value_exn name) in
@@ -129,15 +129,20 @@ module Protobuf = struct
         (match label with
         | Descriptor.FieldDescriptorProto.Label.LABEL_REPEATED -> true
         | _ -> false);
+      oneof_index;
     }
 
+  let oneof_of_request : Descriptor.OneofDescriptorProto.t -> Oneof.t =
+   fun {name; _} -> {name = Option.value_exn name}
+
   let rec message_of_request : Descriptor.DescriptorProto.t -> Message.t =
-   fun {name; field; nested_type; enum_type; _} ->
+   fun {name; field; nested_type; enum_type; oneof_decl; _} ->
     {
       name = Option.value_exn name;
       enums = List.map enum_type ~f:enum_of_request;
       messages = List.map nested_type ~f:message_of_request;
       fields = List.map field ~f:field_of_request;
+      oneofs = List.map oneof_decl ~f:oneof_of_request;
     }
 
   let file_of_request : File.context -> Descriptor.FileDescriptorProto.t -> File.t =

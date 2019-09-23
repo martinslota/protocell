@@ -223,7 +223,7 @@ let rec generate_message
     :  options:options -> string option -> (string, string) Hashtbl.t -> string ->
     Protobuf.Message.t -> Code.module_
   =
- fun ~options package context syntax {name; enums; messages; fields} ->
+ fun ~options package context syntax {name; enums; messages; fields; oneofs = _oneofs} ->
   let determine_module_name name =
     match Hashtbl.find context name with
     | None ->
