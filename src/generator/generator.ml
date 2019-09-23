@@ -223,7 +223,7 @@ let rec generate_message
     :  options:options -> string option -> (string, string) Hashtbl.t -> string ->
     Protobuf.Message.t -> Code.module_
   =
- fun ~options package context syntax {name; enums; messages; fields; oneofs = _oneofs} ->
+ fun ~options package context syntax {name; enums; messages; fields; field_groups} ->
   let determine_module_name name =
     match Hashtbl.find context name with
     | None ->
@@ -251,6 +251,21 @@ let rec generate_message
     | Bool_t -> "bool"
     | Message_t name -> determine_module_name name |> Printf.sprintf "%s.t"
     | Enum_t name -> determine_module_name name |> Printf.sprintf "%s.t"
+  in
+  let oneof_types =
+    field_groups
+    |> List.filter_map ~f:(function
+           | Protobuf.Field.Single _ -> None
+           | Oneof {name; fields} ->
+               Some
+                 (Code.make_variant_type
+                    ~options
+                    name
+                    (List.map fields ~f:(fun Protobuf.Field.{name; data_type; _} ->
+                         Printf.sprintf
+                           "%s of %s"
+                           (String.capitalize name)
+                           (type_to_ocaml_type data_type)))))
   in
   let enums = List.map enums ~f:(generate_enum ~options) in
   let messages =
@@ -442,6 +457,7 @@ let rec generate_message
     Code.(
       List.concat
         [
+          oneof_types;
           [
             enums |> make_modules ~recursive:false ~with_implementation:false |> block;
             messages |> make_modules ~recursive:true ~with_implementation:false |> block;
@@ -454,6 +470,7 @@ let rec generate_message
   let implementation =
     Code.
       [
+        oneof_types |> block ~indented:false;
         enums |> make_modules ~recursive:false ~with_implementation:true |> block;
         messages |> make_modules ~recursive:true ~with_implementation:true |> block;
         type_declaration;

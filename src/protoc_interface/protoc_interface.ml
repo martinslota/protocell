@@ -137,12 +137,15 @@ module Protobuf = struct
 
   let rec message_of_request : Descriptor.DescriptorProto.t -> Message.t =
    fun {name; field; nested_type; enum_type; oneof_decl; _} ->
+    let fields = List.map field ~f:field_of_request in
+    let oneofs = List.map oneof_decl ~f:oneof_of_request in
+    let field_groups = Field.determine_groups fields oneofs in
     {
       name = Option.value_exn name;
       enums = List.map enum_type ~f:enum_of_request;
       messages = List.map nested_type ~f:message_of_request;
-      fields = List.map field ~f:field_of_request;
-      oneofs = List.map oneof_decl ~f:oneof_of_request;
+      fields;
+      field_groups;
     }
 
   let file_of_request : File.context -> Descriptor.FileDescriptorProto.t -> File.t =

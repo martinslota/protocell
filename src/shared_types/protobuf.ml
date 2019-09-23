@@ -26,6 +26,10 @@ module Enum = struct
   }
 end
 
+module Oneof = struct
+  type t = {name : string}
+end
+
 module Field = struct
   type t = {
     name : string;
@@ -34,10 +38,42 @@ module Field = struct
     repeated : bool;
     oneof_index : int option;
   }
-end
 
-module Oneof = struct
-  type t = {name : string}
+  type group =
+    | Single of t
+    | Oneof of {
+        name : string;
+        fields : t list;
+      }
+
+  let determine_groups fields oneofs =
+    let oneofs = List.to_array oneofs in
+    let index_to_fields =
+      List.filter_map fields ~f:(fun ({oneof_index; _} as field) ->
+          Option.map oneof_index ~f:(fun index -> index, field))
+      |> Hashtbl.of_alist_multi (module Int)
+    in
+    let _, groups =
+      List.fold_right
+        fields
+        ~init:([], [])
+        ~f:(fun ({oneof_index; _} as field) (visited, acc) ->
+          match oneof_index with
+          | None -> visited, Single field :: acc
+          | Some index -> (
+            match List.mem visited index ~equal:Int.equal with
+            | true -> visited, acc
+            | false ->
+                let group =
+                  Oneof
+                    {
+                      name = oneofs.(index).Oneof.name;
+                      fields = Hashtbl.find_exn index_to_fields index |> List.rev;
+                    }
+                in
+                index :: visited, group :: acc))
+    in
+    groups
 end
 
 module Message = struct
@@ -46,7 +82,7 @@ module Message = struct
     enums : Enum.t list;
     messages : t list;
     fields : Field.t list;
-    oneofs : Oneof.t list;
+    field_groups : Field.group list;
   }
 end
 

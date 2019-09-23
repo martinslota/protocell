@@ -501,6 +501,13 @@ let deserialize_message input =
   Reader.read input >>| fun records ->
   Hashtbl.of_alist_multi ~growth_allowed:false (module Id) records
 
+let find_oneof_id ids records =
+  let ids_present = List.filter ids ~f:(fun id -> Hashtbl.mem records id) in
+  match List.length ids_present with
+  | 0 -> Ok None
+  | 1 -> Ok (Some (List.hd_exn ids_present))
+  | _ -> Error `Multiple_oneof_fields_set
+
 let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
  fun value typ ->
   let module F = Field_value in

@@ -70,6 +70,7 @@ let wire_format_deserialization_error_to_string error =
         "Enum field type cannot accept value type %s"
         (Runtime.Wire_format.sort_to_string sort)
   | `Unrecognized_enum_value -> "Unrecognized enum value"
+  | `Multiple_oneof_fields_set -> "Multiple oneof fields set"
   | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
 
 let process_error_to_string = function
@@ -114,6 +115,7 @@ let text_format_deserialization_error_to_string error =
       Printf.sprintf "Varint value %s outside OCaml int type range"
       @@ Int64.to_string int64
   | `Unrecognized_enum_value -> "Unrecognized enum value"
+  | `Multiple_oneof_fields_set -> "Multiple oneof fields set"
   | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
 
 let text_error_to_string = function
