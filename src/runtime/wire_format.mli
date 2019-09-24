@@ -123,3 +123,8 @@ val decode_repeated_enum_field
   (unit -> 'v) ->
   parsed_message ->
   ('v list, [> deserialization_error]) Result.t
+
+val decode_oneof_field
+  :  (id, parsed_message -> ('v, ([> deserialization_error] as 'e)) Result.t) List.Assoc.t ->
+  parsed_message ->
+  ('v option, 'e) Result.t

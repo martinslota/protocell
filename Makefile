@@ -27,7 +27,7 @@ release: ## Create a new release on Github. Prepare the release for publishing o
 .PHONY: generate-spec
 generate-spec: 
 	$(eval PROTOBUF_INCLUDE := $(shell find /usr -type d -path '*include/google/protobuf' | head -n 1 | xargs dirname | xargs dirname))
-	@protoc --plugin=protoc-gen-ocaml=_build/default/src/protocell/protocell.exe --ocaml_out=src/protoc_interface $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
+	@protoc -I $(PROTOBUF_INCLUDE) --plugin=protoc-gen-ocaml=_build/default/src/protocell/protocell.exe --ocaml_out=src/protoc_interface $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
 
 .PHONY: help
 help: ## Display this help

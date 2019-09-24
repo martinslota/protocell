@@ -107,7 +107,7 @@ message RepeatedInt64Packed {
 
 message WithOneOf {
   oneof choice {
-    int32 apples = 1;
+    string apples = 1;
     int32 oranges = 2;
   }
   int32 bananas = 3;

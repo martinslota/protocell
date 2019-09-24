@@ -185,6 +185,17 @@ module Repeated = struct
       [P.RepeatedInt64Packed.{field = [1; 2; 3]}]
 end
 
+module Oneof = struct
+  let tests =
+    Utils.suite
+      (module P.WithOneOf)
+      "WithOneOf"
+      [
+        P.WithOneOf.{choice = Some (Apples "42"); bananas = 47};
+        P.WithOneOf.{choice = Some (Oranges 42); bananas = 47};
+      ]
+end
+
 let () =
   Alcotest.run
     "Protocell test suite"
@@ -211,4 +222,5 @@ let () =
       Repeated.repeated_string_tests;
       Repeated.repeated_int64_unpacked_tests;
       Repeated.repeated_int64_packed_tests;
+      Oneof.tests;
     ]

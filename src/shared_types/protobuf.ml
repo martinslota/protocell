@@ -81,7 +81,6 @@ module Message = struct
     name : string;
     enums : Enum.t list;
     messages : t list;
-    fields : Field.t list;
     field_groups : Field.group list;
   }
 end

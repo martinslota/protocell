@@ -139,13 +139,11 @@ module Protobuf = struct
    fun {name; field; nested_type; enum_type; oneof_decl; _} ->
     let fields = List.map field ~f:field_of_request in
     let oneofs = List.map oneof_decl ~f:oneof_of_request in
-    let field_groups = Field.determine_groups fields oneofs in
     {
       name = Option.value_exn name;
       enums = List.map enum_type ~f:enum_of_request;
       messages = List.map nested_type ~f:message_of_request;
-      fields;
-      field_groups;
+      field_groups = Field.determine_groups fields oneofs;
     }
 
   let file_of_request : File.context -> Descriptor.FileDescriptorProto.t -> File.t =
@@ -204,7 +202,7 @@ module Protobuf = struct
       messages;
       context;
       dependencies;
-      syntax = Option.value_exn syntax;
+      syntax = Option.value syntax ~default:"proto2";
     }
 
   let of_request : Plugin.CodeGeneratorRequest.t -> t =

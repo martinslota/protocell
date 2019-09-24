@@ -398,3 +398,15 @@ let decode_repeated_enum_field id of_string _default records =
   match Hashtbl.find records id with
   | None -> Ok []
   | Some values -> List.map values ~f:(decode_enum_value of_string) |> Result.all
+
+let decode_oneof_field deserializers records =
+  let open Result.Let_syntax in
+  let applicable =
+    List.filter deserializers ~f:(fun (id, _) -> Hashtbl.mem records id)
+  in
+  match List.length applicable with
+  | 0 -> Ok None
+  | 1 ->
+      applicable |> List.hd_exn |> snd |> fun deserializer ->
+      deserializer records >>| Option.some
+  | _ -> Error `Multiple_oneof_fields_set

@@ -1,6 +1,8 @@
 [@@@ocaml.warning "-39"]
 
-let (>>=) = Runtime.Result.(>>=)
+let (>>=) = Caml.Result.bind
+
+let (>>|) = fun r f -> Caml.Result.map f r
 
 module F' = Runtime.Field_value
 
@@ -169,6 +171,7 @@ and DescriptorProto : sig
     type t = {
       start : int option;
       end' : int option;
+      options : ExtensionRangeOptions.t option;
     }
   
     val serialize : t -> (string, [> W'.serialization_error]) result
@@ -220,6 +223,7 @@ end = struct
     type t = {
       start : int option;
       end' : int option;
+      options : ExtensionRangeOptions.t option;
     }
   
     val serialize : t -> (string, [> W'.serialization_error]) result
@@ -233,13 +237,15 @@ end = struct
     type t = {
       start : int option;
       end' : int option;
+      options : ExtensionRangeOptions.t option;
     }
   
     let rec serialize =
-      fun { start; end' } ->
+      fun { start; end'; options } ->
         let o' = Runtime.Byte_output.create () in
         (W'.serialize_optional_field 1 F'.Int32_t start o') >>= fun () ->
         (W'.serialize_optional_field 2 F'.Int32_t end' o') >>= fun () ->
+        (W'.serialize_user_field 3 ExtensionRangeOptions.serialize options o') >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
@@ -248,13 +254,15 @@ end = struct
         W'.deserialize_message >>= fun m' ->
         W'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
         W'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
-        Ok { start; end' }
+        (W'.decode_user_field 3 ExtensionRangeOptions.deserialize m') >>= fun options ->
+        Ok { start; end'; options }
   
     let rec stringify =
-      fun { start; end' } ->
+      fun { start; end'; options } ->
         let o' = Runtime.Byte_output.create () in
         (T'.serialize_optional_field "start" F'.Int32_t start o') >>= fun () ->
         (T'.serialize_optional_field "end'" F'.Int32_t end' o') >>= fun () ->
+        (T'.serialize_user_field "options" ExtensionRangeOptions.stringify options o') >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec unstringify =
@@ -263,7 +271,8 @@ end = struct
         T'.deserialize_message >>= fun m' ->
         T'.decode_optional_field "start" F'.Int32_t m' >>= fun start ->
         T'.decode_optional_field "end'" F'.Int32_t m' >>= fun end' ->
-        Ok { start; end' }
+        (T'.decode_user_field "options" ExtensionRangeOptions.unstringify m') >>= fun options ->
+        Ok { start; end'; options }
   end
   
   and ReservedRange : sig
@@ -390,6 +399,50 @@ end = struct
       (T'.decode_repeated_user_field "reserved_range" DescriptorProto.ReservedRange.unstringify m') >>= fun reserved_range ->
       T'.decode_repeated_field "reserved_name" F'.String_t m' >>= fun reserved_name ->
       Ok { name; field; extension; nested_type; enum_type; extension_range; oneof_decl; options; reserved_range; reserved_name }
+end
+
+and ExtensionRangeOptions : sig
+  type t = {
+    uninterpreted_option : UninterpretedOption.t list;
+  }
+
+  val serialize : t -> (string, [> W'.serialization_error]) result
+
+  val deserialize : string -> (t, [> W'.deserialization_error]) result
+
+  val stringify : t -> (string, [> T'.serialization_error]) result
+
+  val unstringify : string -> (t, [> T'.deserialization_error]) result
+end = struct
+  type t = {
+    uninterpreted_option : UninterpretedOption.t list;
+  }
+
+  let rec serialize =
+    fun { uninterpreted_option } ->
+      let o' = Runtime.Byte_output.create () in
+      (W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o') >>= fun () ->
+      Ok (Runtime.Byte_output.contents o')
+
+  let rec deserialize =
+    fun input' ->
+      Ok (Runtime.Byte_input.create input') >>=
+      W'.deserialize_message >>= fun m' ->
+      (W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m') >>= fun uninterpreted_option ->
+      Ok { uninterpreted_option }
+
+  let rec stringify =
+    fun { uninterpreted_option } ->
+      let o' = Runtime.Byte_output.create () in
+      (T'.serialize_repeated_user_field "uninterpreted_option" UninterpretedOption.stringify uninterpreted_option o') >>= fun () ->
+      Ok (Runtime.Byte_output.contents o')
+
+  let rec unstringify =
+    fun input' ->
+      Ok (Runtime.Byte_input.create input') >>=
+      T'.deserialize_message >>= fun m' ->
+      (T'.decode_repeated_user_field "uninterpreted_option" UninterpretedOption.unstringify m') >>= fun uninterpreted_option ->
+      Ok { uninterpreted_option }
 end
 
 and FieldDescriptorProto : sig
@@ -782,10 +835,27 @@ end = struct
 end
 
 and EnumDescriptorProto : sig
+  module rec EnumReservedRange : sig
+    type t = {
+      start : int option;
+      end' : int option;
+    }
+  
+    val serialize : t -> (string, [> W'.serialization_error]) result
+  
+    val deserialize : string -> (t, [> W'.deserialization_error]) result
+  
+    val stringify : t -> (string, [> T'.serialization_error]) result
+  
+    val unstringify : string -> (t, [> T'.deserialization_error]) result
+  end
+
   type t = {
     name : string option;
     value' : EnumValueDescriptorProto.t list;
     options : EnumOptions.t option;
+    reserved_range : EnumDescriptorProto.EnumReservedRange.t list;
+    reserved_name : string list;
   }
 
   val serialize : t -> (string, [> W'.serialization_error]) result
@@ -796,18 +866,72 @@ and EnumDescriptorProto : sig
 
   val unstringify : string -> (t, [> T'.deserialization_error]) result
 end = struct
+  module rec EnumReservedRange : sig
+    type t = {
+      start : int option;
+      end' : int option;
+    }
+  
+    val serialize : t -> (string, [> W'.serialization_error]) result
+  
+    val deserialize : string -> (t, [> W'.deserialization_error]) result
+  
+    val stringify : t -> (string, [> T'.serialization_error]) result
+  
+    val unstringify : string -> (t, [> T'.deserialization_error]) result
+  end = struct
+    type t = {
+      start : int option;
+      end' : int option;
+    }
+  
+    let rec serialize =
+      fun { start; end' } ->
+        let o' = Runtime.Byte_output.create () in
+        (W'.serialize_optional_field 1 F'.Int32_t start o') >>= fun () ->
+        (W'.serialize_optional_field 2 F'.Int32_t end' o') >>= fun () ->
+        Ok (Runtime.Byte_output.contents o')
+  
+    let rec deserialize =
+      fun input' ->
+        Ok (Runtime.Byte_input.create input') >>=
+        W'.deserialize_message >>= fun m' ->
+        W'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
+        W'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
+        Ok { start; end' }
+  
+    let rec stringify =
+      fun { start; end' } ->
+        let o' = Runtime.Byte_output.create () in
+        (T'.serialize_optional_field "start" F'.Int32_t start o') >>= fun () ->
+        (T'.serialize_optional_field "end'" F'.Int32_t end' o') >>= fun () ->
+        Ok (Runtime.Byte_output.contents o')
+  
+    let rec unstringify =
+      fun input' ->
+        Ok (Runtime.Byte_input.create input') >>=
+        T'.deserialize_message >>= fun m' ->
+        T'.decode_optional_field "start" F'.Int32_t m' >>= fun start ->
+        T'.decode_optional_field "end'" F'.Int32_t m' >>= fun end' ->
+        Ok { start; end' }
+  end
+
   type t = {
     name : string option;
     value' : EnumValueDescriptorProto.t list;
     options : EnumOptions.t option;
+    reserved_range : EnumDescriptorProto.EnumReservedRange.t list;
+    reserved_name : string list;
   }
 
   let rec serialize =
-    fun { name; value'; options } ->
+    fun { name; value'; options; reserved_range; reserved_name } ->
       let o' = Runtime.Byte_output.create () in
       (W'.serialize_optional_field 1 F'.String_t name o') >>= fun () ->
       (W'.serialize_repeated_user_field 2 EnumValueDescriptorProto.serialize value' o') >>= fun () ->
       (W'.serialize_user_field 3 EnumOptions.serialize options o') >>= fun () ->
+      (W'.serialize_repeated_user_field 4 EnumDescriptorProto.EnumReservedRange.serialize reserved_range o') >>= fun () ->
+      (W'.serialize_repeated_field 5 F'.String_t reserved_name o') >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
@@ -817,14 +941,18 @@ end = struct
       W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
       (W'.decode_repeated_user_field 2 EnumValueDescriptorProto.deserialize m') >>= fun value' ->
       (W'.decode_user_field 3 EnumOptions.deserialize m') >>= fun options ->
-      Ok { name; value'; options }
+      (W'.decode_repeated_user_field 4 EnumDescriptorProto.EnumReservedRange.deserialize m') >>= fun reserved_range ->
+      W'.decode_repeated_field 5 F'.String_t m' >>= fun reserved_name ->
+      Ok { name; value'; options; reserved_range; reserved_name }
 
   let rec stringify =
-    fun { name; value'; options } ->
+    fun { name; value'; options; reserved_range; reserved_name } ->
       let o' = Runtime.Byte_output.create () in
       (T'.serialize_optional_field "name" F'.String_t name o') >>= fun () ->
       (T'.serialize_repeated_user_field "value'" EnumValueDescriptorProto.stringify value' o') >>= fun () ->
       (T'.serialize_user_field "options" EnumOptions.stringify options o') >>= fun () ->
+      (T'.serialize_repeated_user_field "reserved_range" EnumDescriptorProto.EnumReservedRange.stringify reserved_range o') >>= fun () ->
+      (T'.serialize_repeated_field "reserved_name" F'.String_t reserved_name o') >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec unstringify =
@@ -834,7 +962,9 @@ end = struct
       T'.decode_optional_field "name" F'.String_t m' >>= fun name ->
       (T'.decode_repeated_user_field "value'" EnumValueDescriptorProto.unstringify m') >>= fun value' ->
       (T'.decode_user_field "options" EnumOptions.unstringify m') >>= fun options ->
-      Ok { name; value'; options }
+      (T'.decode_repeated_user_field "reserved_range" EnumDescriptorProto.EnumReservedRange.unstringify m') >>= fun reserved_range ->
+      T'.decode_repeated_field "reserved_name" F'.String_t m' >>= fun reserved_name ->
+      Ok { name; value'; options; reserved_range; reserved_name }
 end
 
 and EnumValueDescriptorProto : sig
@@ -1052,10 +1182,16 @@ and FileOptions : sig
     cc_generic_services : bool option;
     java_generic_services : bool option;
     py_generic_services : bool option;
+    php_generic_services : bool option;
     deprecated : bool option;
     cc_enable_arenas : bool option;
     objc_class_prefix : string option;
     csharp_namespace : string option;
+    swift_prefix : string option;
+    php_class_prefix : string option;
+    php_namespace : string option;
+    php_metadata_namespace : string option;
+    ruby_package : string option;
     uninterpreted_option : UninterpretedOption.t list;
   }
 
@@ -1129,15 +1265,21 @@ end = struct
     cc_generic_services : bool option;
     java_generic_services : bool option;
     py_generic_services : bool option;
+    php_generic_services : bool option;
     deprecated : bool option;
     cc_enable_arenas : bool option;
     objc_class_prefix : string option;
     csharp_namespace : string option;
+    swift_prefix : string option;
+    php_class_prefix : string option;
+    php_namespace : string option;
+    php_metadata_namespace : string option;
+    ruby_package : string option;
     uninterpreted_option : UninterpretedOption.t list;
   }
 
   let rec serialize =
-    fun { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; uninterpreted_option } ->
+    fun { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
       (W'.serialize_optional_field 1 F'.String_t java_package o') >>= fun () ->
       (W'.serialize_optional_field 8 F'.String_t java_outer_classname o') >>= fun () ->
@@ -1149,10 +1291,16 @@ end = struct
       (W'.serialize_optional_field 16 F'.Bool_t cc_generic_services o') >>= fun () ->
       (W'.serialize_optional_field 17 F'.Bool_t java_generic_services o') >>= fun () ->
       (W'.serialize_optional_field 18 F'.Bool_t py_generic_services o') >>= fun () ->
+      (W'.serialize_optional_field 42 F'.Bool_t php_generic_services o') >>= fun () ->
       (W'.serialize_optional_field 23 F'.Bool_t deprecated o') >>= fun () ->
       (W'.serialize_optional_field 31 F'.Bool_t cc_enable_arenas o') >>= fun () ->
       (W'.serialize_optional_field 36 F'.String_t objc_class_prefix o') >>= fun () ->
       (W'.serialize_optional_field 37 F'.String_t csharp_namespace o') >>= fun () ->
+      (W'.serialize_optional_field 39 F'.String_t swift_prefix o') >>= fun () ->
+      (W'.serialize_optional_field 40 F'.String_t php_class_prefix o') >>= fun () ->
+      (W'.serialize_optional_field 41 F'.String_t php_namespace o') >>= fun () ->
+      (W'.serialize_optional_field 44 F'.String_t php_metadata_namespace o') >>= fun () ->
+      (W'.serialize_optional_field 45 F'.String_t ruby_package o') >>= fun () ->
       (W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o') >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
@@ -1170,15 +1318,21 @@ end = struct
       W'.decode_optional_field 16 F'.Bool_t m' >>= fun cc_generic_services ->
       W'.decode_optional_field 17 F'.Bool_t m' >>= fun java_generic_services ->
       W'.decode_optional_field 18 F'.Bool_t m' >>= fun py_generic_services ->
+      W'.decode_optional_field 42 F'.Bool_t m' >>= fun php_generic_services ->
       W'.decode_optional_field 23 F'.Bool_t m' >>= fun deprecated ->
       W'.decode_optional_field 31 F'.Bool_t m' >>= fun cc_enable_arenas ->
       W'.decode_optional_field 36 F'.String_t m' >>= fun objc_class_prefix ->
       W'.decode_optional_field 37 F'.String_t m' >>= fun csharp_namespace ->
+      W'.decode_optional_field 39 F'.String_t m' >>= fun swift_prefix ->
+      W'.decode_optional_field 40 F'.String_t m' >>= fun php_class_prefix ->
+      W'.decode_optional_field 41 F'.String_t m' >>= fun php_namespace ->
+      W'.decode_optional_field 44 F'.String_t m' >>= fun php_metadata_namespace ->
+      W'.decode_optional_field 45 F'.String_t m' >>= fun ruby_package ->
       (W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m') >>= fun uninterpreted_option ->
-      Ok { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; uninterpreted_option }
+      Ok { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option }
 
   let rec stringify =
-    fun { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; uninterpreted_option } ->
+    fun { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
       (T'.serialize_optional_field "java_package" F'.String_t java_package o') >>= fun () ->
       (T'.serialize_optional_field "java_outer_classname" F'.String_t java_outer_classname o') >>= fun () ->
@@ -1190,10 +1344,16 @@ end = struct
       (T'.serialize_optional_field "cc_generic_services" F'.Bool_t cc_generic_services o') >>= fun () ->
       (T'.serialize_optional_field "java_generic_services" F'.Bool_t java_generic_services o') >>= fun () ->
       (T'.serialize_optional_field "py_generic_services" F'.Bool_t py_generic_services o') >>= fun () ->
+      (T'.serialize_optional_field "php_generic_services" F'.Bool_t php_generic_services o') >>= fun () ->
       (T'.serialize_optional_field "deprecated" F'.Bool_t deprecated o') >>= fun () ->
       (T'.serialize_optional_field "cc_enable_arenas" F'.Bool_t cc_enable_arenas o') >>= fun () ->
       (T'.serialize_optional_field "objc_class_prefix" F'.String_t objc_class_prefix o') >>= fun () ->
       (T'.serialize_optional_field "csharp_namespace" F'.String_t csharp_namespace o') >>= fun () ->
+      (T'.serialize_optional_field "swift_prefix" F'.String_t swift_prefix o') >>= fun () ->
+      (T'.serialize_optional_field "php_class_prefix" F'.String_t php_class_prefix o') >>= fun () ->
+      (T'.serialize_optional_field "php_namespace" F'.String_t php_namespace o') >>= fun () ->
+      (T'.serialize_optional_field "php_metadata_namespace" F'.String_t php_metadata_namespace o') >>= fun () ->
+      (T'.serialize_optional_field "ruby_package" F'.String_t ruby_package o') >>= fun () ->
       (T'.serialize_repeated_user_field "uninterpreted_option" UninterpretedOption.stringify uninterpreted_option o') >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
@@ -1211,12 +1371,18 @@ end = struct
       T'.decode_optional_field "cc_generic_services" F'.Bool_t m' >>= fun cc_generic_services ->
       T'.decode_optional_field "java_generic_services" F'.Bool_t m' >>= fun java_generic_services ->
       T'.decode_optional_field "py_generic_services" F'.Bool_t m' >>= fun py_generic_services ->
+      T'.decode_optional_field "php_generic_services" F'.Bool_t m' >>= fun php_generic_services ->
       T'.decode_optional_field "deprecated" F'.Bool_t m' >>= fun deprecated ->
       T'.decode_optional_field "cc_enable_arenas" F'.Bool_t m' >>= fun cc_enable_arenas ->
       T'.decode_optional_field "objc_class_prefix" F'.String_t m' >>= fun objc_class_prefix ->
       T'.decode_optional_field "csharp_namespace" F'.String_t m' >>= fun csharp_namespace ->
+      T'.decode_optional_field "swift_prefix" F'.String_t m' >>= fun swift_prefix ->
+      T'.decode_optional_field "php_class_prefix" F'.String_t m' >>= fun php_class_prefix ->
+      T'.decode_optional_field "php_namespace" F'.String_t m' >>= fun php_namespace ->
+      T'.decode_optional_field "php_metadata_namespace" F'.String_t m' >>= fun php_metadata_namespace ->
+      T'.decode_optional_field "ruby_package" F'.String_t m' >>= fun ruby_package ->
       (T'.decode_repeated_user_field "uninterpreted_option" UninterpretedOption.unstringify m') >>= fun uninterpreted_option ->
-      Ok { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; uninterpreted_option }
+      Ok { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option }
 end
 
 and MessageOptions : sig
@@ -1704,8 +1870,26 @@ end = struct
 end
 
 and MethodOptions : sig
+  module IdempotencyLevel : sig
+    type t =
+      | IDEMPOTENCY_UNKNOWN
+      | NO_SIDE_EFFECTS
+      | IDEMPOTENT
+  
+    val default : unit -> t
+  
+    val to_int : t -> int
+  
+    val of_int : int -> t option
+  
+    val to_string : t -> string
+  
+    val of_string : string -> t option
+  end
+
   type t = {
     deprecated : bool option;
+    idempotency_level : MethodOptions.IdempotencyLevel.t;
     uninterpreted_option : UninterpretedOption.t list;
   }
 
@@ -1717,15 +1901,68 @@ and MethodOptions : sig
 
   val unstringify : string -> (t, [> T'.deserialization_error]) result
 end = struct
+  module IdempotencyLevel : sig
+    type t =
+      | IDEMPOTENCY_UNKNOWN
+      | NO_SIDE_EFFECTS
+      | IDEMPOTENT
+  
+    val default : unit -> t
+  
+    val to_int : t -> int
+  
+    val of_int : int -> t option
+  
+    val to_string : t -> string
+  
+    val of_string : string -> t option
+  end = struct
+    type t =
+      | IDEMPOTENCY_UNKNOWN
+      | NO_SIDE_EFFECTS
+      | IDEMPOTENT
+  
+    let default =
+    fun () -> IDEMPOTENCY_UNKNOWN
+  
+    let to_int =
+      function
+      | IDEMPOTENCY_UNKNOWN -> 0
+      | NO_SIDE_EFFECTS -> 1
+      | IDEMPOTENT -> 2
+  
+    let of_int =
+      function
+      | 0 -> Some IDEMPOTENCY_UNKNOWN
+      | 1 -> Some NO_SIDE_EFFECTS
+      | 2 -> Some IDEMPOTENT
+      | _ -> None
+  
+    let to_string =
+      function
+      | IDEMPOTENCY_UNKNOWN -> "IDEMPOTENCY_UNKNOWN"
+      | NO_SIDE_EFFECTS -> "NO_SIDE_EFFECTS"
+      | IDEMPOTENT -> "IDEMPOTENT"
+  
+    let of_string =
+      function
+      | "IDEMPOTENCY_UNKNOWN" -> Some IDEMPOTENCY_UNKNOWN
+      | "NO_SIDE_EFFECTS" -> Some NO_SIDE_EFFECTS
+      | "IDEMPOTENT" -> Some IDEMPOTENT
+      | _ -> None
+  end
+
   type t = {
     deprecated : bool option;
+    idempotency_level : MethodOptions.IdempotencyLevel.t;
     uninterpreted_option : UninterpretedOption.t list;
   }
 
   let rec serialize =
-    fun { deprecated; uninterpreted_option } ->
+    fun { deprecated; idempotency_level; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
       (W'.serialize_optional_field 33 F'.Bool_t deprecated o') >>= fun () ->
+      (W'.serialize_enum_field 34 MethodOptions.IdempotencyLevel.to_int idempotency_level o') >>= fun () ->
       (W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o') >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
@@ -1734,13 +1971,15 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       W'.deserialize_message >>= fun m' ->
       W'.decode_optional_field 33 F'.Bool_t m' >>= fun deprecated ->
+      (W'.decode_enum_field 34 MethodOptions.IdempotencyLevel.of_int MethodOptions.IdempotencyLevel.default m') >>= fun idempotency_level ->
       (W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m') >>= fun uninterpreted_option ->
-      Ok { deprecated; uninterpreted_option }
+      Ok { deprecated; idempotency_level; uninterpreted_option }
 
   let rec stringify =
-    fun { deprecated; uninterpreted_option } ->
+    fun { deprecated; idempotency_level; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
       (T'.serialize_optional_field "deprecated" F'.Bool_t deprecated o') >>= fun () ->
+      (T'.serialize_enum_field "idempotency_level" MethodOptions.IdempotencyLevel.to_string idempotency_level o') >>= fun () ->
       (T'.serialize_repeated_user_field "uninterpreted_option" UninterpretedOption.stringify uninterpreted_option o') >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
@@ -1749,8 +1988,9 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       T'.deserialize_message >>= fun m' ->
       T'.decode_optional_field "deprecated" F'.Bool_t m' >>= fun deprecated ->
+      (T'.decode_enum_field "idempotency_level" MethodOptions.IdempotencyLevel.of_string MethodOptions.IdempotencyLevel.default m') >>= fun idempotency_level ->
       (T'.decode_repeated_user_field "uninterpreted_option" UninterpretedOption.unstringify m') >>= fun uninterpreted_option ->
-      Ok { deprecated; uninterpreted_option }
+      Ok { deprecated; idempotency_level; uninterpreted_option }
 end
 
 and UninterpretedOption : sig

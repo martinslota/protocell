@@ -1,4 +1,3 @@
-module Result = Base.Result
 module Byte_input = Byte_input
 module Byte_output = Byte_output
 module Field_value = Field_value
