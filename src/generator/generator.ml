@@ -565,8 +565,8 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
       make_file
         [
           line {|[@@@ocaml.warning "-39"]|};
-          line "let (>>=) = Caml.Result.bind";
-          line "let (>>|) = fun r f -> Caml.Result.map f r";
+          line "let (>>=) = Runtime.Result.(>>=)";
+          line "let (>>|) = Runtime.Result.(>>|)";
           line "module F' = Runtime.Field_value";
           line "module T' = Runtime.Text_format";
           line "module W' = Runtime.Wire_format";

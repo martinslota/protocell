@@ -1,8 +1,8 @@
 [@@@ocaml.warning "-39"]
 
-let (>>=) = Caml.Result.bind
+let (>>=) = Runtime.Result.(>>=)
 
-let (>>|) = fun r f -> Caml.Result.map f r
+let (>>|) = Runtime.Result.(>>|)
 
 module F' = Runtime.Field_value
 
