@@ -232,17 +232,13 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
   {module_name = name; signature; implementation}
 
 let rec generate_message
-    :  options:options -> string option -> (string, string) Hashtbl.t -> string ->
-    Protobuf.Message.t -> Code.module_
+    :  options:options -> (string, string) Hashtbl.t -> string -> Protobuf.Message.t ->
+    Code.module_
   =
- fun ~options package context syntax {name; enums; messages; field_groups} ->
+ fun ~options context syntax {name; enums; messages; field_groups} ->
   let determine_module_name name =
     match Hashtbl.find context name with
-    | None ->
-        let prefix =
-          package |> Option.map ~f:(Printf.sprintf ".%s.") |> Option.value ~default:"."
-        in
-        String.chop_prefix ~prefix name |> Option.value ~default:name
+    | None -> name
     | Some module_name -> module_name
   in
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
@@ -309,9 +305,7 @@ let rec generate_message
   in
   let oneofs = field_groups |> List.filter_map ~f:(generate_oneof ~options) in
   let enums = List.map enums ~f:(generate_enum ~options) in
-  let messages =
-    List.map messages ~f:(generate_message package context syntax ~options)
-  in
+  let messages = List.map messages ~f:(generate_message context syntax ~options) in
   let type_declaration =
     let to_record_field Protobuf.Field.{name; data_type; repeated; _} =
       let suffix =
@@ -558,7 +552,7 @@ let rec generate_message
   {module_name = name; signature; implementation}
 
 let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
- fun ~options {name; package; enums; messages; context; dependencies; syntax} ->
+ fun ~options {name; enums; messages; context; dependencies; syntax} ->
   let context = Hashtbl.of_alist_exn (module String) context in
   let contents =
     Code.(
@@ -576,7 +570,7 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
           List.map enums ~f:(generate_enum ~options)
           |> Code.make_modules ~recursive:false ~with_implementation:true
           |> block ~indented:false;
-          List.map messages ~f:(generate_message ~options package context syntax)
+          List.map messages ~f:(generate_message ~options context syntax)
           |> Code.make_modules ~recursive:true ~with_implementation:true
           |> block ~indented:false;
         ])

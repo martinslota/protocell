@@ -196,7 +196,7 @@ module Protobuf = struct
     in
     let dependencies = List.map dependency ~f:ocaml_module_name in
     let syntax = Option.value syntax ~default:"proto2" in
-    {name; package; enums; messages; context; dependencies; syntax}
+    {name; enums; messages; context; dependencies; syntax}
 
   let of_request : Plugin.CodeGeneratorRequest.t -> t =
    fun {proto_file; _} ->
