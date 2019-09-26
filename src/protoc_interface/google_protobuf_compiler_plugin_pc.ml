@@ -6,12 +6,11 @@ let (>>|) = Runtime.Result.(>>|)
 
 module F' = Runtime.Field_value
 
+module B' = Runtime.Binary_format
+
 module T' = Runtime.Text_format
 
-module W' = Runtime.Wire_format
-
 open Google_protobuf_descriptor_pc
-
 
 module rec Version : sig
   type t = {
@@ -21,9 +20,9 @@ module rec Version : sig
     suffix : string option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -39,20 +38,20 @@ end = struct
   let rec serialize =
     fun { major; minor; patch; suffix } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.Int32_t major o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.Int32_t minor o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.Int32_t patch o' >>= fun () ->
-      W'.serialize_optional_field 4 F'.String_t suffix o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.Int32_t major o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.Int32_t minor o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.Int32_t patch o' >>= fun () ->
+      B'.serialize_optional_field 4 F'.String_t suffix o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.Int32_t m' >>= fun major ->
-      W'.decode_optional_field 2 F'.Int32_t m' >>= fun minor ->
-      W'.decode_optional_field 3 F'.Int32_t m' >>= fun patch ->
-      W'.decode_optional_field 4 F'.String_t m' >>= fun suffix ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.Int32_t m' >>= fun major ->
+      B'.decode_optional_field 2 F'.Int32_t m' >>= fun minor ->
+      B'.decode_optional_field 3 F'.Int32_t m' >>= fun patch ->
+      B'.decode_optional_field 4 F'.String_t m' >>= fun suffix ->
       Ok { major; minor; patch; suffix }
 
   let rec stringify =
@@ -83,9 +82,9 @@ and CodeGeneratorRequest : sig
     compiler_version : Version.t option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -101,20 +100,20 @@ end = struct
   let rec serialize =
     fun { file_to_generate; parameter; proto_file; compiler_version } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_field 1 F'.String_t file_to_generate o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.String_t parameter o' >>= fun () ->
-      W'.serialize_repeated_user_field 15 FileDescriptorProto.serialize proto_file o' >>= fun () ->
-      W'.serialize_user_field 3 Version.serialize compiler_version o' >>= fun () ->
+      B'.serialize_repeated_field 1 F'.String_t file_to_generate o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.String_t parameter o' >>= fun () ->
+      B'.serialize_repeated_user_field 15 FileDescriptorProto.serialize proto_file o' >>= fun () ->
+      B'.serialize_user_field 3 Version.serialize compiler_version o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_field 1 F'.String_t m' >>= fun file_to_generate ->
-      W'.decode_optional_field 2 F'.String_t m' >>= fun parameter ->
-      W'.decode_repeated_user_field 15 FileDescriptorProto.deserialize m' >>= fun proto_file ->
-      W'.decode_user_field 3 Version.deserialize m' >>= fun compiler_version ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_field 1 F'.String_t m' >>= fun file_to_generate ->
+      B'.decode_optional_field 2 F'.String_t m' >>= fun parameter ->
+      B'.decode_repeated_user_field 15 FileDescriptorProto.deserialize m' >>= fun proto_file ->
+      B'.decode_user_field 3 Version.deserialize m' >>= fun compiler_version ->
       Ok { file_to_generate; parameter; proto_file; compiler_version }
 
   let rec stringify =
@@ -145,9 +144,9 @@ and CodeGeneratorResponse : sig
       content : string option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -159,9 +158,9 @@ and CodeGeneratorResponse : sig
     file : CodeGeneratorResponse.File.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -174,9 +173,9 @@ end = struct
       content : string option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -191,18 +190,18 @@ end = struct
     let rec serialize =
       fun { name; insertion_point; content } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-        W'.serialize_optional_field 2 F'.String_t insertion_point o' >>= fun () ->
-        W'.serialize_optional_field 15 F'.String_t content o' >>= fun () ->
+        B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+        B'.serialize_optional_field 2 F'.String_t insertion_point o' >>= fun () ->
+        B'.serialize_optional_field 15 F'.String_t content o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-        W'.decode_optional_field 2 F'.String_t m' >>= fun insertion_point ->
-        W'.decode_optional_field 15 F'.String_t m' >>= fun content ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+        B'.decode_optional_field 2 F'.String_t m' >>= fun insertion_point ->
+        B'.decode_optional_field 15 F'.String_t m' >>= fun content ->
         Ok { name; insertion_point; content }
   
     let rec stringify =
@@ -231,16 +230,16 @@ end = struct
   let rec serialize =
     fun { error; file } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t error o' >>= fun () ->
-      W'.serialize_repeated_user_field 15 CodeGeneratorResponse.File.serialize file o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t error o' >>= fun () ->
+      B'.serialize_repeated_user_field 15 CodeGeneratorResponse.File.serialize file o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun error ->
-      W'.decode_repeated_user_field 15 CodeGeneratorResponse.File.deserialize m' >>= fun file ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun error ->
+      B'.decode_repeated_user_field 15 CodeGeneratorResponse.File.deserialize m' >>= fun file ->
       Ok { error; file }
 
   let rec stringify =

@@ -6,20 +6,18 @@ let (>>|) = Runtime.Result.(>>|)
 
 module F' = Runtime.Field_value
 
+module B' = Runtime.Binary_format
+
 module T' = Runtime.Text_format
-
-module W' = Runtime.Wire_format
-
-
 
 module rec FileDescriptorSet : sig
   type t = {
     file : FileDescriptorProto.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -32,14 +30,14 @@ end = struct
   let rec serialize =
     fun { file } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_user_field 1 FileDescriptorProto.serialize file o' >>= fun () ->
+      B'.serialize_repeated_user_field 1 FileDescriptorProto.serialize file o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_user_field 1 FileDescriptorProto.deserialize m' >>= fun file ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_user_field 1 FileDescriptorProto.deserialize m' >>= fun file ->
       Ok { file }
 
   let rec stringify =
@@ -72,9 +70,9 @@ and FileDescriptorProto : sig
     syntax : string option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -98,36 +96,36 @@ end = struct
   let rec serialize =
     fun { name; package; dependency; public_dependency; weak_dependency; message_type; enum_type; service; extension; options; source_code_info; syntax } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.String_t package o' >>= fun () ->
-      W'.serialize_repeated_field 3 F'.String_t dependency o' >>= fun () ->
-      W'.serialize_repeated_field 10 F'.Int32_t public_dependency o' >>= fun () ->
-      W'.serialize_repeated_field 11 F'.Int32_t weak_dependency o' >>= fun () ->
-      W'.serialize_repeated_user_field 4 DescriptorProto.serialize message_type o' >>= fun () ->
-      W'.serialize_repeated_user_field 5 EnumDescriptorProto.serialize enum_type o' >>= fun () ->
-      W'.serialize_repeated_user_field 6 ServiceDescriptorProto.serialize service o' >>= fun () ->
-      W'.serialize_repeated_user_field 7 FieldDescriptorProto.serialize extension o' >>= fun () ->
-      W'.serialize_user_field 8 FileOptions.serialize options o' >>= fun () ->
-      W'.serialize_user_field 9 SourceCodeInfo.serialize source_code_info o' >>= fun () ->
-      W'.serialize_optional_field 12 F'.String_t syntax o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.String_t package o' >>= fun () ->
+      B'.serialize_repeated_field 3 F'.String_t dependency o' >>= fun () ->
+      B'.serialize_repeated_field 10 F'.Int32_t public_dependency o' >>= fun () ->
+      B'.serialize_repeated_field 11 F'.Int32_t weak_dependency o' >>= fun () ->
+      B'.serialize_repeated_user_field 4 DescriptorProto.serialize message_type o' >>= fun () ->
+      B'.serialize_repeated_user_field 5 EnumDescriptorProto.serialize enum_type o' >>= fun () ->
+      B'.serialize_repeated_user_field 6 ServiceDescriptorProto.serialize service o' >>= fun () ->
+      B'.serialize_repeated_user_field 7 FieldDescriptorProto.serialize extension o' >>= fun () ->
+      B'.serialize_user_field 8 FileOptions.serialize options o' >>= fun () ->
+      B'.serialize_user_field 9 SourceCodeInfo.serialize source_code_info o' >>= fun () ->
+      B'.serialize_optional_field 12 F'.String_t syntax o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_optional_field 2 F'.String_t m' >>= fun package ->
-      W'.decode_repeated_field 3 F'.String_t m' >>= fun dependency ->
-      W'.decode_repeated_field 10 F'.Int32_t m' >>= fun public_dependency ->
-      W'.decode_repeated_field 11 F'.Int32_t m' >>= fun weak_dependency ->
-      W'.decode_repeated_user_field 4 DescriptorProto.deserialize m' >>= fun message_type ->
-      W'.decode_repeated_user_field 5 EnumDescriptorProto.deserialize m' >>= fun enum_type ->
-      W'.decode_repeated_user_field 6 ServiceDescriptorProto.deserialize m' >>= fun service ->
-      W'.decode_repeated_user_field 7 FieldDescriptorProto.deserialize m' >>= fun extension ->
-      W'.decode_user_field 8 FileOptions.deserialize m' >>= fun options ->
-      W'.decode_user_field 9 SourceCodeInfo.deserialize m' >>= fun source_code_info ->
-      W'.decode_optional_field 12 F'.String_t m' >>= fun syntax ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_optional_field 2 F'.String_t m' >>= fun package ->
+      B'.decode_repeated_field 3 F'.String_t m' >>= fun dependency ->
+      B'.decode_repeated_field 10 F'.Int32_t m' >>= fun public_dependency ->
+      B'.decode_repeated_field 11 F'.Int32_t m' >>= fun weak_dependency ->
+      B'.decode_repeated_user_field 4 DescriptorProto.deserialize m' >>= fun message_type ->
+      B'.decode_repeated_user_field 5 EnumDescriptorProto.deserialize m' >>= fun enum_type ->
+      B'.decode_repeated_user_field 6 ServiceDescriptorProto.deserialize m' >>= fun service ->
+      B'.decode_repeated_user_field 7 FieldDescriptorProto.deserialize m' >>= fun extension ->
+      B'.decode_user_field 8 FileOptions.deserialize m' >>= fun options ->
+      B'.decode_user_field 9 SourceCodeInfo.deserialize m' >>= fun source_code_info ->
+      B'.decode_optional_field 12 F'.String_t m' >>= fun syntax ->
       Ok { name; package; dependency; public_dependency; weak_dependency; message_type; enum_type; service; extension; options; source_code_info; syntax }
 
   let rec stringify =
@@ -174,9 +172,9 @@ and DescriptorProto : sig
       options : ExtensionRangeOptions.t option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -189,9 +187,9 @@ and DescriptorProto : sig
       end' : int option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -211,9 +209,9 @@ and DescriptorProto : sig
     reserved_name : string list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -226,9 +224,9 @@ end = struct
       options : ExtensionRangeOptions.t option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -243,18 +241,18 @@ end = struct
     let rec serialize =
       fun { start; end'; options } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_optional_field 1 F'.Int32_t start o' >>= fun () ->
-        W'.serialize_optional_field 2 F'.Int32_t end' o' >>= fun () ->
-        W'.serialize_user_field 3 ExtensionRangeOptions.serialize options o' >>= fun () ->
+        B'.serialize_optional_field 1 F'.Int32_t start o' >>= fun () ->
+        B'.serialize_optional_field 2 F'.Int32_t end' o' >>= fun () ->
+        B'.serialize_user_field 3 ExtensionRangeOptions.serialize options o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
-        W'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
-        W'.decode_user_field 3 ExtensionRangeOptions.deserialize m' >>= fun options ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
+        B'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
+        B'.decode_user_field 3 ExtensionRangeOptions.deserialize m' >>= fun options ->
         Ok { start; end'; options }
   
     let rec stringify =
@@ -281,9 +279,9 @@ end = struct
       end' : int option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -297,16 +295,16 @@ end = struct
     let rec serialize =
       fun { start; end' } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_optional_field 1 F'.Int32_t start o' >>= fun () ->
-        W'.serialize_optional_field 2 F'.Int32_t end' o' >>= fun () ->
+        B'.serialize_optional_field 1 F'.Int32_t start o' >>= fun () ->
+        B'.serialize_optional_field 2 F'.Int32_t end' o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
-        W'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
+        B'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
         Ok { start; end' }
   
     let rec stringify =
@@ -341,32 +339,32 @@ end = struct
   let rec serialize =
     fun { name; field; extension; nested_type; enum_type; extension_range; oneof_decl; options; reserved_range; reserved_name } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_repeated_user_field 2 FieldDescriptorProto.serialize field o' >>= fun () ->
-      W'.serialize_repeated_user_field 6 FieldDescriptorProto.serialize extension o' >>= fun () ->
-      W'.serialize_repeated_user_field 3 DescriptorProto.serialize nested_type o' >>= fun () ->
-      W'.serialize_repeated_user_field 4 EnumDescriptorProto.serialize enum_type o' >>= fun () ->
-      W'.serialize_repeated_user_field 5 DescriptorProto.ExtensionRange.serialize extension_range o' >>= fun () ->
-      W'.serialize_repeated_user_field 8 OneofDescriptorProto.serialize oneof_decl o' >>= fun () ->
-      W'.serialize_user_field 7 MessageOptions.serialize options o' >>= fun () ->
-      W'.serialize_repeated_user_field 9 DescriptorProto.ReservedRange.serialize reserved_range o' >>= fun () ->
-      W'.serialize_repeated_field 10 F'.String_t reserved_name o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_repeated_user_field 2 FieldDescriptorProto.serialize field o' >>= fun () ->
+      B'.serialize_repeated_user_field 6 FieldDescriptorProto.serialize extension o' >>= fun () ->
+      B'.serialize_repeated_user_field 3 DescriptorProto.serialize nested_type o' >>= fun () ->
+      B'.serialize_repeated_user_field 4 EnumDescriptorProto.serialize enum_type o' >>= fun () ->
+      B'.serialize_repeated_user_field 5 DescriptorProto.ExtensionRange.serialize extension_range o' >>= fun () ->
+      B'.serialize_repeated_user_field 8 OneofDescriptorProto.serialize oneof_decl o' >>= fun () ->
+      B'.serialize_user_field 7 MessageOptions.serialize options o' >>= fun () ->
+      B'.serialize_repeated_user_field 9 DescriptorProto.ReservedRange.serialize reserved_range o' >>= fun () ->
+      B'.serialize_repeated_field 10 F'.String_t reserved_name o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_repeated_user_field 2 FieldDescriptorProto.deserialize m' >>= fun field ->
-      W'.decode_repeated_user_field 6 FieldDescriptorProto.deserialize m' >>= fun extension ->
-      W'.decode_repeated_user_field 3 DescriptorProto.deserialize m' >>= fun nested_type ->
-      W'.decode_repeated_user_field 4 EnumDescriptorProto.deserialize m' >>= fun enum_type ->
-      W'.decode_repeated_user_field 5 DescriptorProto.ExtensionRange.deserialize m' >>= fun extension_range ->
-      W'.decode_repeated_user_field 8 OneofDescriptorProto.deserialize m' >>= fun oneof_decl ->
-      W'.decode_user_field 7 MessageOptions.deserialize m' >>= fun options ->
-      W'.decode_repeated_user_field 9 DescriptorProto.ReservedRange.deserialize m' >>= fun reserved_range ->
-      W'.decode_repeated_field 10 F'.String_t m' >>= fun reserved_name ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_repeated_user_field 2 FieldDescriptorProto.deserialize m' >>= fun field ->
+      B'.decode_repeated_user_field 6 FieldDescriptorProto.deserialize m' >>= fun extension ->
+      B'.decode_repeated_user_field 3 DescriptorProto.deserialize m' >>= fun nested_type ->
+      B'.decode_repeated_user_field 4 EnumDescriptorProto.deserialize m' >>= fun enum_type ->
+      B'.decode_repeated_user_field 5 DescriptorProto.ExtensionRange.deserialize m' >>= fun extension_range ->
+      B'.decode_repeated_user_field 8 OneofDescriptorProto.deserialize m' >>= fun oneof_decl ->
+      B'.decode_user_field 7 MessageOptions.deserialize m' >>= fun options ->
+      B'.decode_repeated_user_field 9 DescriptorProto.ReservedRange.deserialize m' >>= fun reserved_range ->
+      B'.decode_repeated_field 10 F'.String_t m' >>= fun reserved_name ->
       Ok { name; field; extension; nested_type; enum_type; extension_range; oneof_decl; options; reserved_range; reserved_name }
 
   let rec stringify =
@@ -406,9 +404,9 @@ and ExtensionRangeOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -421,14 +419,14 @@ end = struct
   let rec serialize =
     fun { uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { uninterpreted_option }
 
   let rec stringify =
@@ -508,9 +506,9 @@ and FieldDescriptorProto : sig
     options : FieldOptions.t option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -724,32 +722,32 @@ end = struct
   let rec serialize =
     fun { name; number; label; type'; type_name; extendee; default_value; oneof_index; json_name; options } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.Int32_t number o' >>= fun () ->
-      W'.serialize_enum_field 4 FieldDescriptorProto.Label.to_int label o' >>= fun () ->
-      W'.serialize_enum_field 5 FieldDescriptorProto.Type.to_int type' o' >>= fun () ->
-      W'.serialize_optional_field 6 F'.String_t type_name o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.String_t extendee o' >>= fun () ->
-      W'.serialize_optional_field 7 F'.String_t default_value o' >>= fun () ->
-      W'.serialize_optional_field 9 F'.Int32_t oneof_index o' >>= fun () ->
-      W'.serialize_optional_field 10 F'.String_t json_name o' >>= fun () ->
-      W'.serialize_user_field 8 FieldOptions.serialize options o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.Int32_t number o' >>= fun () ->
+      B'.serialize_enum_field 4 FieldDescriptorProto.Label.to_int label o' >>= fun () ->
+      B'.serialize_enum_field 5 FieldDescriptorProto.Type.to_int type' o' >>= fun () ->
+      B'.serialize_optional_field 6 F'.String_t type_name o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.String_t extendee o' >>= fun () ->
+      B'.serialize_optional_field 7 F'.String_t default_value o' >>= fun () ->
+      B'.serialize_optional_field 9 F'.Int32_t oneof_index o' >>= fun () ->
+      B'.serialize_optional_field 10 F'.String_t json_name o' >>= fun () ->
+      B'.serialize_user_field 8 FieldOptions.serialize options o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_optional_field 3 F'.Int32_t m' >>= fun number ->
-      W'.decode_enum_field 4 FieldDescriptorProto.Label.of_int FieldDescriptorProto.Label.default m' >>= fun label ->
-      W'.decode_enum_field 5 FieldDescriptorProto.Type.of_int FieldDescriptorProto.Type.default m' >>= fun type' ->
-      W'.decode_optional_field 6 F'.String_t m' >>= fun type_name ->
-      W'.decode_optional_field 2 F'.String_t m' >>= fun extendee ->
-      W'.decode_optional_field 7 F'.String_t m' >>= fun default_value ->
-      W'.decode_optional_field 9 F'.Int32_t m' >>= fun oneof_index ->
-      W'.decode_optional_field 10 F'.String_t m' >>= fun json_name ->
-      W'.decode_user_field 8 FieldOptions.deserialize m' >>= fun options ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_optional_field 3 F'.Int32_t m' >>= fun number ->
+      B'.decode_enum_field 4 FieldDescriptorProto.Label.of_int FieldDescriptorProto.Label.default m' >>= fun label ->
+      B'.decode_enum_field 5 FieldDescriptorProto.Type.of_int FieldDescriptorProto.Type.default m' >>= fun type' ->
+      B'.decode_optional_field 6 F'.String_t m' >>= fun type_name ->
+      B'.decode_optional_field 2 F'.String_t m' >>= fun extendee ->
+      B'.decode_optional_field 7 F'.String_t m' >>= fun default_value ->
+      B'.decode_optional_field 9 F'.Int32_t m' >>= fun oneof_index ->
+      B'.decode_optional_field 10 F'.String_t m' >>= fun json_name ->
+      B'.decode_user_field 8 FieldOptions.deserialize m' >>= fun options ->
       Ok { name; number; label; type'; type_name; extendee; default_value; oneof_index; json_name; options }
 
   let rec stringify =
@@ -790,9 +788,9 @@ and OneofDescriptorProto : sig
     options : OneofOptions.t option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -806,16 +804,16 @@ end = struct
   let rec serialize =
     fun { name; options } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_user_field 2 OneofOptions.serialize options o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_user_field 2 OneofOptions.serialize options o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_user_field 2 OneofOptions.deserialize m' >>= fun options ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_user_field 2 OneofOptions.deserialize m' >>= fun options ->
       Ok { name; options }
 
   let rec stringify =
@@ -841,9 +839,9 @@ and EnumDescriptorProto : sig
       end' : int option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -858,9 +856,9 @@ and EnumDescriptorProto : sig
     reserved_name : string list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -872,9 +870,9 @@ end = struct
       end' : int option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -888,16 +886,16 @@ end = struct
     let rec serialize =
       fun { start; end' } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_optional_field 1 F'.Int32_t start o' >>= fun () ->
-        W'.serialize_optional_field 2 F'.Int32_t end' o' >>= fun () ->
+        B'.serialize_optional_field 1 F'.Int32_t start o' >>= fun () ->
+        B'.serialize_optional_field 2 F'.Int32_t end' o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
-        W'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_optional_field 1 F'.Int32_t m' >>= fun start ->
+        B'.decode_optional_field 2 F'.Int32_t m' >>= fun end' ->
         Ok { start; end' }
   
     let rec stringify =
@@ -927,22 +925,22 @@ end = struct
   let rec serialize =
     fun { name; value'; options; reserved_range; reserved_name } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_repeated_user_field 2 EnumValueDescriptorProto.serialize value' o' >>= fun () ->
-      W'.serialize_user_field 3 EnumOptions.serialize options o' >>= fun () ->
-      W'.serialize_repeated_user_field 4 EnumDescriptorProto.EnumReservedRange.serialize reserved_range o' >>= fun () ->
-      W'.serialize_repeated_field 5 F'.String_t reserved_name o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_repeated_user_field 2 EnumValueDescriptorProto.serialize value' o' >>= fun () ->
+      B'.serialize_user_field 3 EnumOptions.serialize options o' >>= fun () ->
+      B'.serialize_repeated_user_field 4 EnumDescriptorProto.EnumReservedRange.serialize reserved_range o' >>= fun () ->
+      B'.serialize_repeated_field 5 F'.String_t reserved_name o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_repeated_user_field 2 EnumValueDescriptorProto.deserialize m' >>= fun value' ->
-      W'.decode_user_field 3 EnumOptions.deserialize m' >>= fun options ->
-      W'.decode_repeated_user_field 4 EnumDescriptorProto.EnumReservedRange.deserialize m' >>= fun reserved_range ->
-      W'.decode_repeated_field 5 F'.String_t m' >>= fun reserved_name ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_repeated_user_field 2 EnumValueDescriptorProto.deserialize m' >>= fun value' ->
+      B'.decode_user_field 3 EnumOptions.deserialize m' >>= fun options ->
+      B'.decode_repeated_user_field 4 EnumDescriptorProto.EnumReservedRange.deserialize m' >>= fun reserved_range ->
+      B'.decode_repeated_field 5 F'.String_t m' >>= fun reserved_name ->
       Ok { name; value'; options; reserved_range; reserved_name }
 
   let rec stringify =
@@ -974,9 +972,9 @@ and EnumValueDescriptorProto : sig
     options : EnumValueOptions.t option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -991,18 +989,18 @@ end = struct
   let rec serialize =
     fun { name; number; options } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.Int32_t number o' >>= fun () ->
-      W'.serialize_user_field 3 EnumValueOptions.serialize options o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.Int32_t number o' >>= fun () ->
+      B'.serialize_user_field 3 EnumValueOptions.serialize options o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_optional_field 2 F'.Int32_t m' >>= fun number ->
-      W'.decode_user_field 3 EnumValueOptions.deserialize m' >>= fun options ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_optional_field 2 F'.Int32_t m' >>= fun number ->
+      B'.decode_user_field 3 EnumValueOptions.deserialize m' >>= fun options ->
       Ok { name; number; options }
 
   let rec stringify =
@@ -1030,9 +1028,9 @@ and ServiceDescriptorProto : sig
     options : ServiceOptions.t option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1047,18 +1045,18 @@ end = struct
   let rec serialize =
     fun { name; method'; options } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_repeated_user_field 2 MethodDescriptorProto.serialize method' o' >>= fun () ->
-      W'.serialize_user_field 3 ServiceOptions.serialize options o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_repeated_user_field 2 MethodDescriptorProto.serialize method' o' >>= fun () ->
+      B'.serialize_user_field 3 ServiceOptions.serialize options o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_repeated_user_field 2 MethodDescriptorProto.deserialize m' >>= fun method' ->
-      W'.decode_user_field 3 ServiceOptions.deserialize m' >>= fun options ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_repeated_user_field 2 MethodDescriptorProto.deserialize m' >>= fun method' ->
+      B'.decode_user_field 3 ServiceOptions.deserialize m' >>= fun options ->
       Ok { name; method'; options }
 
   let rec stringify =
@@ -1089,9 +1087,9 @@ and MethodDescriptorProto : sig
     server_streaming : bool option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1109,24 +1107,24 @@ end = struct
   let rec serialize =
     fun { name; input_type; output_type; options; client_streaming; server_streaming } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.String_t input_type o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.String_t output_type o' >>= fun () ->
-      W'.serialize_user_field 4 MethodOptions.serialize options o' >>= fun () ->
-      W'.serialize_optional_field 5 F'.Bool_t client_streaming o' >>= fun () ->
-      W'.serialize_optional_field 6 F'.Bool_t server_streaming o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t name o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.String_t input_type o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.String_t output_type o' >>= fun () ->
+      B'.serialize_user_field 4 MethodOptions.serialize options o' >>= fun () ->
+      B'.serialize_optional_field 5 F'.Bool_t client_streaming o' >>= fun () ->
+      B'.serialize_optional_field 6 F'.Bool_t server_streaming o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun name ->
-      W'.decode_optional_field 2 F'.String_t m' >>= fun input_type ->
-      W'.decode_optional_field 3 F'.String_t m' >>= fun output_type ->
-      W'.decode_user_field 4 MethodOptions.deserialize m' >>= fun options ->
-      W'.decode_optional_field 5 F'.Bool_t m' >>= fun client_streaming ->
-      W'.decode_optional_field 6 F'.Bool_t m' >>= fun server_streaming ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun name ->
+      B'.decode_optional_field 2 F'.String_t m' >>= fun input_type ->
+      B'.decode_optional_field 3 F'.String_t m' >>= fun output_type ->
+      B'.decode_user_field 4 MethodOptions.deserialize m' >>= fun options ->
+      B'.decode_optional_field 5 F'.Bool_t m' >>= fun client_streaming ->
+      B'.decode_optional_field 6 F'.Bool_t m' >>= fun server_streaming ->
       Ok { name; input_type; output_type; options; client_streaming; server_streaming }
 
   let rec stringify =
@@ -1195,9 +1193,9 @@ and FileOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1281,54 +1279,54 @@ end = struct
   let rec serialize =
     fun { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.String_t java_package o' >>= fun () ->
-      W'.serialize_optional_field 8 F'.String_t java_outer_classname o' >>= fun () ->
-      W'.serialize_optional_field 10 F'.Bool_t java_multiple_files o' >>= fun () ->
-      W'.serialize_optional_field 20 F'.Bool_t java_generate_equals_and_hash o' >>= fun () ->
-      W'.serialize_optional_field 27 F'.Bool_t java_string_check_utf8 o' >>= fun () ->
-      W'.serialize_enum_field 9 FileOptions.OptimizeMode.to_int optimize_for o' >>= fun () ->
-      W'.serialize_optional_field 11 F'.String_t go_package o' >>= fun () ->
-      W'.serialize_optional_field 16 F'.Bool_t cc_generic_services o' >>= fun () ->
-      W'.serialize_optional_field 17 F'.Bool_t java_generic_services o' >>= fun () ->
-      W'.serialize_optional_field 18 F'.Bool_t py_generic_services o' >>= fun () ->
-      W'.serialize_optional_field 42 F'.Bool_t php_generic_services o' >>= fun () ->
-      W'.serialize_optional_field 23 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_optional_field 31 F'.Bool_t cc_enable_arenas o' >>= fun () ->
-      W'.serialize_optional_field 36 F'.String_t objc_class_prefix o' >>= fun () ->
-      W'.serialize_optional_field 37 F'.String_t csharp_namespace o' >>= fun () ->
-      W'.serialize_optional_field 39 F'.String_t swift_prefix o' >>= fun () ->
-      W'.serialize_optional_field 40 F'.String_t php_class_prefix o' >>= fun () ->
-      W'.serialize_optional_field 41 F'.String_t php_namespace o' >>= fun () ->
-      W'.serialize_optional_field 44 F'.String_t php_metadata_namespace o' >>= fun () ->
-      W'.serialize_optional_field 45 F'.String_t ruby_package o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.String_t java_package o' >>= fun () ->
+      B'.serialize_optional_field 8 F'.String_t java_outer_classname o' >>= fun () ->
+      B'.serialize_optional_field 10 F'.Bool_t java_multiple_files o' >>= fun () ->
+      B'.serialize_optional_field 20 F'.Bool_t java_generate_equals_and_hash o' >>= fun () ->
+      B'.serialize_optional_field 27 F'.Bool_t java_string_check_utf8 o' >>= fun () ->
+      B'.serialize_enum_field 9 FileOptions.OptimizeMode.to_int optimize_for o' >>= fun () ->
+      B'.serialize_optional_field 11 F'.String_t go_package o' >>= fun () ->
+      B'.serialize_optional_field 16 F'.Bool_t cc_generic_services o' >>= fun () ->
+      B'.serialize_optional_field 17 F'.Bool_t java_generic_services o' >>= fun () ->
+      B'.serialize_optional_field 18 F'.Bool_t py_generic_services o' >>= fun () ->
+      B'.serialize_optional_field 42 F'.Bool_t php_generic_services o' >>= fun () ->
+      B'.serialize_optional_field 23 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_optional_field 31 F'.Bool_t cc_enable_arenas o' >>= fun () ->
+      B'.serialize_optional_field 36 F'.String_t objc_class_prefix o' >>= fun () ->
+      B'.serialize_optional_field 37 F'.String_t csharp_namespace o' >>= fun () ->
+      B'.serialize_optional_field 39 F'.String_t swift_prefix o' >>= fun () ->
+      B'.serialize_optional_field 40 F'.String_t php_class_prefix o' >>= fun () ->
+      B'.serialize_optional_field 41 F'.String_t php_namespace o' >>= fun () ->
+      B'.serialize_optional_field 44 F'.String_t php_metadata_namespace o' >>= fun () ->
+      B'.serialize_optional_field 45 F'.String_t ruby_package o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.String_t m' >>= fun java_package ->
-      W'.decode_optional_field 8 F'.String_t m' >>= fun java_outer_classname ->
-      W'.decode_optional_field 10 F'.Bool_t m' >>= fun java_multiple_files ->
-      W'.decode_optional_field 20 F'.Bool_t m' >>= fun java_generate_equals_and_hash ->
-      W'.decode_optional_field 27 F'.Bool_t m' >>= fun java_string_check_utf8 ->
-      W'.decode_enum_field 9 FileOptions.OptimizeMode.of_int FileOptions.OptimizeMode.default m' >>= fun optimize_for ->
-      W'.decode_optional_field 11 F'.String_t m' >>= fun go_package ->
-      W'.decode_optional_field 16 F'.Bool_t m' >>= fun cc_generic_services ->
-      W'.decode_optional_field 17 F'.Bool_t m' >>= fun java_generic_services ->
-      W'.decode_optional_field 18 F'.Bool_t m' >>= fun py_generic_services ->
-      W'.decode_optional_field 42 F'.Bool_t m' >>= fun php_generic_services ->
-      W'.decode_optional_field 23 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_optional_field 31 F'.Bool_t m' >>= fun cc_enable_arenas ->
-      W'.decode_optional_field 36 F'.String_t m' >>= fun objc_class_prefix ->
-      W'.decode_optional_field 37 F'.String_t m' >>= fun csharp_namespace ->
-      W'.decode_optional_field 39 F'.String_t m' >>= fun swift_prefix ->
-      W'.decode_optional_field 40 F'.String_t m' >>= fun php_class_prefix ->
-      W'.decode_optional_field 41 F'.String_t m' >>= fun php_namespace ->
-      W'.decode_optional_field 44 F'.String_t m' >>= fun php_metadata_namespace ->
-      W'.decode_optional_field 45 F'.String_t m' >>= fun ruby_package ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.String_t m' >>= fun java_package ->
+      B'.decode_optional_field 8 F'.String_t m' >>= fun java_outer_classname ->
+      B'.decode_optional_field 10 F'.Bool_t m' >>= fun java_multiple_files ->
+      B'.decode_optional_field 20 F'.Bool_t m' >>= fun java_generate_equals_and_hash ->
+      B'.decode_optional_field 27 F'.Bool_t m' >>= fun java_string_check_utf8 ->
+      B'.decode_enum_field 9 FileOptions.OptimizeMode.of_int FileOptions.OptimizeMode.default m' >>= fun optimize_for ->
+      B'.decode_optional_field 11 F'.String_t m' >>= fun go_package ->
+      B'.decode_optional_field 16 F'.Bool_t m' >>= fun cc_generic_services ->
+      B'.decode_optional_field 17 F'.Bool_t m' >>= fun java_generic_services ->
+      B'.decode_optional_field 18 F'.Bool_t m' >>= fun py_generic_services ->
+      B'.decode_optional_field 42 F'.Bool_t m' >>= fun php_generic_services ->
+      B'.decode_optional_field 23 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_optional_field 31 F'.Bool_t m' >>= fun cc_enable_arenas ->
+      B'.decode_optional_field 36 F'.String_t m' >>= fun objc_class_prefix ->
+      B'.decode_optional_field 37 F'.String_t m' >>= fun csharp_namespace ->
+      B'.decode_optional_field 39 F'.String_t m' >>= fun swift_prefix ->
+      B'.decode_optional_field 40 F'.String_t m' >>= fun php_class_prefix ->
+      B'.decode_optional_field 41 F'.String_t m' >>= fun php_namespace ->
+      B'.decode_optional_field 44 F'.String_t m' >>= fun php_metadata_namespace ->
+      B'.decode_optional_field 45 F'.String_t m' >>= fun ruby_package ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option }
 
   let rec stringify =
@@ -1394,9 +1392,9 @@ and MessageOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1413,22 +1411,22 @@ end = struct
   let rec serialize =
     fun { message_set_wire_format; no_standard_descriptor_accessor; deprecated; map_entry; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.Bool_t message_set_wire_format o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.Bool_t no_standard_descriptor_accessor o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_optional_field 7 F'.Bool_t map_entry o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.Bool_t message_set_wire_format o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.Bool_t no_standard_descriptor_accessor o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_optional_field 7 F'.Bool_t map_entry o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.Bool_t m' >>= fun message_set_wire_format ->
-      W'.decode_optional_field 2 F'.Bool_t m' >>= fun no_standard_descriptor_accessor ->
-      W'.decode_optional_field 3 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_optional_field 7 F'.Bool_t m' >>= fun map_entry ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.Bool_t m' >>= fun message_set_wire_format ->
+      B'.decode_optional_field 2 F'.Bool_t m' >>= fun no_standard_descriptor_accessor ->
+      B'.decode_optional_field 3 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_optional_field 7 F'.Bool_t m' >>= fun map_entry ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { message_set_wire_format; no_standard_descriptor_accessor; deprecated; map_entry; uninterpreted_option }
 
   let rec stringify =
@@ -1498,9 +1496,9 @@ and FieldOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1621,26 +1619,26 @@ end = struct
   let rec serialize =
     fun { ctype; packed; jstype; lazy'; deprecated; weak; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_enum_field 1 FieldOptions.CType.to_int ctype o' >>= fun () ->
-      W'.serialize_optional_field 2 F'.Bool_t packed o' >>= fun () ->
-      W'.serialize_enum_field 6 FieldOptions.JSType.to_int jstype o' >>= fun () ->
-      W'.serialize_optional_field 5 F'.Bool_t lazy' o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_optional_field 10 F'.Bool_t weak o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_enum_field 1 FieldOptions.CType.to_int ctype o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.Bool_t packed o' >>= fun () ->
+      B'.serialize_enum_field 6 FieldOptions.JSType.to_int jstype o' >>= fun () ->
+      B'.serialize_optional_field 5 F'.Bool_t lazy' o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_optional_field 10 F'.Bool_t weak o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_enum_field 1 FieldOptions.CType.of_int FieldOptions.CType.default m' >>= fun ctype ->
-      W'.decode_optional_field 2 F'.Bool_t m' >>= fun packed ->
-      W'.decode_enum_field 6 FieldOptions.JSType.of_int FieldOptions.JSType.default m' >>= fun jstype ->
-      W'.decode_optional_field 5 F'.Bool_t m' >>= fun lazy' ->
-      W'.decode_optional_field 3 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_optional_field 10 F'.Bool_t m' >>= fun weak ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_enum_field 1 FieldOptions.CType.of_int FieldOptions.CType.default m' >>= fun ctype ->
+      B'.decode_optional_field 2 F'.Bool_t m' >>= fun packed ->
+      B'.decode_enum_field 6 FieldOptions.JSType.of_int FieldOptions.JSType.default m' >>= fun jstype ->
+      B'.decode_optional_field 5 F'.Bool_t m' >>= fun lazy' ->
+      B'.decode_optional_field 3 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_optional_field 10 F'.Bool_t m' >>= fun weak ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { ctype; packed; jstype; lazy'; deprecated; weak; uninterpreted_option }
 
   let rec stringify =
@@ -1674,9 +1672,9 @@ and OneofOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1689,14 +1687,14 @@ end = struct
   let rec serialize =
     fun { uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { uninterpreted_option }
 
   let rec stringify =
@@ -1720,9 +1718,9 @@ and EnumOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1737,18 +1735,18 @@ end = struct
   let rec serialize =
     fun { allow_alias; deprecated; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 2 F'.Bool_t allow_alias o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_optional_field 2 F'.Bool_t allow_alias o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 2 F'.Bool_t m' >>= fun allow_alias ->
-      W'.decode_optional_field 3 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 2 F'.Bool_t m' >>= fun allow_alias ->
+      B'.decode_optional_field 3 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { allow_alias; deprecated; uninterpreted_option }
 
   let rec stringify =
@@ -1775,9 +1773,9 @@ and EnumValueOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1791,16 +1789,16 @@ end = struct
   let rec serialize =
     fun { deprecated; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 1 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_optional_field 1 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 1 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 1 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { deprecated; uninterpreted_option }
 
   let rec stringify =
@@ -1825,9 +1823,9 @@ and ServiceOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1841,16 +1839,16 @@ end = struct
   let rec serialize =
     fun { deprecated; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 33 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_optional_field 33 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 33 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 33 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { deprecated; uninterpreted_option }
 
   let rec stringify =
@@ -1893,9 +1891,9 @@ and MethodOptions : sig
     uninterpreted_option : UninterpretedOption.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -1961,18 +1959,18 @@ end = struct
   let rec serialize =
     fun { deprecated; idempotency_level; uninterpreted_option } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_optional_field 33 F'.Bool_t deprecated o' >>= fun () ->
-      W'.serialize_enum_field 34 MethodOptions.IdempotencyLevel.to_int idempotency_level o' >>= fun () ->
-      W'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
+      B'.serialize_optional_field 33 F'.Bool_t deprecated o' >>= fun () ->
+      B'.serialize_enum_field 34 MethodOptions.IdempotencyLevel.to_int idempotency_level o' >>= fun () ->
+      B'.serialize_repeated_user_field 999 UninterpretedOption.serialize uninterpreted_option o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_optional_field 33 F'.Bool_t m' >>= fun deprecated ->
-      W'.decode_enum_field 34 MethodOptions.IdempotencyLevel.of_int MethodOptions.IdempotencyLevel.default m' >>= fun idempotency_level ->
-      W'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_optional_field 33 F'.Bool_t m' >>= fun deprecated ->
+      B'.decode_enum_field 34 MethodOptions.IdempotencyLevel.of_int MethodOptions.IdempotencyLevel.default m' >>= fun idempotency_level ->
+      B'.decode_repeated_user_field 999 UninterpretedOption.deserialize m' >>= fun uninterpreted_option ->
       Ok { deprecated; idempotency_level; uninterpreted_option }
 
   let rec stringify =
@@ -2000,9 +1998,9 @@ and UninterpretedOption : sig
       is_extension : bool option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -2019,9 +2017,9 @@ and UninterpretedOption : sig
     aggregate_value : string option;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -2033,9 +2031,9 @@ end = struct
       is_extension : bool option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -2049,16 +2047,16 @@ end = struct
     let rec serialize =
       fun { name_part; is_extension } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_optional_field 1 F'.String_t name_part o' >>= fun () ->
-        W'.serialize_optional_field 2 F'.Bool_t is_extension o' >>= fun () ->
+        B'.serialize_optional_field 1 F'.String_t name_part o' >>= fun () ->
+        B'.serialize_optional_field 2 F'.Bool_t is_extension o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_optional_field 1 F'.String_t m' >>= fun name_part ->
-        W'.decode_optional_field 2 F'.Bool_t m' >>= fun is_extension ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_optional_field 1 F'.String_t m' >>= fun name_part ->
+        B'.decode_optional_field 2 F'.Bool_t m' >>= fun is_extension ->
         Ok { name_part; is_extension }
   
     let rec stringify =
@@ -2090,26 +2088,26 @@ end = struct
   let rec serialize =
     fun { name; identifier_value; positive_int_value; negative_int_value; double_value; string_value; aggregate_value } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_user_field 2 UninterpretedOption.NamePart.serialize name o' >>= fun () ->
-      W'.serialize_optional_field 3 F'.String_t identifier_value o' >>= fun () ->
-      W'.serialize_optional_field 4 F'.Uint64_t positive_int_value o' >>= fun () ->
-      W'.serialize_optional_field 5 F'.Int64_t negative_int_value o' >>= fun () ->
-      W'.serialize_optional_field 6 F'.Double_t double_value o' >>= fun () ->
-      W'.serialize_optional_field 7 F'.Bytes_t string_value o' >>= fun () ->
-      W'.serialize_optional_field 8 F'.String_t aggregate_value o' >>= fun () ->
+      B'.serialize_repeated_user_field 2 UninterpretedOption.NamePart.serialize name o' >>= fun () ->
+      B'.serialize_optional_field 3 F'.String_t identifier_value o' >>= fun () ->
+      B'.serialize_optional_field 4 F'.Uint64_t positive_int_value o' >>= fun () ->
+      B'.serialize_optional_field 5 F'.Int64_t negative_int_value o' >>= fun () ->
+      B'.serialize_optional_field 6 F'.Double_t double_value o' >>= fun () ->
+      B'.serialize_optional_field 7 F'.Bytes_t string_value o' >>= fun () ->
+      B'.serialize_optional_field 8 F'.String_t aggregate_value o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_user_field 2 UninterpretedOption.NamePart.deserialize m' >>= fun name ->
-      W'.decode_optional_field 3 F'.String_t m' >>= fun identifier_value ->
-      W'.decode_optional_field 4 F'.Uint64_t m' >>= fun positive_int_value ->
-      W'.decode_optional_field 5 F'.Int64_t m' >>= fun negative_int_value ->
-      W'.decode_optional_field 6 F'.Double_t m' >>= fun double_value ->
-      W'.decode_optional_field 7 F'.Bytes_t m' >>= fun string_value ->
-      W'.decode_optional_field 8 F'.String_t m' >>= fun aggregate_value ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_user_field 2 UninterpretedOption.NamePart.deserialize m' >>= fun name ->
+      B'.decode_optional_field 3 F'.String_t m' >>= fun identifier_value ->
+      B'.decode_optional_field 4 F'.Uint64_t m' >>= fun positive_int_value ->
+      B'.decode_optional_field 5 F'.Int64_t m' >>= fun negative_int_value ->
+      B'.decode_optional_field 6 F'.Double_t m' >>= fun double_value ->
+      B'.decode_optional_field 7 F'.Bytes_t m' >>= fun string_value ->
+      B'.decode_optional_field 8 F'.String_t m' >>= fun aggregate_value ->
       Ok { name; identifier_value; positive_int_value; negative_int_value; double_value; string_value; aggregate_value }
 
   let rec stringify =
@@ -2148,9 +2146,9 @@ and SourceCodeInfo : sig
       leading_detached_comments : string list;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -2161,9 +2159,9 @@ and SourceCodeInfo : sig
     location : SourceCodeInfo.Location.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -2178,9 +2176,9 @@ end = struct
       leading_detached_comments : string list;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -2197,22 +2195,22 @@ end = struct
     let rec serialize =
       fun { path; span; leading_comments; trailing_comments; leading_detached_comments } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_repeated_field 1 F'.Int32_t path o' >>= fun () ->
-        W'.serialize_repeated_field 2 F'.Int32_t span o' >>= fun () ->
-        W'.serialize_optional_field 3 F'.String_t leading_comments o' >>= fun () ->
-        W'.serialize_optional_field 4 F'.String_t trailing_comments o' >>= fun () ->
-        W'.serialize_repeated_field 6 F'.String_t leading_detached_comments o' >>= fun () ->
+        B'.serialize_repeated_field 1 F'.Int32_t path o' >>= fun () ->
+        B'.serialize_repeated_field 2 F'.Int32_t span o' >>= fun () ->
+        B'.serialize_optional_field 3 F'.String_t leading_comments o' >>= fun () ->
+        B'.serialize_optional_field 4 F'.String_t trailing_comments o' >>= fun () ->
+        B'.serialize_repeated_field 6 F'.String_t leading_detached_comments o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_repeated_field 1 F'.Int32_t m' >>= fun path ->
-        W'.decode_repeated_field 2 F'.Int32_t m' >>= fun span ->
-        W'.decode_optional_field 3 F'.String_t m' >>= fun leading_comments ->
-        W'.decode_optional_field 4 F'.String_t m' >>= fun trailing_comments ->
-        W'.decode_repeated_field 6 F'.String_t m' >>= fun leading_detached_comments ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_repeated_field 1 F'.Int32_t m' >>= fun path ->
+        B'.decode_repeated_field 2 F'.Int32_t m' >>= fun span ->
+        B'.decode_optional_field 3 F'.String_t m' >>= fun leading_comments ->
+        B'.decode_optional_field 4 F'.String_t m' >>= fun trailing_comments ->
+        B'.decode_repeated_field 6 F'.String_t m' >>= fun leading_detached_comments ->
         Ok { path; span; leading_comments; trailing_comments; leading_detached_comments }
   
     let rec stringify =
@@ -2244,14 +2242,14 @@ end = struct
   let rec serialize =
     fun { location } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_user_field 1 SourceCodeInfo.Location.serialize location o' >>= fun () ->
+      B'.serialize_repeated_user_field 1 SourceCodeInfo.Location.serialize location o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_user_field 1 SourceCodeInfo.Location.deserialize m' >>= fun location ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_user_field 1 SourceCodeInfo.Location.deserialize m' >>= fun location ->
       Ok { location }
 
   let rec stringify =
@@ -2277,9 +2275,9 @@ and GeneratedCodeInfo : sig
       end' : int option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -2290,9 +2288,9 @@ and GeneratedCodeInfo : sig
     annotation : GeneratedCodeInfo.Annotation.t list;
   }
 
-  val serialize : t -> (string, [> W'.serialization_error]) result
+  val serialize : t -> (string, [> B'.serialization_error]) result
 
-  val deserialize : string -> (t, [> W'.deserialization_error]) result
+  val deserialize : string -> (t, [> B'.deserialization_error]) result
 
   val stringify : t -> (string, [> T'.serialization_error]) result
 
@@ -2306,9 +2304,9 @@ end = struct
       end' : int option;
     }
   
-    val serialize : t -> (string, [> W'.serialization_error]) result
+    val serialize : t -> (string, [> B'.serialization_error]) result
   
-    val deserialize : string -> (t, [> W'.deserialization_error]) result
+    val deserialize : string -> (t, [> B'.deserialization_error]) result
   
     val stringify : t -> (string, [> T'.serialization_error]) result
   
@@ -2324,20 +2322,20 @@ end = struct
     let rec serialize =
       fun { path; source_file; begin'; end' } ->
         let o' = Runtime.Byte_output.create () in
-        W'.serialize_repeated_field 1 F'.Int32_t path o' >>= fun () ->
-        W'.serialize_optional_field 2 F'.String_t source_file o' >>= fun () ->
-        W'.serialize_optional_field 3 F'.Int32_t begin' o' >>= fun () ->
-        W'.serialize_optional_field 4 F'.Int32_t end' o' >>= fun () ->
+        B'.serialize_repeated_field 1 F'.Int32_t path o' >>= fun () ->
+        B'.serialize_optional_field 2 F'.String_t source_file o' >>= fun () ->
+        B'.serialize_optional_field 3 F'.Int32_t begin' o' >>= fun () ->
+        B'.serialize_optional_field 4 F'.Int32_t end' o' >>= fun () ->
         Ok (Runtime.Byte_output.contents o')
   
     let rec deserialize =
       fun input' ->
         Ok (Runtime.Byte_input.create input') >>=
-        W'.deserialize_message >>= fun m' ->
-        W'.decode_repeated_field 1 F'.Int32_t m' >>= fun path ->
-        W'.decode_optional_field 2 F'.String_t m' >>= fun source_file ->
-        W'.decode_optional_field 3 F'.Int32_t m' >>= fun begin' ->
-        W'.decode_optional_field 4 F'.Int32_t m' >>= fun end' ->
+        B'.deserialize_message >>= fun m' ->
+        B'.decode_repeated_field 1 F'.Int32_t m' >>= fun path ->
+        B'.decode_optional_field 2 F'.String_t m' >>= fun source_file ->
+        B'.decode_optional_field 3 F'.Int32_t m' >>= fun begin' ->
+        B'.decode_optional_field 4 F'.Int32_t m' >>= fun end' ->
         Ok { path; source_file; begin'; end' }
   
     let rec stringify =
@@ -2367,14 +2365,14 @@ end = struct
   let rec serialize =
     fun { annotation } ->
       let o' = Runtime.Byte_output.create () in
-      W'.serialize_repeated_user_field 1 GeneratedCodeInfo.Annotation.serialize annotation o' >>= fun () ->
+      B'.serialize_repeated_user_field 1 GeneratedCodeInfo.Annotation.serialize annotation o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
-      W'.deserialize_message >>= fun m' ->
-      W'.decode_repeated_user_field 1 GeneratedCodeInfo.Annotation.deserialize m' >>= fun annotation ->
+      B'.deserialize_message >>= fun m' ->
+      B'.decode_repeated_user_field 1 GeneratedCodeInfo.Annotation.deserialize m' >>= fun annotation ->
       Ok { annotation }
 
   let rec stringify =

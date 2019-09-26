@@ -136,7 +136,7 @@ module Code = struct
     modules_code true [] modules
 
   let make_file items =
-    let items = List.intersperse items ~sep:(line "") in
+    let items = add_vertical_space items in
     block ~indented:false items
 
   let emit code =
@@ -502,10 +502,10 @@ let rec generate_message
   in
   let field_number_to_ocaml_id Protobuf.Field.{number; _} = Printf.sprintf "%d" number in
   let serialize_code =
-    generate_serialization_function "serialize" "W'" field_number_to_ocaml_id "int"
+    generate_serialization_function "serialize" "B'" field_number_to_ocaml_id "int"
   in
   let deserialize_code =
-    generate_deserialization_function "deserialize" "W'" field_number_to_ocaml_id "int"
+    generate_deserialization_function "deserialize" "B'" field_number_to_ocaml_id "int"
   in
   let field_name_to_ocaml_id Protobuf.Field.{name; _} = Printf.sprintf {|"%s"|} name in
   let stringify_code =
@@ -517,8 +517,8 @@ let rec generate_message
   let signature =
     let generated_function_signatures =
       [
-        "val serialize : t -> (string, [> W'.serialization_error]) result";
-        "val deserialize : string -> (t, [> W'.deserialization_error]) result";
+        "val serialize : t -> (string, [> B'.serialization_error]) result";
+        "val deserialize : string -> (t, [> B'.deserialization_error]) result";
         "val stringify : t -> (string, [> T'.serialization_error]) result";
         "val unstringify : string -> (t, [> T'.deserialization_error]) result";
       ]
@@ -562,8 +562,8 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
           line "let (>>=) = Runtime.Result.(>>=)";
           line "let (>>|) = Runtime.Result.(>>|)";
           line "module F' = Runtime.Field_value";
+          line "module B' = Runtime.Binary_format";
           line "module T' = Runtime.Text_format";
-          line "module W' = Runtime.Wire_format";
           List.map dependencies ~f:(fun dependency ->
               dependency |> String.capitalize |> Printf.sprintf "open %s" |> line)
           |> block ~indented:false;

@@ -19,9 +19,9 @@ let execute_process_with_input ~prog ~args ~input =
 module type Serdes_testable = sig
   type t [@@deriving eq, show]
 
-  val serialize : t -> (string, [> Runtime.Wire_format.serialization_error]) result
+  val serialize : t -> (string, [> Runtime.Binary_format.serialization_error]) result
 
-  val deserialize : string -> (t, [> Runtime.Wire_format.deserialization_error]) result
+  val deserialize : string -> (t, [> Runtime.Binary_format.deserialization_error]) result
 
   val stringify : t -> (string, [> Runtime.Text_format.serialization_error]) result
 
@@ -53,10 +53,10 @@ let wire_format_deserialization_error_to_string error =
       "%s field type %s cannot accept value type %s"
       field_type_name
       (Runtime.Field_value.typ_to_string typ)
-      (Runtime.Wire_format.sort_to_string sort)
+      (Runtime.Binary_format.sort_to_string sort)
   in
   match error with
-  | #Runtime.Wire_format.parse_error as e -> wire_format_parse_error_to_string e
+  | #Runtime.Binary_format.parse_error as e -> wire_format_parse_error_to_string e
   | `Wrong_value_sort_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
   | `Wrong_value_sort_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
   | `Wrong_value_sort_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
@@ -64,11 +64,11 @@ let wire_format_deserialization_error_to_string error =
   | `Wrong_value_sort_for_user_field sort ->
       Printf.sprintf
         "Message field type cannot accept value type %s"
-        (Runtime.Wire_format.sort_to_string sort)
+        (Runtime.Binary_format.sort_to_string sort)
   | `Wrong_value_sort_for_enum_field sort ->
       Printf.sprintf
         "Enum field type cannot accept value type %s"
-        (Runtime.Wire_format.sort_to_string sort)
+        (Runtime.Binary_format.sort_to_string sort)
   | `Unrecognized_enum_value -> "Unrecognized enum value"
   | `Multiple_oneof_fields_set -> "Multiple oneof fields set"
   | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
@@ -79,7 +79,7 @@ let process_error_to_string = function
 
 let wire_error_to_string = function
   | #process_error as e -> process_error_to_string e
-  | #Runtime.Wire_format.deserialization_error as e ->
+  | #Runtime.Binary_format.deserialization_error as e ->
       wire_format_deserialization_error_to_string e
 
 let text_format_parse_error_to_string = function
