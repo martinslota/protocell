@@ -377,7 +377,7 @@ let rec generate_message
         match data_type with
         | Message_t _ ->
             Printf.sprintf
-              {|(%s.serialize%s_user_field %s %s.%s %s o')|}
+              {|%s.serialize%s_user_field %s %s.%s %s o'|}
               format_module_name
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
@@ -386,7 +386,7 @@ let rec generate_message
               name
         | Enum_t _ ->
             Printf.sprintf
-              {|(%s.serialize%s_enum_field %s %s.to_%s %s o')|}
+              {|%s.serialize%s_enum_field %s %s.to_%s %s o'|}
               format_module_name
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
@@ -395,7 +395,7 @@ let rec generate_message
               name
         | _ ->
             Printf.sprintf
-              {|(%s.serialize%s_field %s F'.%s %s o')|}
+              {|%s.serialize%s_field %s F'.%s %s o'|}
               format_module_name
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
@@ -439,7 +439,7 @@ let rec generate_message
         match data_type with
         | Message_t _ ->
             Printf.sprintf
-              {|(%s.decode%s_user_field %s %s.%s m')|}
+              {|%s.decode%s_user_field %s %s.%s m'|}
               format_module_name
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
@@ -447,7 +447,7 @@ let rec generate_message
               function_name
         | Enum_t _ ->
             Printf.sprintf
-              {|(%s.decode%s_enum_field %s %s.of_%s %s.default m')|}
+              {|%s.decode%s_enum_field %s %s.of_%s %s.default m'|}
               format_module_name
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
