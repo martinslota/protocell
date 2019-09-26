@@ -294,7 +294,7 @@ let rec generate_message
                 fields
                 |> List.map ~f:(fun Protobuf.Field.{name; _} ->
                        Printf.sprintf
-                         "let %s value =  %s value "
+                         "let %s value = %s value "
                          name
                          (String.capitalize name))
                 |> Code.lines;
