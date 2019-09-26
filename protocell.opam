@@ -18,7 +18,7 @@ depexts: [
   ["protoc-dev" "protobuf-compiler"] {os-distribution = "alpine"}
   ["protoc-dev" "protobuf-compiler"] {os-family = "suse"}
   ["protoc"] {os = "freebsd"}
-  ["protoc"] {os = "macos" & os-distribution = "homebrew"}
+  ["protobuf"] {os = "macos" & os-distribution = "homebrew"}
 ]
 depends: [
   "alcotest" {with-test}
