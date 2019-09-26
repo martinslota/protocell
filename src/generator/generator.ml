@@ -278,29 +278,27 @@ let rec generate_message
           {
             module_name = String.capitalize name;
             signature =
-              List.concat
-                [
-                  [type_declaration];
-                  fields
-                  |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
-                         Printf.sprintf
-                           "val %s : %s -> t"
-                           name
-                           (type_to_ocaml_type data_type)
-                         |> Code.line);
-                ];
+              [
+                type_declaration;
+                fields
+                |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
+                       Printf.sprintf
+                         "val %s : %s -> t"
+                         name
+                         (type_to_ocaml_type data_type))
+                |> Code.lines;
+              ];
             implementation =
-              List.concat
-                [
-                  [type_declaration];
-                  fields
-                  |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                         Printf.sprintf
-                           "let %s value =  %s value "
-                           name
-                           (String.capitalize name)
-                         |> Code.line);
-                ];
+              [
+                type_declaration;
+                fields
+                |> List.map ~f:(fun Protobuf.Field.{name; _} ->
+                       Printf.sprintf
+                         "let %s value =  %s value "
+                         name
+                         (String.capitalize name))
+                |> Code.lines;
+              ];
           }
   in
   let oneofs = field_groups |> List.filter_map ~f:(generate_oneof ~options) in
