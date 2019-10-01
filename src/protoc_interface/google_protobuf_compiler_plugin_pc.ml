@@ -10,7 +10,11 @@ module B' = Runtime.Binary_format
 
 module T' = Runtime.Text_format
 
-open Google_protobuf_descriptor_pc
+module Google = struct
+  module Protobuf = struct
+    include Google_protobuf_descriptor_pc
+  end
+end
 
 module rec Version : sig
   type t = {
@@ -74,11 +78,11 @@ end = struct
       Ok { major; minor; patch; suffix }
 end
 
-and CodeGeneratorRequest : sig
+and Code_generator_request : sig
   type t = {
     file_to_generate : string list;
     parameter : string option;
-    proto_file : FileDescriptorProto.t list;
+    proto_file : Google.Protobuf.File_descriptor_proto.t list;
     compiler_version : Version.t option;
   }
 
@@ -93,7 +97,7 @@ end = struct
   type t = {
     file_to_generate : string list;
     parameter : string option;
-    proto_file : FileDescriptorProto.t list;
+    proto_file : Google.Protobuf.File_descriptor_proto.t list;
     compiler_version : Version.t option;
   }
 
@@ -102,7 +106,7 @@ end = struct
       let o' = Runtime.Byte_output.create () in
       B'.serialize_repeated_field 1 F'.String_t file_to_generate o' >>= fun () ->
       B'.serialize_optional_field 2 F'.String_t parameter o' >>= fun () ->
-      B'.serialize_repeated_user_field 15 FileDescriptorProto.serialize proto_file o' >>= fun () ->
+      B'.serialize_repeated_user_field 15 Google.Protobuf.File_descriptor_proto.serialize proto_file o' >>= fun () ->
       B'.serialize_user_field 3 Version.serialize compiler_version o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
@@ -112,7 +116,7 @@ end = struct
       B'.deserialize_message >>= fun m' ->
       B'.decode_repeated_field 1 F'.String_t m' >>= fun file_to_generate ->
       B'.decode_optional_field 2 F'.String_t m' >>= fun parameter ->
-      B'.decode_repeated_user_field 15 FileDescriptorProto.deserialize m' >>= fun proto_file ->
+      B'.decode_repeated_user_field 15 Google.Protobuf.File_descriptor_proto.deserialize m' >>= fun proto_file ->
       B'.decode_user_field 3 Version.deserialize m' >>= fun compiler_version ->
       Ok { file_to_generate; parameter; proto_file; compiler_version }
 
@@ -121,7 +125,7 @@ end = struct
       let o' = Runtime.Byte_output.create () in
       T'.serialize_repeated_field "file_to_generate" F'.String_t file_to_generate o' >>= fun () ->
       T'.serialize_optional_field "parameter" F'.String_t parameter o' >>= fun () ->
-      T'.serialize_repeated_user_field "proto_file" FileDescriptorProto.stringify proto_file o' >>= fun () ->
+      T'.serialize_repeated_user_field "proto_file" Google.Protobuf.File_descriptor_proto.stringify proto_file o' >>= fun () ->
       T'.serialize_user_field "compiler_version" Version.stringify compiler_version o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
@@ -131,12 +135,12 @@ end = struct
       T'.deserialize_message >>= fun m' ->
       T'.decode_repeated_field "file_to_generate" F'.String_t m' >>= fun file_to_generate ->
       T'.decode_optional_field "parameter" F'.String_t m' >>= fun parameter ->
-      T'.decode_repeated_user_field "proto_file" FileDescriptorProto.unstringify m' >>= fun proto_file ->
+      T'.decode_repeated_user_field "proto_file" Google.Protobuf.File_descriptor_proto.unstringify m' >>= fun proto_file ->
       T'.decode_user_field "compiler_version" Version.unstringify m' >>= fun compiler_version ->
       Ok { file_to_generate; parameter; proto_file; compiler_version }
 end
 
-and CodeGeneratorResponse : sig
+and Code_generator_response : sig
   module rec File : sig
     type t = {
       name : string option;
@@ -155,7 +159,7 @@ and CodeGeneratorResponse : sig
 
   type t = {
     error : string option;
-    file : CodeGeneratorResponse.File.t list;
+    file : Code_generator_response.File.t list;
   }
 
   val serialize : t -> (string, [> B'.serialization_error]) result
@@ -224,14 +228,14 @@ end = struct
 
   type t = {
     error : string option;
-    file : CodeGeneratorResponse.File.t list;
+    file : Code_generator_response.File.t list;
   }
 
   let rec serialize =
     fun { error; file } ->
       let o' = Runtime.Byte_output.create () in
       B'.serialize_optional_field 1 F'.String_t error o' >>= fun () ->
-      B'.serialize_repeated_user_field 15 CodeGeneratorResponse.File.serialize file o' >>= fun () ->
+      B'.serialize_repeated_user_field 15 Code_generator_response.File.serialize file o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec deserialize =
@@ -239,14 +243,14 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       B'.deserialize_message >>= fun m' ->
       B'.decode_optional_field 1 F'.String_t m' >>= fun error ->
-      B'.decode_repeated_user_field 15 CodeGeneratorResponse.File.deserialize m' >>= fun file ->
+      B'.decode_repeated_user_field 15 Code_generator_response.File.deserialize m' >>= fun file ->
       Ok { error; file }
 
   let rec stringify =
     fun { error; file } ->
       let o' = Runtime.Byte_output.create () in
       T'.serialize_optional_field "error" F'.String_t error o' >>= fun () ->
-      T'.serialize_repeated_user_field "file" CodeGeneratorResponse.File.stringify file o' >>= fun () ->
+      T'.serialize_repeated_user_field "file" Code_generator_response.File.stringify file o' >>= fun () ->
       Ok (Runtime.Byte_output.contents o')
 
   let rec unstringify =
@@ -254,6 +258,6 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       T'.deserialize_message >>= fun m' ->
       T'.decode_optional_field "error" F'.String_t m' >>= fun error ->
-      T'.decode_repeated_user_field "file" CodeGeneratorResponse.File.unstringify m' >>= fun file ->
+      T'.decode_repeated_user_field "file" Code_generator_response.File.unstringify m' >>= fun file ->
       Ok { error; file }
 end

@@ -122,7 +122,7 @@ end
 module Messages = struct
   let two_fields_tests =
     Utils.suite
-      (module P.TwoFields)
+      (module P.Two_fields)
       "TwoFields"
       [
         {int_field = 42; string_field = "hey there!"};
@@ -138,17 +138,17 @@ module Messages = struct
 
   let with_nested_submessage_tests =
     Utils.suite
-      (module P.WithNestedSubmessage)
+      (module P.With_nested_submessage)
       "WithNestedSubmessage"
-      [P.WithNestedSubmessage.{field = Some Nested.{field = "something"}}]
+      [P.With_nested_submessage.{field = Some Nested.{field = "something"}}]
 
   let mutual_references_tests =
     Utils.suite
-      (module P.MutualReferences)
+      (module P.Mutual_references)
       "MutualReferences"
       [
-        P.MutualReferences.{field = Some Nested1.{field1 = None}};
-        P.MutualReferences.
+        P.Mutual_references.{field = Some Nested1.{field1 = None}};
+        P.Mutual_references.
           {
             field =
               Some
@@ -160,39 +160,39 @@ end
 module Enums = struct
   let tests =
     Utils.suite
-      (module P.WithEnum)
+      (module P.With_enum)
       "WithEnum"
-      [P.WithEnum.{field = DAY}; P.WithEnum.{field = NIGHT}]
+      [P.With_enum.{field = Day}; P.With_enum.{field = Night}]
 end
 
 module Repeated = struct
   let repeated_string_tests =
     Utils.suite
-      (module P.RepeatedString)
+      (module P.Repeated_string)
       "RepeatedString"
-      [P.RepeatedString.{field = ["aaa"; "bbb"]}]
+      [P.Repeated_string.{field = ["aaa"; "bbb"]}]
 
   let repeated_int64_unpacked_tests =
     Utils.suite
-      (module P.RepeatedInt64Unpacked)
+      (module P.Repeated_int64_unpacked)
       "RepeatedInt64Unpacked"
-      [P.RepeatedInt64Unpacked.{field = [1; 2; 3]}]
+      [P.Repeated_int64_unpacked.{field = [1; 2; 3]}]
 
   let repeated_int64_packed_tests =
     Utils.suite
-      (module P.RepeatedInt64Packed)
+      (module P.Repeated_int64_packed)
       "RepeatedInt64Packed"
-      [P.RepeatedInt64Packed.{field = [1; 2; 3]}]
+      [P.Repeated_int64_packed.{field = [1; 2; 3]}]
 end
 
 module Oneof = struct
   let tests =
     Utils.suite
-      (module P.WithOneOf)
+      (module P.With_one_of)
       "WithOneOf"
       [
-        P.WithOneOf.{choice = Some (Apples "42"); bananas = 47};
-        P.WithOneOf.{choice = Some (Oranges 42); bananas = 47};
+        P.With_one_of.{choice = Some (Apples "42"); bananas = 47};
+        P.With_one_of.{choice = Some (Oranges 42); bananas = 47};
       ]
 end
 

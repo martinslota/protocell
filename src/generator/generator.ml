@@ -1,6 +1,14 @@
 open Base
-module Protobuf = Shared_types.Protobuf
-module Generated_code = Shared_types.Generated_code
+module Protobuf = Shared.Protobuf
+module Generated_code = Shared.Generated_code
+module Module_name = Protobuf.Module_name
+module Module_path = Protobuf.Module_path
+module Variant_name = Protobuf.Variant_name
+module Field_name = Protobuf.Field_name
+module Enum = Protobuf.Enum
+module Field = Protobuf.Field
+module Message = Protobuf.Message
+module File = Protobuf.File
 
 type options = {derivers : string list}
 
@@ -15,7 +23,7 @@ module Code = struct
   }
 
   type module_ = {
-    module_name : string;
+    module_name : Module_name.t;
     signature : t list;
     implementation : t list;
   }
@@ -111,6 +119,7 @@ module Code = struct
     let rec modules_code is_first acc = function
       | [] -> List.rev acc
       | {module_name; signature; implementation} :: rest ->
+          let module_name = Module_name.to_string module_name in
           let prefix =
             match recursive, is_first with
             | false, true -> [Printf.sprintf "module %s : sig" module_name]
@@ -150,10 +159,13 @@ module Code = struct
     append buffer ~indent:"" code; Buffer.contents buffer
 end
 
-let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
- fun ~options {name; values} ->
+let generate_enum : options:options -> Enum.t -> Code.module_ =
+ fun ~options {module_name; values; _} ->
   let type_declaration =
-    values |> List.map ~f:fst |> Code.make_variant_type ~options "t"
+    values
+    |> List.map ~f:(fun Enum.{variant_name; _} -> variant_name)
+    |> List.map ~f:Variant_name.to_string
+    |> Code.make_variant_type ~options "t"
   in
   let signature =
     Code.
@@ -167,12 +179,21 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
       ]
   in
   let unique_values =
-    List.dedup_and_sort values ~compare:(fun (_, id1) (_, id2) -> id1 - id2)
+    List.dedup_and_sort values ~compare:(fun Enum.{id = id1; _} {id = id2; _} ->
+        id1 - id2)
   in
   let implementation =
     let default_value =
-      List.find values ~f:(fun (_, id) -> id = 0)
+      List.find values ~f:(fun {id; _} -> id = 0)
       |> Option.value ~default:(List.hd_exn values)
+    in
+    let default_function =
+      [
+        default_value.variant_name
+        |> Variant_name.to_string
+        |> Printf.sprintf "fun () -> %s"
+        |> Code.line;
+      ]
     in
     let to_int_function =
       List.concat
@@ -180,8 +201,9 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
           [
             [line "function"];
             values
-            |> List.map ~f:(fun (name, number) ->
-                   line (Printf.sprintf "| %s -> %d" name number));
+            |> List.map ~f:(fun Enum.{id; variant_name; _} ->
+                   let variant_name = Variant_name.to_string variant_name in
+                   line (Printf.sprintf "| %s -> %d" variant_name id));
           ]
     in
     let of_int_function =
@@ -190,8 +212,9 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
           [
             [line "function"];
             unique_values
-            |> List.map ~f:(fun (name, number) ->
-                   line (Printf.sprintf "| %d -> Some %s" number name));
+            |> List.map ~f:(fun Enum.{id; variant_name; _} ->
+                   let variant_name = Variant_name.to_string variant_name in
+                   line (Printf.sprintf "| %d -> Some %s" id variant_name));
             [line "| _ -> None"];
           ]
     in
@@ -201,8 +224,9 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
           [
             [line "function"];
             values
-            |> List.map ~f:(fun (name, _) ->
-                   line (Printf.sprintf {|| %s -> "%s"|} name name));
+            |> List.map ~f:(fun Enum.{variant_name; original_name; _} ->
+                   let variant_name = Variant_name.to_string variant_name in
+                   line (Printf.sprintf {|| %s -> "%s"|} variant_name original_name));
           ]
     in
     let of_string_function =
@@ -211,36 +235,26 @@ let generate_enum : options:options -> Protobuf.Enum.t -> Code.module_ =
           [
             [line "function"];
             unique_values
-            |> List.map ~f:(fun (name, _) ->
-                   line (Printf.sprintf {|| "%s" -> Some %s|} name name));
+            |> List.map ~f:(fun Enum.{variant_name; original_name; _} ->
+                   let variant_name = Variant_name.to_string variant_name in
+                   line (Printf.sprintf {|| "%s" -> Some %s|} original_name variant_name));
             [line "| _ -> None"];
           ]
     in
     Code.
       [
         type_declaration;
-        make_let ~recursive:false "default"
-        @@ line
-        @@ Printf.sprintf "fun () -> %s"
-        @@ fst default_value;
+        make_let ~recursive:false "default" @@ block default_function;
         make_let ~recursive:false "to_int" @@ block to_int_function;
         make_let ~recursive:false "of_int" @@ block of_int_function;
         make_let ~recursive:false "to_string" @@ block to_string_function;
         make_let ~recursive:false "of_string" @@ block of_string_function;
       ]
   in
-  {module_name = name; signature; implementation}
+  {module_name; signature; implementation}
 
-let rec generate_message
-    :  options:options -> (string, string) Hashtbl.t -> string -> Protobuf.Message.t ->
-    Code.module_
-  =
- fun ~options context syntax {name; enums; messages; field_groups} ->
-  let determine_module_name name =
-    match Hashtbl.find context name with
-    | None -> name
-    | Some module_name -> module_name
-  in
+let rec generate_message : options:options -> string -> Message.t -> Code.module_ =
+ fun ~options syntax {module_name; enums; messages; field_groups; _} ->
   let type_to_ocaml_type : Protobuf.field_data_type -> string = function
     | String_t -> "string"
     | Bytes_t -> "string"
@@ -257,34 +271,33 @@ let rec generate_message
     | Float_t -> "float"
     | Double_t -> "float"
     | Bool_t -> "bool"
-    | Message_t name -> determine_module_name name |> Printf.sprintf "%s.t"
-    | Enum_t name -> determine_module_name name |> Printf.sprintf "%s.t"
+    | Message_t name -> name |> Module_path.to_string |> Printf.sprintf "%s.t"
+    | Enum_t name -> name |> Module_path.to_string |> Printf.sprintf "%s.t"
   in
-  let generate_oneof : options:options -> Protobuf.Field.group -> Code.module_ option =
+  let generate_oneof : options:options -> Field.group -> Code.module_ option =
    fun ~options -> function
-    | Protobuf.Field.Single _ -> None
-    | Oneof {name; fields} ->
+    | Field.Single _ -> None
+    | Oneof {module_name; fields; _} ->
         let type_declaration =
           Code.make_variant_type
             ~options
             "t"
-            (List.map fields ~f:(fun Protobuf.Field.{name; data_type; _} ->
-                 Printf.sprintf
-                   "%s of %s"
-                   (String.capitalize name)
-                   (type_to_ocaml_type data_type)))
+            (List.map fields ~f:(fun Field.{variant_name; data_type; _} ->
+                 let variant_name = Variant_name.to_string variant_name in
+                 Printf.sprintf "%s of %s" variant_name (type_to_ocaml_type data_type)))
         in
         Some
           {
-            module_name = String.capitalize name;
+            module_name;
             signature =
               [
                 type_declaration;
                 fields
-                |> List.map ~f:(fun Protobuf.Field.{name; data_type; _} ->
+                |> List.map ~f:(fun Field.{field_name; data_type; _} ->
+                       let field_name = Field_name.to_string field_name in
                        Printf.sprintf
                          "val %s : %s -> t"
-                         name
+                         field_name
                          (type_to_ocaml_type data_type))
                 |> Code.lines;
               ];
@@ -292,20 +305,19 @@ let rec generate_message
               [
                 type_declaration;
                 fields
-                |> List.map ~f:(fun Protobuf.Field.{name; _} ->
-                       Printf.sprintf
-                         "let %s value = %s value "
-                         name
-                         (String.capitalize name))
+                |> List.map ~f:(fun Field.{field_name; variant_name; _} ->
+                       let field_name = Field_name.to_string field_name in
+                       let variant_name = Variant_name.to_string variant_name in
+                       Printf.sprintf "let %s value = %s value " field_name variant_name)
                 |> Code.lines;
               ];
           }
   in
   let oneofs = field_groups |> List.filter_map ~f:(generate_oneof ~options) in
   let enums = List.map enums ~f:(generate_enum ~options) in
-  let messages = List.map messages ~f:(generate_message context syntax ~options) in
+  let messages = List.map messages ~f:(generate_message syntax ~options) in
   let type_declaration =
-    let to_record_field Protobuf.Field.{name; data_type; repeated; _} =
+    let to_record_field Field.{field_name; data_type; repeated; _} =
       let suffix =
         match repeated with
         | true -> " list"
@@ -316,13 +328,15 @@ let rec generate_message
           | Enum_t _, _ -> ""
           | _ -> " option")
       in
-      name, Printf.sprintf "%s%s" (type_to_ocaml_type data_type) suffix
+      ( Field_name.to_string field_name,
+        Printf.sprintf "%s%s" (type_to_ocaml_type data_type) suffix )
     in
     field_groups
     |> List.map ~f:(function
-           | Protobuf.Field.Single field -> to_record_field field
-           | Oneof {name; _} ->
-               name, name |> String.capitalize |> Printf.sprintf "%s.t option")
+           | Field.Single field -> to_record_field field
+           | Oneof {module_name; field_name; _} ->
+               ( Field_name.to_string field_name,
+                 Printf.sprintf "%s.t option" (Module_name.to_string module_name) ))
     |> Code.make_record_type ~options "t"
   in
   let type_to_constructor : Protobuf.field_data_type -> string = function
@@ -341,8 +355,8 @@ let rec generate_message
     | Float_t -> "Float_t"
     | Double_t -> "Double_t"
     | Bool_t -> "Bool_t"
-    | Message_t name -> determine_module_name name
-    | Enum_t name -> determine_module_name name
+    | Message_t name -> Module_path.to_string name
+    | Enum_t name -> Module_path.to_string name
   in
   let fn_name_part_of_repeated data_type repeated =
     match repeated with
@@ -355,50 +369,50 @@ let rec generate_message
         | Protobuf.Message_t _ | Enum_t _ -> ""
         | _ -> "_optional"))
   in
-  let generate_serialization_function function_name format_module_name field_to_ocaml_id
-      serialized_enum_type
-    =
-    Code.make_let ~recursive:true function_name
+  let generate_serialization_function names field_to_ocaml_id serialized_enum_type =
+    Code.make_let ~recursive:true names.Generated_code.serialize
     @@
     let argument =
       field_groups
       |> List.map ~f:(function
-             | Protobuf.Field.Single {name; _} -> name
-             | Oneof {name; _} -> name)
+             | Field.Single {field_name; _} -> field_name
+             | Oneof {field_name; _} -> field_name)
+      |> List.map ~f:Field_name.to_string
       |> String.concat ~sep:"; "
       |> Printf.sprintf "{ %s }"
     in
     let body =
       let field_to_serialization_call
-          (Protobuf.Field.{name; data_type; repeated; _} as field)
+          (Field.{field_name; data_type; repeated; _} as field)
         =
+        let field_name = Field_name.to_string field_name in
         match data_type with
         | Message_t _ ->
             Printf.sprintf
               {|%s.serialize%s_user_field %s %s.%s %s o'|}
-              format_module_name
+              names.module_alias
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
               (type_to_constructor data_type)
-              function_name
-              name
+              names.serialize
+              field_name
         | Enum_t _ ->
             Printf.sprintf
               {|%s.serialize%s_enum_field %s %s.to_%s %s o'|}
-              format_module_name
+              names.module_alias
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
               (type_to_constructor data_type)
               serialized_enum_type
-              name
+              field_name
         | _ ->
             Printf.sprintf
               {|%s.serialize%s_field %s F'.%s %s o'|}
-              format_module_name
+              names.module_alias
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
               (type_to_constructor data_type)
-              name
+              field_name
       in
       let suffix = " >>= fun () ->" in
       Code.(
@@ -406,16 +420,21 @@ let rec generate_message
           [
             line "let o' = Runtime.Byte_output.create () in";
             List.map field_groups ~f:(function
-                | Protobuf.Field.Single field ->
+                | Field.Single field ->
                     Printf.sprintf "%s%s" (field_to_serialization_call field) suffix
                     |> line
-                | Oneof {name; fields} ->
-                    Code.make_match ~bracketed:true ~suffix name
+                | Oneof {field_name; fields; _} ->
+                    let field_name = Field_name.to_string field_name in
+                    Code.make_match ~bracketed:true ~suffix field_name
                     @@ List.concat
                          [
                            ["None", "Ok ()"];
-                           List.map fields ~f:(fun ({name; _} as field) ->
-                               ( Printf.sprintf "Some %s %s" (String.capitalize name) name,
+                           List.map
+                             fields
+                             ~f:(fun ({variant_name; field_name; _} as field) ->
+                               let field_name = Field_name.to_string field_name in
+                               let variant_name = Variant_name.to_string variant_name in
+                               ( Printf.sprintf "Some %s %s" variant_name field_name,
                                  field_to_serialization_call field ));
                          ])
             |> block ~indented:false;
@@ -424,29 +443,25 @@ let rec generate_message
     in
     Code.make_lambda argument body
   in
-  let generate_deserialization_function function_name format_module_name
-      field_to_ocaml_id serialized_enum_type
-    =
-    Code.make_let ~recursive:true function_name
+  let generate_deserialization_function names field_to_ocaml_id serialized_enum_type =
+    Code.make_let ~recursive:true names.Generated_code.deserialize
     @@
     let argument = "input'" in
     let result_match =
-      let field_to_deserialization_call
-          (Protobuf.Field.{data_type; repeated; _} as field)
-        =
+      let field_to_deserialization_call (Field.{data_type; repeated; _} as field) =
         match data_type with
         | Message_t _ ->
             Printf.sprintf
               {|%s.decode%s_user_field %s %s.%s m'|}
-              format_module_name
+              names.module_alias
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
               (type_to_constructor data_type)
-              function_name
+              names.deserialize
         | Enum_t _ ->
             Printf.sprintf
               {|%s.decode%s_enum_field %s %s.of_%s %s.default m'|}
-              format_module_name
+              names.module_alias
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
               (type_to_constructor data_type)
@@ -455,7 +470,7 @@ let rec generate_message
         | _ ->
             Printf.sprintf
               "%s.decode%s_field %s F'.%s m'"
-              format_module_name
+              names.module_alias
               (fn_name_part_of_repeated data_type repeated)
               (field_to_ocaml_id field)
               (type_to_constructor data_type)
@@ -466,14 +481,16 @@ let rec generate_message
           [
             line (Printf.sprintf "Ok (Runtime.Byte_input.create %s) >>=" argument);
             line
-              (Printf.sprintf "%s.deserialize_message >>= fun m' ->" format_module_name);
+              (Printf.sprintf "%s.deserialize_message >>= fun m' ->" names.module_alias);
             List.map field_groups ~f:(function
-                | Protobuf.Field.Single ({name; _} as field) ->
-                    with_suffix (field_to_deserialization_call field) name |> line
-                | Oneof {name; fields} ->
+                | Field.Single ({field_name; _} as field) ->
+                    let field_name = Field_name.to_string field_name in
+                    with_suffix (field_to_deserialization_call field) field_name |> line
+                | Oneof {module_name; field_name; fields; _} ->
+                    let field_name = Field_name.to_string field_name in
                     block
                       [
-                        Printf.sprintf "%s.decode_oneof_field [" format_module_name
+                        Printf.sprintf "%s.decode_oneof_field [" names.module_alias
                         |> line;
                         fields
                         |> List.map ~f:(fun field ->
@@ -481,36 +498,51 @@ let rec generate_message
                                  "%s, (fun m' -> %s >>| %s.%s);"
                                  (field_to_ocaml_id field)
                                  (field_to_deserialization_call field)
-                                 (String.capitalize name)
-                                 field.name
+                                 (Module_name.to_string module_name)
+                                 (Field_name.to_string field.field_name)
                                |> line)
                         |> block;
-                        with_suffix "] m'" name |> line;
+                        with_suffix "] m'" field_name |> line;
                       ])
             |> block ~indented:false;
             field_groups
             |> List.map ~f:(function
-                   | Protobuf.Field.Single {name; _} -> name
-                   | Oneof {name; _} -> name)
+                   | Field.Single {field_name; _} -> field_name
+                   | Oneof {field_name; _} -> field_name)
+            |> List.map ~f:Field_name.to_string
             |> make_record ~prefix:"Ok";
           ])
     in
     let body = [result_match] |> Code.block ~indented:false in
     Code.make_lambda argument body
   in
-  let field_number_to_ocaml_id Protobuf.Field.{number; _} = Printf.sprintf "%d" number in
+  let field_number_to_ocaml_id Field.{number; _} = Printf.sprintf "%d" number in
   let serialize_code =
-    generate_serialization_function "serialize" "B'" field_number_to_ocaml_id "int"
+    generate_serialization_function
+      (Generated_code.names_of_output_format Binary)
+      field_number_to_ocaml_id
+      "int"
   in
   let deserialize_code =
-    generate_deserialization_function "deserialize" "B'" field_number_to_ocaml_id "int"
+    generate_deserialization_function
+      (Generated_code.names_of_output_format Binary)
+      field_number_to_ocaml_id
+      "int"
   in
-  let field_name_to_ocaml_id Protobuf.Field.{name; _} = Printf.sprintf {|"%s"|} name in
+  let field_name_to_ocaml_id Field.{field_name; _} =
+    field_name |> Field_name.to_string |> Printf.sprintf {|"%s"|}
+  in
   let stringify_code =
-    generate_serialization_function "stringify" "T'" field_name_to_ocaml_id "string"
+    generate_serialization_function
+      (Generated_code.names_of_output_format Text)
+      field_name_to_ocaml_id
+      "string"
   in
   let unstringify_code =
-    generate_deserialization_function "unstringify" "T'" field_name_to_ocaml_id "string"
+    generate_deserialization_function
+      (Generated_code.names_of_output_format Text)
+      field_name_to_ocaml_id
+      "string"
   in
   let signature =
     let generated_function_signatures =
@@ -547,11 +579,35 @@ let rec generate_message
         unstringify_code;
       ]
   in
-  {module_name = name; signature; implementation}
+  {module_name; signature; implementation}
 
-let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t =
- fun ~options {name; enums; messages; context; dependencies; syntax} ->
-  let context = Hashtbl.of_alist_exn (module String) context in
+let rec generate_dependency_module package files =
+  match package with
+  | [] ->
+      List.map files ~f:(fun File.{module_name; _} ->
+          module_name |> Module_name.to_string |> Printf.sprintf "include %s")
+      |> Code.lines
+  | p :: rest ->
+      Code.block
+        ~indented:(List.length rest <> List.length files)
+        [
+          p |> Module_name.to_string |> Printf.sprintf "module %s = struct" |> Code.line;
+          generate_dependency_module rest files;
+          Code.line "end";
+        ]
+
+let generate_file : options:options -> File.t -> Generated_code.File.t =
+ fun ~options {file_name; enums; messages; dependencies; syntax; _} ->
+  let dependencies =
+    dependencies
+    |> List.stable_sort ~compare:(fun File.{package = first; _} {package = second; _} ->
+           Module_path.compare first second)
+    |> List.group ~break:(fun File.{package = first; _} {package = second; _} ->
+           not @@ Module_path.equal first second)
+    |> List.map ~f:(fun files ->
+           let package = files |> List.hd_exn |> fun File.{package; _} -> package in
+           generate_dependency_module package files)
+  in
   let contents =
     Code.(
       make_file
@@ -562,19 +618,17 @@ let generate_file : options:options -> Protobuf.File.t -> Generated_code.File.t 
           line "module F' = Runtime.Field_value";
           line "module B' = Runtime.Binary_format";
           line "module T' = Runtime.Text_format";
-          List.map dependencies ~f:(fun dependency ->
-              dependency |> String.capitalize |> Printf.sprintf "open %s" |> line)
-          |> block ~indented:false;
+          dependencies |> block ~indented:false;
           List.map enums ~f:(generate_enum ~options)
           |> Code.make_modules ~recursive:false ~with_implementation:true
           |> block ~indented:false;
-          List.map messages ~f:(generate_message ~options context syntax)
+          List.map messages ~f:(generate_message ~options syntax)
           |> Code.make_modules ~recursive:true ~with_implementation:true
           |> block ~indented:false;
         ])
     |> Code.emit
   in
-  {name; contents}
+  {file_name; contents}
 
 let generate_files : options:options -> Protobuf.t -> Generated_code.t =
  fun ~options {files} -> List.map ~f:(generate_file ~options) files

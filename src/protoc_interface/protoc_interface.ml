@@ -3,13 +3,13 @@ open Base
 module Plugin = struct
   include Google_protobuf_compiler_plugin_pc
 
-  let decode_request = CodeGeneratorRequest.deserialize
+  let decode_request = Code_generator_request.deserialize
 
-  let encode_response = CodeGeneratorResponse.serialize
+  let encode_response = Code_generator_response.serialize
 
   let error_response =
     let bytes_result =
-      CodeGeneratorResponse.serialize {error = Some "Protocell error"; file = []}
+      Code_generator_response.serialize {error = Some "Protocell error"; file = []}
     in
     Option.value_exn ~message:"Protocell: Fatal error" (Result.ok bytes_result)
 end
@@ -19,135 +19,127 @@ module Descriptor = struct
 end
 
 module Protobuf = struct
-  include Shared_types.Protobuf
+  include Shared.Protobuf
 
-  let field_type_of_request : Descriptor.FieldDescriptorProto.t -> field_data_type =
-   fun {type'; type_name; _} ->
+  let field_type_of_request
+      :  package:Module_path.t -> known_types:Module_path.t list ->
+      Descriptor.Field_descriptor_proto.t -> field_data_type
+    =
+   fun ~package ~known_types {type'; type_name; _} ->
+    let f type_name =
+      let full_path =
+        Option.value_exn
+          (Option.value_exn type_name
+          |> String.chop_prefix_exn ~prefix:"."
+          |> String.split ~on:'.'
+          |> List.map ~f:Module_name.of_string
+          |> Option.all)
+      in
+      match List.mem known_types full_path ~equal:Module_path.equal with
+      | true -> full_path
+      | false -> List.drop full_path (List.length package)
+    in
     match type' with
-    | TYPE_STRING -> String_t
-    | TYPE_BYTES -> Bytes_t
-    | TYPE_INT32 -> Int32_t
-    | TYPE_INT64 -> Int64_t
-    | TYPE_SINT32 -> Sint32_t
-    | TYPE_SINT64 -> Sint64_t
-    | TYPE_UINT32 -> Uint32_t
-    | TYPE_UINT64 -> Uint64_t
-    | TYPE_FIXED32 -> Fixed32_t
-    | TYPE_FIXED64 -> Fixed64_t
-    | TYPE_SFIXED32 -> Sfixed32_t
-    | TYPE_SFIXED64 -> Sfixed64_t
-    | TYPE_FLOAT -> Float_t
-    | TYPE_DOUBLE -> Double_t
-    | TYPE_BOOL -> Bool_t
-    | TYPE_MESSAGE -> Message_t (Option.value_exn type_name)
-    | TYPE_ENUM -> Enum_t (Option.value_exn type_name)
-    | TYPE_GROUP -> failwith "Groups are not supported"
+    | Type_string -> String_t
+    | Type_bytes -> Bytes_t
+    | Type_int32 -> Int32_t
+    | Type_int64 -> Int64_t
+    | Type_sint32 -> Sint32_t
+    | Type_sint64 -> Sint64_t
+    | Type_uint32 -> Uint32_t
+    | Type_uint64 -> Uint64_t
+    | Type_fixed32 -> Fixed32_t
+    | Type_fixed64 -> Fixed64_t
+    | Type_sfixed32 -> Sfixed32_t
+    | Type_sfixed64 -> Sfixed64_t
+    | Type_float -> Float_t
+    | Type_double -> Double_t
+    | Type_bool -> Bool_t
+    | Type_message -> Message_t (f type_name)
+    | Type_enum -> Enum_t (f type_name)
+    | Type_group -> failwith "Groups are not supported"
 
-  let enum_of_request : Descriptor.EnumDescriptorProto.t -> Enum.t =
+  let enum_of_request : Descriptor.Enum_descriptor_proto.t -> Enum.t =
    fun {name; value'; _} ->
     let values =
       List.map value' ~f:(fun {name; number; _} ->
-          Option.value_exn name, Option.value_exn number)
+          Enum.
+            {
+              id = Option.value_exn number;
+              original_name = Option.value_exn name;
+              variant_name =
+                Option.value_exn (Option.bind name ~f:Variant_name.of_string);
+            })
     in
-    {name = Option.value_exn name; values}
+    {module_name = Option.value_exn (Option.bind name ~f:Module_name.of_string); values}
 
-  let ocaml_keywords =
-    Hash_set.of_list
-      (module String)
-      [
-        "and";
-        "as";
-        "assert";
-        "asr";
-        "begin";
-        "class";
-        "constraint";
-        "do";
-        "done";
-        "downto";
-        "else";
-        "end";
-        "exception";
-        "external";
-        "false";
-        "for";
-        "fun";
-        "function";
-        "functor";
-        "if";
-        "in";
-        "include";
-        "inherit";
-        "initializer";
-        "land";
-        "lazy";
-        "let";
-        "lor";
-        "lsl";
-        "lsr";
-        "lxor";
-        "match";
-        "method";
-        "mod";
-        "module";
-        "mutable";
-        "new";
-        "nonrec";
-        "object";
-        "of";
-        "open";
-        "or";
-        "private";
-        "rec";
-        "sig";
-        "struct";
-        "then";
-        "to";
-        "true";
-        "try";
-        "type";
-        "val";
-        "virtual";
-        "when";
-        "while";
-        "with";
-        "parser";
-        "value";
-      ]
-
-  let field_of_request : Descriptor.FieldDescriptorProto.t -> Field.t =
-   fun ({name; number; label; oneof_index; _} as field) ->
+  let field_of_request
+      :  package:Module_path.t -> known_types:Module_path.t list ->
+      Descriptor.Field_descriptor_proto.t -> Field.t
+    =
+   fun ~package ~known_types ({name; number; label; oneof_index; _} as field) ->
     {
-      name =
-        (let name = String.uncapitalize (Option.value_exn name) in
-         match Hash_set.mem ocaml_keywords name with
-         | true -> Printf.sprintf "%s'" name
-         | false -> name);
+      field_name = Option.value_exn (Option.bind name ~f:Field_name.of_string);
+      variant_name = Option.value_exn (Option.bind name ~f:Variant_name.of_string);
       number = Option.value_exn number;
-      data_type = field_type_of_request field;
+      data_type = field_type_of_request ~package ~known_types field;
       repeated =
         (match label with
-        | Descriptor.FieldDescriptorProto.Label.LABEL_REPEATED -> true
+        | Descriptor.Field_descriptor_proto.Label.Label_repeated -> true
         | _ -> false);
       oneof_index;
     }
 
-  let oneof_of_request : Descriptor.OneofDescriptorProto.t -> Oneof.t =
-   fun {name; _} -> {name = Option.value_exn name}
+  let oneof_of_request : Descriptor.Oneof_descriptor_proto.t -> Oneof.t =
+   fun {name; _} ->
+    {
+      module_name = Option.value_exn (Option.bind name ~f:Module_name.of_string);
+      field_name = Option.value_exn (Option.bind name ~f:Field_name.of_string);
+    }
 
-  let rec message_of_request : Descriptor.DescriptorProto.t -> Message.t =
-   fun {name; field; nested_type; enum_type; oneof_decl; _} ->
-    let fields = List.map field ~f:field_of_request in
+  let rec message_of_request
+      :  package:Module_path.t -> known_types:Module_path.t list ->
+      Descriptor.Descriptor_proto.t -> Message.t
+    =
+   fun ~package ~known_types {name; field; nested_type; enum_type; oneof_decl; _} ->
+    let fields = List.map field ~f:(field_of_request ~package ~known_types) in
     let oneofs = List.map oneof_decl ~f:oneof_of_request in
     {
-      name = Option.value_exn name;
+      module_name = Option.value_exn (Option.bind name ~f:Module_name.of_string);
       enums = List.map enum_type ~f:enum_of_request;
-      messages = List.map nested_type ~f:message_of_request;
+      messages = List.map nested_type ~f:(message_of_request ~package ~known_types);
       field_groups = Field.determine_groups fields oneofs;
     }
 
-  let file_of_request : File.context -> Descriptor.FileDescriptorProto.t -> File.t =
-   fun context {name; package; enum_type; message_type; dependency; syntax; _} ->
+  let file_of_request
+      : (string, File.t) List.Assoc.t -> Descriptor.File_descriptor_proto.t -> File.t
+    =
+   fun known_files {name; package; enum_type; message_type; dependency; syntax; _} ->
+    let dependencies =
+      List.filter_map known_files ~f:(fun (file_name, file) ->
+          match List.exists dependency ~f:(String.equal file_name) with
+          | true -> Some file
+          | false -> None)
+    in
+    let enum_module_paths prefix enums =
+      List.map enums ~f:(fun Enum.{module_name; _} ->
+          List.concat [prefix; [module_name]])
+    in
+    let rec message_module_paths prefix messages =
+      List.concat_map messages ~f:(fun Message.{module_name; messages; enums; _} ->
+          let prefix = List.concat [prefix; [module_name]] in
+          List.concat
+            [
+              [prefix];
+              message_module_paths prefix messages;
+              enum_module_paths prefix enums;
+            ])
+    in
+    let known_types =
+      List.concat_map dependencies ~f:(fun {enums; package; messages; _} ->
+          List.concat
+            [message_module_paths package messages; enum_module_paths package enums])
+    in
     let ocaml_module_name name =
       let base_name =
         match String.chop_suffix name ~suffix:".proto" with
@@ -156,65 +148,43 @@ module Protobuf = struct
       in
       Printf.sprintf "%s_pc" base_name |> String.tr ~target:'/' ~replacement:'_'
     in
-    let name = Printf.sprintf "%s.ml" (ocaml_module_name (Option.value_exn name)) in
-    let enums = List.map ~f:enum_of_request enum_type in
-    let messages = List.map ~f:message_of_request message_type in
-    let full_enum_names prefix enums =
-      List.map enums ~f:(fun Enum.{name; _} -> Printf.sprintf "%s%s" prefix name)
-    in
-    let rec full_message_names accumulator to_process =
-      match to_process with
-      | [] -> accumulator
-      | (prefix, Message.{name; enums; messages; _}) :: rest ->
-          let accumulator = Printf.sprintf "%s%s" prefix name :: accumulator in
-          let prefix = Printf.sprintf "%s%s." prefix name in
-          let accumulator = List.concat [full_enum_names prefix enums; accumulator] in
-          let to_process =
-            List.concat [List.map messages ~f:(fun message -> prefix, message); rest]
-          in
-          full_message_names accumulator to_process
-    in
-    let all_names =
-      List.concat
-        [
-          full_enum_names "" enums;
-          full_message_names [] (List.map messages ~f:(fun message -> "", message));
-        ]
-    in
-    let package_prefix =
+    let package =
       match package with
-      | None -> ""
-      | Some package -> Printf.sprintf "%s." package
+      | None -> []
+      | Some package ->
+          Option.value_exn
+            (package
+            |> String.split ~on:'.'
+            |> List.map ~f:Module_name.of_string
+            |> Option.all)
     in
-    let context =
-      List.concat
-        [
-          context;
-          all_names
-          |> List.map ~f:(fun name -> Printf.sprintf ".%s%s" package_prefix name, name);
-        ]
+    let file_name = Printf.sprintf "%s.ml" (ocaml_module_name (Option.value_exn name)) in
+    let module_name =
+      Option.(value_exn (name >>| ocaml_module_name >>= Module_name.of_string))
     in
-    let dependencies = List.map dependency ~f:ocaml_module_name in
+    let enums = List.map ~f:enum_of_request enum_type in
+    let messages = List.map ~f:(message_of_request ~package ~known_types) message_type in
     let syntax = Option.value syntax ~default:"proto2" in
-    {name; enums; messages; context; dependencies; syntax}
+    {file_name; package; module_name; enums; messages; dependencies; syntax}
 
-  let of_request : Plugin.CodeGeneratorRequest.t -> t =
+  let of_request : Plugin.Code_generator_request.t -> t =
    fun {proto_file; _} ->
     let _, files =
-      List.fold proto_file ~init:([], []) ~f:(fun (context, accumulator) proto ->
-          let f = file_of_request context proto in
-          f.context, f :: accumulator)
+      List.fold proto_file ~init:([], []) ~f:(fun (x, accumulator) proto ->
+          let f = file_of_request x proto in
+          let x = (Option.value_exn proto.name, f) :: x in
+          x, f :: accumulator)
     in
     {files}
 end
 
 module Generated_code = struct
-  include Shared_types.Generated_code
+  include Shared.Generated_code
 
-  let file_to_response : File.t -> Plugin.CodeGeneratorResponse.File.t =
-   fun {name; contents} ->
-    {name = Some name; insertion_point = None; content = Some contents}
+  let file_to_response : File.t -> Plugin.Code_generator_response.File.t =
+   fun {file_name; contents} ->
+    {name = Some file_name; insertion_point = None; content = Some contents}
 
-  let to_response : t -> Plugin.CodeGeneratorResponse.t =
+  let to_response : t -> Plugin.Code_generator_response.t =
    fun files -> {error = None; file = List.map ~f:file_to_response files}
 end
