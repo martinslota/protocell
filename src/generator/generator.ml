@@ -586,13 +586,16 @@ let rec generate_dependency_module package files =
   | [] ->
       List.map files ~f:(fun File.{module_name; _} ->
           module_name |> Module_name.to_string |> Printf.sprintf "include %s")
-      |> Code.lines
-  | p :: rest ->
+      |> Code.lines ~indented:false
+  | package_module :: rest ->
       Code.block
         ~indented:(List.length rest <> List.length files)
         [
-          p |> Module_name.to_string |> Printf.sprintf "module %s = struct" |> Code.line;
-          generate_dependency_module rest files;
+          package_module
+          |> Module_name.to_string
+          |> Printf.sprintf "module %s = struct"
+          |> Code.line;
+          Code.block [generate_dependency_module rest files];
           Code.line "end";
         ]
 
@@ -613,12 +616,12 @@ let generate_file : options:options -> File.t -> Generated_code.File.t =
       make_file
         [
           line {|[@@@ocaml.warning "-39"]|};
+          dependencies |> block ~indented:false;
           line "let (>>=) = Runtime.Result.(>>=)";
           line "let (>>|) = Runtime.Result.(>>|)";
           line "module F' = Runtime.Field_value";
           line "module B' = Runtime.Binary_format";
           line "module T' = Runtime.Text_format";
-          dependencies |> block ~indented:false;
           List.map enums ~f:(generate_enum ~options)
           |> Code.make_modules ~recursive:false ~with_implementation:true
           |> block ~indented:false;

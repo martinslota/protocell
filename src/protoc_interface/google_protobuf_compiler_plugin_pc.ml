@@ -1,5 +1,11 @@
 [@@@ocaml.warning "-39"]
 
+module Google = struct
+    module Protobuf = struct
+      include Google_protobuf_descriptor_pc
+    end
+end
+
 let (>>=) = Runtime.Result.(>>=)
 
 let (>>|) = Runtime.Result.(>>|)
@@ -9,12 +15,6 @@ module F' = Runtime.Field_value
 module B' = Runtime.Binary_format
 
 module T' = Runtime.Text_format
-
-module Google = struct
-  module Protobuf = struct
-    include Google_protobuf_descriptor_pc
-  end
-end
 
 module rec Version : sig
   type t = {

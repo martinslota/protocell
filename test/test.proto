@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "test_import.proto";
+
 message String {
   string field = 1;
 }
@@ -113,10 +115,14 @@ message WithOneOf {
   int32 bananas = 3;
 }
 
-enum E {
+enum EnumWithAlias {
   A = 0;
   B = 1;
   C = 2;
   D = 2;
   option allow_alias = true;
+}
+
+message WithImportedMessage {
+  Imported f = 2;
 }

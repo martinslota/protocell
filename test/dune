@@ -10,10 +10,10 @@
    (WITH_DERIVERS eq,show))))
 
 (rule
- (targets test_pc.ml)
+ (targets test_pc.ml test_import_pc.ml)
  (deps
   (:plugin ../src/protocell/protocell.exe)
-  (:proto test.proto))
+  (:proto test.proto test_import.proto))
  (action
   (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
 
