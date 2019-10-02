@@ -114,6 +114,10 @@ module type NAME = sig
   val equal : t -> t -> bool
 
   val compare : t -> t -> int
+
+  val hash : t -> int
+
+  val sexp_of_t : t -> Sexp.t
 end
 
 module Make_capitalized_snake_case_name () : NAME = struct
@@ -132,6 +136,10 @@ module Make_capitalized_snake_case_name () : NAME = struct
   let equal = String.equal
 
   let compare = String.compare
+
+  let hash = String.hash
+
+  let sexp_of_t = String.sexp_of_t
 end
 
 module Make_uncapitalized_snake_case_name () : NAME = struct
@@ -150,6 +158,10 @@ module Make_uncapitalized_snake_case_name () : NAME = struct
   let equal = String.equal
 
   let compare = String.compare
+
+  let hash = String.hash
+
+  let sexp_of_t = String.sexp_of_t
 end
 
 module Module_name = Make_capitalized_snake_case_name ()
@@ -163,10 +175,20 @@ module Module_path = struct
 
   let compare = List.compare Module_name.compare
 
-  let equal first second = match compare first second with | 0 -> true | _ -> false
+  let equal first second =
+    match compare first second with
+    | 0 -> true
+    | _ -> false
 
-  let to_string name =
-    name |> List.map ~f:Module_name.to_string |> String.concat ~sep:"."
+  let of_string input =
+    input |> String.split ~on:'.' |> List.map ~f:Module_name.of_string |> Option.all
+
+  let to_string path =
+    path |> List.map ~f:Module_name.to_string |> String.concat ~sep:"."
+
+  let hash path = String.hash @@ to_string path
+
+  let sexp_of_t path = List.sexp_of_t Module_name.sexp_of_t path
 end
 
 type field_data_type =
@@ -237,12 +259,12 @@ module Field = struct
       List.fold_right
         fields
         ~init:([], [])
-        ~f:(fun ({oneof_index; _} as field) (visited, acc) ->
+        ~f:(fun ({oneof_index; _} as field) (visited, accumulator) ->
           match oneof_index with
-          | None -> visited, Single field :: acc
+          | None -> visited, Single field :: accumulator
           | Some index -> (
             match List.mem visited index ~equal:Int.equal with
-            | true -> visited, acc
+            | true -> visited, accumulator
             | false ->
                 let oneof = oneofs.(index) in
                 let group =
@@ -253,7 +275,7 @@ module Field = struct
                       fields = Hashtbl.find_exn index_to_fields index |> List.rev;
                     }
                 in
-                index :: visited, group :: acc))
+                index :: visited, group :: accumulator))
     in
     groups
 end

@@ -1,5 +1,9 @@
 open Base
 
+let unwrap ~expected option =
+  let message = Printf.sprintf "Expected %s but got None" expected in
+  Option.value_exn ~message option
+
 module Plugin = struct
   include Google_protobuf_compiler_plugin_pc
 
@@ -11,7 +15,7 @@ module Plugin = struct
     let bytes_result =
       Code_generator_response.serialize {error = Some "Protocell error"; file = []}
     in
-    Option.value_exn ~message:"Protocell: Fatal error" (Result.ok bytes_result)
+    unwrap ~expected:"serialized protocell error" (Result.ok bytes_result)
 end
 
 module Descriptor = struct
@@ -21,23 +25,32 @@ end
 module Protobuf = struct
   include Shared.Protobuf
 
+  let module_name_of_string_opt input =
+    input |> Option.bind ~f:Module_name.of_string |> unwrap ~expected:"module_name"
+
+  let variant_name_of_string_opt input =
+    input |> Option.bind ~f:Variant_name.of_string |> unwrap ~expected:"variant_name"
+
+  let field_name_of_string_opt input =
+    input |> Option.bind ~f:Field_name.of_string |> unwrap ~expected:"field_name"
+
   let field_type_of_request
-      :  package:Module_path.t -> known_types:Module_path.t list ->
+      :  package:Module_path.t ->
+      substitutions:(Module_path.t, Module_path.t) Hashtbl.t ->
       Descriptor.Field_descriptor_proto.t -> field_data_type
     =
-   fun ~package ~known_types {type'; type_name; _} ->
-    let f type_name =
+   fun ~package ~substitutions {type'; type_name; _} ->
+    let determine_module_path type_name =
       let full_path =
-        Option.value_exn
-          (Option.value_exn type_name
-          |> String.chop_prefix_exn ~prefix:"."
-          |> String.split ~on:'.'
-          |> List.map ~f:Module_name.of_string
-          |> Option.all)
+        type_name
+        |> unwrap ~expected:"type_name"
+        |> String.chop_prefix_exn ~prefix:"."
+        |> Module_path.of_string
+        |> unwrap ~expected:"module_path"
       in
-      match List.mem known_types full_path ~equal:Module_path.equal with
-      | true -> full_path
-      | false -> List.drop full_path (List.length package)
+      match Hashtbl.find substitutions full_path with
+      | Some subst_path -> subst_path
+      | None -> List.drop full_path (List.length package)
     in
     match type' with
     | Type_string -> String_t
@@ -55,8 +68,8 @@ module Protobuf = struct
     | Type_float -> Float_t
     | Type_double -> Double_t
     | Type_bool -> Bool_t
-    | Type_message -> Message_t (f type_name)
-    | Type_enum -> Enum_t (f type_name)
+    | Type_message -> Message_t (determine_module_path type_name)
+    | Type_enum -> Enum_t (determine_module_path type_name)
     | Type_group -> failwith "Groups are not supported"
 
   let enum_of_request : Descriptor.Enum_descriptor_proto.t -> Enum.t =
@@ -65,24 +78,24 @@ module Protobuf = struct
       List.map value' ~f:(fun {name; number; _} ->
           Enum.
             {
-              id = Option.value_exn number;
-              original_name = Option.value_exn name;
-              variant_name =
-                Option.value_exn (Option.bind name ~f:Variant_name.of_string);
+              id = unwrap ~expected:"enum_value_id" number;
+              original_name = unwrap ~expected:"enum_value_name" name;
+              variant_name = variant_name_of_string_opt name;
             })
     in
-    {module_name = Option.value_exn (Option.bind name ~f:Module_name.of_string); values}
+    {module_name = module_name_of_string_opt name; values}
 
   let field_of_request
-      :  package:Module_path.t -> known_types:Module_path.t list ->
+      :  package:Module_path.t ->
+      substitutions:(Module_path.t, Module_path.t) Hashtbl.t ->
       Descriptor.Field_descriptor_proto.t -> Field.t
     =
-   fun ~package ~known_types ({name; number; label; oneof_index; _} as field) ->
+   fun ~package ~substitutions ({name; number; label; oneof_index; _} as field) ->
     {
-      field_name = Option.value_exn (Option.bind name ~f:Field_name.of_string);
-      variant_name = Option.value_exn (Option.bind name ~f:Variant_name.of_string);
-      number = Option.value_exn number;
-      data_type = field_type_of_request ~package ~known_types field;
+      field_name = field_name_of_string_opt name;
+      variant_name = variant_name_of_string_opt name;
+      number = unwrap ~expected:"field_number" number;
+      data_type = field_type_of_request ~package ~substitutions field;
       repeated =
         (match label with
         | Descriptor.Field_descriptor_proto.Label.Label_repeated -> true
@@ -93,21 +106,22 @@ module Protobuf = struct
   let oneof_of_request : Descriptor.Oneof_descriptor_proto.t -> Oneof.t =
    fun {name; _} ->
     {
-      module_name = Option.value_exn (Option.bind name ~f:Module_name.of_string);
-      field_name = Option.value_exn (Option.bind name ~f:Field_name.of_string);
+      module_name = module_name_of_string_opt name;
+      field_name = field_name_of_string_opt name;
     }
 
   let rec message_of_request
-      :  package:Module_path.t -> known_types:Module_path.t list ->
+      :  package:Module_path.t ->
+      substitutions:(Module_path.t, Module_path.t) Hashtbl.t ->
       Descriptor.Descriptor_proto.t -> Message.t
     =
-   fun ~package ~known_types {name; field; nested_type; enum_type; oneof_decl; _} ->
-    let fields = List.map field ~f:(field_of_request ~package ~known_types) in
+   fun ~package ~substitutions {name; field; nested_type; enum_type; oneof_decl; _} ->
+    let fields = List.map field ~f:(field_of_request ~package ~substitutions) in
     let oneofs = List.map oneof_decl ~f:oneof_of_request in
     {
-      module_name = Option.value_exn (Option.bind name ~f:Module_name.of_string);
+      module_name = module_name_of_string_opt name;
       enums = List.map enum_type ~f:enum_of_request;
-      messages = List.map nested_type ~f:(message_of_request ~package ~known_types);
+      messages = List.map nested_type ~f:(message_of_request ~package ~substitutions);
       field_groups = Field.determine_groups fields oneofs;
     }
 
@@ -121,24 +135,34 @@ module Protobuf = struct
           | true -> Some file
           | false -> None)
     in
-    let enum_module_paths prefix enums =
-      List.map enums ~f:(fun Enum.{module_name; _} ->
-          List.concat [prefix; [module_name]])
-    in
-    let rec message_module_paths prefix messages =
-      List.concat_map messages ~f:(fun Message.{module_name; messages; enums; _} ->
-          let prefix = List.concat [prefix; [module_name]] in
-          List.concat
-            [
-              [prefix];
-              message_module_paths prefix messages;
-              enum_module_paths prefix enums;
-            ])
-    in
-    let known_types =
-      List.concat_map dependencies ~f:(fun {enums; package; messages; _} ->
-          List.concat
-            [message_module_paths package messages; enum_module_paths package enums])
+    let substitutions =
+      let enum_module_paths ~from_prefix ~to_prefix enums =
+        List.map enums ~f:(fun Enum.{module_name; _} ->
+            ( List.concat [from_prefix; [module_name]],
+              List.concat [to_prefix; [module_name]] ))
+      in
+      let rec message_module_paths ~from_prefix ~to_prefix messages =
+        List.concat_map messages ~f:(fun Message.{module_name; messages; enums; _} ->
+            let from_prefix = List.concat [from_prefix; [module_name]] in
+            let to_prefix = List.concat [to_prefix; [module_name]] in
+            List.concat
+              [
+                [from_prefix, to_prefix];
+                message_module_paths ~from_prefix ~to_prefix messages;
+                enum_module_paths ~from_prefix ~to_prefix enums;
+              ])
+      in
+      dependencies
+      |> List.concat_map ~f:(fun File.{module_name; enums; package; messages; _} ->
+             List.concat
+               [
+                 message_module_paths
+                   ~from_prefix:package
+                   ~to_prefix:[module_name]
+                   messages;
+                 enum_module_paths ~from_prefix:package ~to_prefix:[module_name] enums;
+               ])
+      |> Hashtbl.of_alist_exn (module Module_path)
     in
     let ocaml_module_name name =
       let base_name =
@@ -152,28 +176,35 @@ module Protobuf = struct
       match package with
       | None -> []
       | Some package ->
-          Option.value_exn
-            (package
-            |> String.split ~on:'.'
-            |> List.map ~f:Module_name.of_string
-            |> Option.all)
+          package |> Module_path.of_string |> unwrap ~expected:"module_path"
     in
-    let file_name = Printf.sprintf "%s.ml" (ocaml_module_name (Option.value_exn name)) in
+    let file_name =
+      Printf.sprintf "%s.ml" (ocaml_module_name (unwrap ~expected:"file_name" name))
+    in
     let module_name =
-      Option.(value_exn (name >>| ocaml_module_name >>= Module_name.of_string))
+      Option.(
+        name
+        >>| ocaml_module_name
+        >>= Module_name.of_string
+        |> unwrap ~expected:"module_name")
     in
     let enums = List.map ~f:enum_of_request enum_type in
-    let messages = List.map ~f:(message_of_request ~package ~known_types) message_type in
+    let messages =
+      List.map ~f:(message_of_request ~package ~substitutions) message_type
+    in
     let syntax = Option.value syntax ~default:"proto2" in
     {file_name; package; module_name; enums; messages; dependencies; syntax}
 
   let of_request : Plugin.Code_generator_request.t -> t =
    fun {proto_file; _} ->
-    let _, files =
-      List.fold proto_file ~init:([], []) ~f:(fun (x, accumulator) proto ->
-          let f = file_of_request x proto in
-          let x = (Option.value_exn proto.name, f) :: x in
-          x, f :: accumulator)
+    let files =
+      proto_file
+      |> List.fold ~init:([], []) ~f:(fun (files_seen, accumulator) proto ->
+             let file' = file_of_request files_seen proto in
+             let file_name = unwrap ~expected:"file_name" proto.name in
+             let files_seen = (file_name, file') :: files_seen in
+             files_seen, file' :: accumulator)
+      |> snd
     in
     {files}
 end

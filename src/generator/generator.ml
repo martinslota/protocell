@@ -600,23 +600,12 @@ let rec generate_dependency_module package files =
         ]
 
 let generate_file : options:options -> File.t -> Generated_code.File.t =
- fun ~options {file_name; enums; messages; dependencies; syntax; _} ->
-  let dependencies =
-    dependencies
-    |> List.stable_sort ~compare:(fun File.{package = first; _} {package = second; _} ->
-           Module_path.compare first second)
-    |> List.group ~break:(fun File.{package = first; _} {package = second; _} ->
-           not @@ Module_path.equal first second)
-    |> List.map ~f:(fun files ->
-           let package = files |> List.hd_exn |> fun File.{package; _} -> package in
-           generate_dependency_module package files)
-  in
+ fun ~options {file_name; enums; messages; syntax; _} ->
   let contents =
     Code.(
       make_file
         [
           line {|[@@@ocaml.warning "-39"]|};
-          dependencies |> block ~indented:false;
           line "let (>>=) = Runtime.Result.(>>=)";
           line "let (>>|) = Runtime.Result.(>>|)";
           line "module F' = Runtime.Field_value";
