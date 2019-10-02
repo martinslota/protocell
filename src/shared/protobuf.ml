@@ -161,9 +161,9 @@ module Field_name = Make_uncapitalized_snake_case_name ()
 module Module_path = struct
   type t = Module_name.t list
 
-  let equal = List.equal Module_name.equal
-
   let compare = List.compare Module_name.compare
+
+  let equal first second = match compare first second with | 0 -> true | _ -> false
 
   let to_string name =
     name |> List.map ~f:Module_name.to_string |> String.concat ~sep:"."
