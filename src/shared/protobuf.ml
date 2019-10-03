@@ -250,6 +250,7 @@ end
 
 module Field = struct
   type t = {
+    original_name : string;
     field_name : Field_name.t;
     variant_name : Variant_name.t;
     number : int;

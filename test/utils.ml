@@ -123,8 +123,14 @@ let text_error_to_string = function
   | #Runtime.Text_format.deserialization_error as e ->
       text_format_deserialization_error_to_string e
 
-let suite (type t) (module T : Serdes_testable with type t = t) protobuf_type_name
-    values_to_test
+let make_tests title test_fn values_to_test =
+  let value_count = List.length values_to_test in
+  List.mapi values_to_test ~f:(fun index value ->
+      let test_name = Printf.sprintf "%s (%d/%d)" title index (value_count - 1) in
+      Alcotest.test_case test_name `Quick @@ test_fn value)
+
+let invariant_suite (type t) (module T : Serdes_testable with type t = t)
+    protobuf_type_name values_to_test
   =
   let t_testable : T.t Alcotest.testable = Alcotest.testable T.pp T.equal in
   let protobuf_file_name = "test.proto" in
@@ -173,12 +179,6 @@ let suite (type t) (module T : Serdes_testable with type t = t) protobuf_type_na
           check t_testable "to_binary |> protoc |> of_text mismatch" value actual)
     | Error e -> Alcotest.fail (text_error_to_string e)
   in
-  let value_count = List.length values_to_test in
-  let make_tests title test_fn =
-    List.mapi values_to_test ~f:(fun index value ->
-        let test_name = Printf.sprintf "%s (%d/%d)" title index (value_count - 1) in
-        Alcotest.test_case test_name `Quick @@ test_fn value)
-  in
   ( protobuf_type_name,
     [
       make_tests "Invariant: to_binary |> of_binary is identity" binary_format_roundtrip;
@@ -190,4 +190,5 @@ let suite (type t) (module T : Serdes_testable with type t = t) protobuf_type_na
         "Invariant: to_binary |> protoc |> of_text is identity"
         generate_protoc_binary_input;
     ]
+    |> List.map ~f:(fun test -> test values_to_test)
     |> List.concat )

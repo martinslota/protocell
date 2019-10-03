@@ -340,7 +340,7 @@ let decode_field id typ records =
   match Hashtbl.find records id with
   | None -> Ok (Field_value.default typ)
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok (Field_value.default typ)
     | Some value -> decode_field_value typ value)
 
@@ -349,7 +349,7 @@ let decode_optional_field id typ records =
   match Hashtbl.find records id with
   | None -> Ok None
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok None
     | Some value -> decode_field_value typ value >>| Option.some)
 
@@ -363,18 +363,18 @@ let decode_user_value deserializer value =
   | Message encoding -> deserializer encoding
   | _ as value -> Error (`Wrong_value_sort_for_user_field (to_sort value))
 
-let decode_user_oneof_field id deserializer records =
-  let values = Hashtbl.find_exn records id in
-  decode_user_value deserializer (List.hd_exn values)
-
 let decode_user_field id deserializer records =
   let open Result.Let_syntax in
   match Hashtbl.find records id with
   | None -> Ok None
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok None
     | Some value -> decode_user_value deserializer value >>| Option.some)
+
+let decode_user_oneof_field id deserializer records =
+  let values = Hashtbl.find_exn records id in
+  decode_user_value deserializer (List.last_exn values)
 
 let decode_repeated_user_field id deserializer records =
   match Hashtbl.find records id with
@@ -389,7 +389,7 @@ let decode_enum_field id of_string default records =
   match Hashtbl.find records id with
   | None -> Ok (default ())
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok (default ())
     | Some value -> decode_enum_value of_string value)
 

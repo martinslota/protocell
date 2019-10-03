@@ -92,6 +92,7 @@ module Protobuf = struct
     =
    fun ~package ~substitutions ({name; number; label; oneof_index; _} as field) ->
     {
+      original_name = unwrap ~expected:"original_field_name" name;
       field_name = field_name_of_string_opt name;
       variant_name = variant_name_of_string_opt name;
       number = unwrap ~expected:"field_number" number;

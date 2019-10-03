@@ -2,6 +2,14 @@ syntax = "proto3";
 
 import "test_import.proto";
 
+enum EnumWithAlias {
+  option allow_alias = true;
+  A = 0;
+  B = 1;
+  C = 2;
+  D = 2;
+}
+
 message String {
   string field = 1;
 }
@@ -111,18 +119,22 @@ message WithOneOf {
   oneof choice {
     string apples = 1;
     int32 oranges = 2;
+    WithEnum FruitIsOverrated = 7;
   }
   int32 bananas = 3;
 }
 
-enum EnumWithAlias {
-  A = 0;
-  B = 1;
-  C = 2;
-  D = 2;
-  option allow_alias = true;
+message Empty {
+}
+
+message MultipleWireValues {
+  string field = 1;
+}
+
+message WithMap {
+  map<int64, string> values = 1;
 }
 
 message WithImportedMessage {
-  Imported f = 2;
+  Imported imported = 987;
 }

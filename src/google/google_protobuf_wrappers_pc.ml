@@ -43,14 +43,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Double_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Double_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Double_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Double_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -87,14 +87,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Float_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Float_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Float_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Float_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -131,14 +131,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Int64_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Int64_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Int64_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Int64_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -175,14 +175,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Uint64_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Uint64_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Uint64_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Uint64_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -219,14 +219,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Int32_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Int32_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Int32_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Int32_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -263,14 +263,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Uint32_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Uint32_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Uint32_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Uint32_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -307,14 +307,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Bool_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Bool_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Bool_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Bool_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -351,14 +351,14 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.String_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.String_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.String_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.String_t _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -395,13 +395,13 @@ end = struct
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value'" Field'.Bytes_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.Bytes_t value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value'" Field'.Bytes_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.Bytes_t _m >>= fun value' ->
       Ok { value' }
 end

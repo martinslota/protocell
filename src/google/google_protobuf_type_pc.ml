@@ -644,7 +644,7 @@ end = struct
     fun { name; value' } ->
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_field "name" Field'.String_t name _o >>= fun () ->
-      Text'.serialize_user_field "value'" Google_protobuf_any_pc.Any.to_text value' _o >>= fun () ->
+      Text'.serialize_user_field "value" Google_protobuf_any_pc.Any.to_text value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
@@ -652,6 +652,6 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_field "name" Field'.String_t _m >>= fun name ->
-      Text'.decode_user_field "value'" Google_protobuf_any_pc.Any.of_text _m >>= fun value' ->
+      Text'.decode_user_field "value" Google_protobuf_any_pc.Any.of_text _m >>= fun value' ->
       Ok { name; value' }
 end

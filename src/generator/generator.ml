@@ -602,8 +602,8 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
         (Binary, "int", fun Protobuf.Field.{number; _} -> Printf.sprintf "%d" number);
         ( Text,
           "string",
-          fun Protobuf.Field.{field_name; _} ->
-            field_name |> Protobuf.Field_name.to_string |> Printf.sprintf {|"%s"|} );
+          fun Protobuf.Field.{original_name; _} ->
+            original_name |> Printf.sprintf {|"%s"|} );
       ]
     |> List.map ~f:(fun (format, id_type_name, field_to_id) ->
            Generated_code.names_of_output_format format, id_type_name, field_to_id)

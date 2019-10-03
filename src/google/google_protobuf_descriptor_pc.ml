@@ -259,7 +259,7 @@ end = struct
       fun { start; end'; options } ->
         let _o = Runtime.Byte_output.create () in
         Text'.serialize_optional_field "start" Field'.Int32_t start _o >>= fun () ->
-        Text'.serialize_optional_field "end'" Field'.Int32_t end' _o >>= fun () ->
+        Text'.serialize_optional_field "end" Field'.Int32_t end' _o >>= fun () ->
         Text'.serialize_user_field "options" Extension_range_options.to_text options _o >>= fun () ->
         Ok (Runtime.Byte_output.contents _o)
   
@@ -268,7 +268,7 @@ end = struct
         Ok (Runtime.Byte_input.create input') >>=
         Text'.deserialize_message >>= fun _m ->
         Text'.decode_optional_field "start" Field'.Int32_t _m >>= fun start ->
-        Text'.decode_optional_field "end'" Field'.Int32_t _m >>= fun end' ->
+        Text'.decode_optional_field "end" Field'.Int32_t _m >>= fun end' ->
         Text'.decode_user_field "options" Extension_range_options.of_text _m >>= fun options ->
         Ok { start; end'; options }
   end
@@ -311,7 +311,7 @@ end = struct
       fun { start; end' } ->
         let _o = Runtime.Byte_output.create () in
         Text'.serialize_optional_field "start" Field'.Int32_t start _o >>= fun () ->
-        Text'.serialize_optional_field "end'" Field'.Int32_t end' _o >>= fun () ->
+        Text'.serialize_optional_field "end" Field'.Int32_t end' _o >>= fun () ->
         Ok (Runtime.Byte_output.contents _o)
   
     let rec of_text =
@@ -319,7 +319,7 @@ end = struct
         Ok (Runtime.Byte_input.create input') >>=
         Text'.deserialize_message >>= fun _m ->
         Text'.decode_optional_field "start" Field'.Int32_t _m >>= fun start ->
-        Text'.decode_optional_field "end'" Field'.Int32_t _m >>= fun end' ->
+        Text'.decode_optional_field "end" Field'.Int32_t _m >>= fun end' ->
         Ok { start; end' }
   end
 
@@ -756,7 +756,7 @@ end = struct
       Text'.serialize_optional_field "name" Field'.String_t name _o >>= fun () ->
       Text'.serialize_optional_field "number" Field'.Int32_t number _o >>= fun () ->
       Text'.serialize_enum_field "label" Field_descriptor_proto.Label.to_string label _o >>= fun () ->
-      Text'.serialize_enum_field "type'" Field_descriptor_proto.Type'.to_string type' _o >>= fun () ->
+      Text'.serialize_enum_field "type" Field_descriptor_proto.Type'.to_string type' _o >>= fun () ->
       Text'.serialize_optional_field "type_name" Field'.String_t type_name _o >>= fun () ->
       Text'.serialize_optional_field "extendee" Field'.String_t extendee _o >>= fun () ->
       Text'.serialize_optional_field "default_value" Field'.String_t default_value _o >>= fun () ->
@@ -772,7 +772,7 @@ end = struct
       Text'.decode_optional_field "name" Field'.String_t _m >>= fun name ->
       Text'.decode_optional_field "number" Field'.Int32_t _m >>= fun number ->
       Text'.decode_enum_field "label" Field_descriptor_proto.Label.of_string Field_descriptor_proto.Label.default _m >>= fun label ->
-      Text'.decode_enum_field "type'" Field_descriptor_proto.Type'.of_string Field_descriptor_proto.Type'.default _m >>= fun type' ->
+      Text'.decode_enum_field "type" Field_descriptor_proto.Type'.of_string Field_descriptor_proto.Type'.default _m >>= fun type' ->
       Text'.decode_optional_field "type_name" Field'.String_t _m >>= fun type_name ->
       Text'.decode_optional_field "extendee" Field'.String_t _m >>= fun extendee ->
       Text'.decode_optional_field "default_value" Field'.String_t _m >>= fun default_value ->
@@ -902,7 +902,7 @@ end = struct
       fun { start; end' } ->
         let _o = Runtime.Byte_output.create () in
         Text'.serialize_optional_field "start" Field'.Int32_t start _o >>= fun () ->
-        Text'.serialize_optional_field "end'" Field'.Int32_t end' _o >>= fun () ->
+        Text'.serialize_optional_field "end" Field'.Int32_t end' _o >>= fun () ->
         Ok (Runtime.Byte_output.contents _o)
   
     let rec of_text =
@@ -910,7 +910,7 @@ end = struct
         Ok (Runtime.Byte_input.create input') >>=
         Text'.deserialize_message >>= fun _m ->
         Text'.decode_optional_field "start" Field'.Int32_t _m >>= fun start ->
-        Text'.decode_optional_field "end'" Field'.Int32_t _m >>= fun end' ->
+        Text'.decode_optional_field "end" Field'.Int32_t _m >>= fun end' ->
         Ok { start; end' }
   end
 
@@ -947,7 +947,7 @@ end = struct
     fun { name; value'; options; reserved_range; reserved_name } ->
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_optional_field "name" Field'.String_t name _o >>= fun () ->
-      Text'.serialize_repeated_user_field "value'" Enum_value_descriptor_proto.to_text value' _o >>= fun () ->
+      Text'.serialize_repeated_user_field "value" Enum_value_descriptor_proto.to_text value' _o >>= fun () ->
       Text'.serialize_user_field "options" Enum_options.to_text options _o >>= fun () ->
       Text'.serialize_repeated_user_field "reserved_range" Enum_descriptor_proto.Enum_reserved_range.to_text reserved_range _o >>= fun () ->
       Text'.serialize_repeated_field "reserved_name" Field'.String_t reserved_name _o >>= fun () ->
@@ -958,7 +958,7 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_optional_field "name" Field'.String_t _m >>= fun name ->
-      Text'.decode_repeated_user_field "value'" Enum_value_descriptor_proto.of_text _m >>= fun value' ->
+      Text'.decode_repeated_user_field "value" Enum_value_descriptor_proto.of_text _m >>= fun value' ->
       Text'.decode_user_field "options" Enum_options.of_text _m >>= fun options ->
       Text'.decode_repeated_user_field "reserved_range" Enum_descriptor_proto.Enum_reserved_range.of_text _m >>= fun reserved_range ->
       Text'.decode_repeated_field "reserved_name" Field'.String_t _m >>= fun reserved_name ->
@@ -1063,7 +1063,7 @@ end = struct
     fun { name; method'; options } ->
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_optional_field "name" Field'.String_t name _o >>= fun () ->
-      Text'.serialize_repeated_user_field "method'" Method_descriptor_proto.to_text method' _o >>= fun () ->
+      Text'.serialize_repeated_user_field "method" Method_descriptor_proto.to_text method' _o >>= fun () ->
       Text'.serialize_user_field "options" Service_options.to_text options _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -1072,7 +1072,7 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_optional_field "name" Field'.String_t _m >>= fun name ->
-      Text'.decode_repeated_user_field "method'" Method_descriptor_proto.of_text _m >>= fun method' ->
+      Text'.decode_repeated_user_field "method" Method_descriptor_proto.of_text _m >>= fun method' ->
       Text'.decode_user_field "options" Service_options.of_text _m >>= fun options ->
       Ok { name; method'; options }
 end
@@ -1647,7 +1647,7 @@ end = struct
       Text'.serialize_enum_field "ctype" Field_options.C_type.to_string ctype _o >>= fun () ->
       Text'.serialize_optional_field "packed" Field'.Bool_t packed _o >>= fun () ->
       Text'.serialize_enum_field "jstype" Field_options.J_s_type.to_string jstype _o >>= fun () ->
-      Text'.serialize_optional_field "lazy'" Field'.Bool_t lazy' _o >>= fun () ->
+      Text'.serialize_optional_field "lazy" Field'.Bool_t lazy' _o >>= fun () ->
       Text'.serialize_optional_field "deprecated" Field'.Bool_t deprecated _o >>= fun () ->
       Text'.serialize_optional_field "weak" Field'.Bool_t weak _o >>= fun () ->
       Text'.serialize_repeated_user_field "uninterpreted_option" Uninterpreted_option.to_text uninterpreted_option _o >>= fun () ->
@@ -1660,7 +1660,7 @@ end = struct
       Text'.decode_enum_field "ctype" Field_options.C_type.of_string Field_options.C_type.default _m >>= fun ctype ->
       Text'.decode_optional_field "packed" Field'.Bool_t _m >>= fun packed ->
       Text'.decode_enum_field "jstype" Field_options.J_s_type.of_string Field_options.J_s_type.default _m >>= fun jstype ->
-      Text'.decode_optional_field "lazy'" Field'.Bool_t _m >>= fun lazy' ->
+      Text'.decode_optional_field "lazy" Field'.Bool_t _m >>= fun lazy' ->
       Text'.decode_optional_field "deprecated" Field'.Bool_t _m >>= fun deprecated ->
       Text'.decode_optional_field "weak" Field'.Bool_t _m >>= fun weak ->
       Text'.decode_repeated_user_field "uninterpreted_option" Uninterpreted_option.of_text _m >>= fun uninterpreted_option ->
@@ -2343,8 +2343,8 @@ end = struct
         let _o = Runtime.Byte_output.create () in
         Text'.serialize_repeated_field "path" Field'.Int32_t path _o >>= fun () ->
         Text'.serialize_optional_field "source_file" Field'.String_t source_file _o >>= fun () ->
-        Text'.serialize_optional_field "begin'" Field'.Int32_t begin' _o >>= fun () ->
-        Text'.serialize_optional_field "end'" Field'.Int32_t end' _o >>= fun () ->
+        Text'.serialize_optional_field "begin" Field'.Int32_t begin' _o >>= fun () ->
+        Text'.serialize_optional_field "end" Field'.Int32_t end' _o >>= fun () ->
         Ok (Runtime.Byte_output.contents _o)
   
     let rec of_text =
@@ -2353,8 +2353,8 @@ end = struct
         Text'.deserialize_message >>= fun _m ->
         Text'.decode_repeated_field "path" Field'.Int32_t _m >>= fun path ->
         Text'.decode_optional_field "source_file" Field'.String_t _m >>= fun source_file ->
-        Text'.decode_optional_field "begin'" Field'.Int32_t _m >>= fun begin' ->
-        Text'.decode_optional_field "end'" Field'.Int32_t _m >>= fun end' ->
+        Text'.decode_optional_field "begin" Field'.Int32_t _m >>= fun begin' ->
+        Text'.decode_optional_field "end" Field'.Int32_t _m >>= fun end' ->
         Ok { path; source_file; begin'; end' }
   end
 

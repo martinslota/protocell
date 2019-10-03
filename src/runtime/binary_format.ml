@@ -561,7 +561,7 @@ let decode_field id typ records =
   match Hashtbl.find records id with
   | None -> Ok (Field_value.default typ)
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok (Field_value.default typ)
     | Some value -> decode_field_value typ value)
 
@@ -570,7 +570,7 @@ let decode_optional_field id typ records =
   match Hashtbl.find records id with
   | None -> Ok None
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok None
     | Some value -> decode_field_value typ value >>| Option.some)
 
@@ -591,7 +591,7 @@ let decode_user_field id deserializer records =
   match Hashtbl.find records id with
   | None -> Ok None
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok None
     | Some value -> decode_user_value deserializer value >>| Option.some)
 
@@ -615,7 +615,7 @@ let decode_enum_field id of_int default records =
   match Hashtbl.find records id with
   | None -> Ok (default ())
   | Some values -> (
-    match List.hd values with
+    match List.last values with
     | None -> Ok (default ())
     | Some value -> decode_enum_value of_int value)
 
