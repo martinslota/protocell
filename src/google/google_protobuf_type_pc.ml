@@ -65,13 +65,13 @@ module rec Type' : sig
     syntax : Syntax.t;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;
@@ -194,13 +194,13 @@ and Field : sig
     default_value : string;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module Kind : sig
     type t =
@@ -491,13 +491,13 @@ and Enum : sig
     syntax : Syntax.t;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;
@@ -557,13 +557,13 @@ and Enum_value : sig
     options : Option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;
@@ -612,13 +612,13 @@ and Option : sig
     value' : Google_protobuf_any_pc.Any.t option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;

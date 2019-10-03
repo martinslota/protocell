@@ -56,26 +56,26 @@ module rec Struct' : sig
       value' : Value'.t option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
 
   type t = {
     fields : Struct'.Fields_entry.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module rec Fields_entry : sig
     type t = {
@@ -83,13 +83,13 @@ end = struct
       value' : Value'.t option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       key : string;
@@ -180,13 +180,13 @@ and Value' : sig
     kind : Kind.t option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module Kind : sig
     type t =
@@ -284,13 +284,13 @@ and List_value : sig
     values : Value'.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     values : Value'.t list;

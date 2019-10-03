@@ -21,13 +21,13 @@ module rec Api : sig
     syntax : Google_protobuf_type_pc.Syntax.t;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;
@@ -101,13 +101,13 @@ and Method' : sig
     syntax : Google_protobuf_type_pc.Syntax.t;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;
@@ -176,13 +176,13 @@ and Mixin : sig
     root : string;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string;

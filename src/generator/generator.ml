@@ -574,19 +574,17 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
       field_to_id
     =
     let signatures =
-      Code.
-        [
-          line
-          @@ Printf.sprintf
-               "val %s : t -> (string, [> %s.serialization_error]) result"
-               serialize
-               module_alias;
-          line
-          @@ Printf.sprintf
-               "val %s : string -> (t, [> %s.deserialization_error]) result"
-               deserialize
-               module_alias;
-        ]
+      [
+        Printf.sprintf
+          "val %s : t -> (string, [> %s.serialization_error]) result"
+          serialize
+          module_alias;
+        Printf.sprintf
+          "val %s : string -> (t, [> %s.deserialization_error]) result"
+          deserialize
+          module_alias;
+      ]
+      |> List.map ~f:(fun s -> Code.(block [line s]))
     in
     let implementation =
       [
@@ -656,42 +654,45 @@ let rec generate_dependency_module package files =
           Code.line "end";
         ]
 
-let generate_file : options:options -> File.t -> Generated_code.File.t =
- fun ~options {file_name; enums; messages; syntax; _} ->
-  let binary_format_names = Generated_code.names_of_output_format Binary in
-  let text_format_names = Generated_code.names_of_output_format Text in
-  let contents =
-    Code.(
-      make_file
-        [
-          line {|[@@@ocaml.warning "-39"]|};
-          line "let (>>=) = Runtime.Result.(>>=)";
-          line "let (>>|) = Runtime.Result.(>>|)";
-          line
-          @@ Printf.sprintf
-               "module %s = Runtime.%s"
-               Generated_code.field_value_module_alias
-               Generated_code.field_value_runtime_module_name;
-          line
-          @@ Printf.sprintf
-               "module %s = Runtime.%s"
-               binary_format_names.module_alias
-               binary_format_names.runtime_module_name;
-          line
-          @@ Printf.sprintf
-               "module %s = Runtime.%s"
-               text_format_names.module_alias
-               text_format_names.runtime_module_name;
-          List.map enums ~f:(generate_enum ~options)
-          |> Code.make_modules ~recursive:false ~with_implementation:true
-          |> block ~indented:false;
-          List.map messages ~f:(generate_message ~options syntax)
-          |> Code.make_modules ~recursive:true ~with_implementation:true
-          |> block ~indented:false;
-        ])
-    |> Code.emit
-  in
-  {file_name; contents}
+let generate_file : options:options -> File.t -> Generated_code.File.t option =
+ fun ~options {should_be_generated; file_name; enums; messages; syntax; _} ->
+  match should_be_generated with
+  | false -> None
+  | true ->
+      let binary_format_names = Generated_code.names_of_output_format Binary in
+      let text_format_names = Generated_code.names_of_output_format Text in
+      let contents =
+        Code.(
+          make_file
+            [
+              line {|[@@@ocaml.warning "-39"]|};
+              line "let (>>=) = Runtime.Result.(>>=)";
+              line "let (>>|) = Runtime.Result.(>>|)";
+              line
+              @@ Printf.sprintf
+                   "module %s = Runtime.%s"
+                   Generated_code.field_value_module_alias
+                   Generated_code.field_value_runtime_module_name;
+              line
+              @@ Printf.sprintf
+                   "module %s = Runtime.%s"
+                   binary_format_names.module_alias
+                   binary_format_names.runtime_module_name;
+              line
+              @@ Printf.sprintf
+                   "module %s = Runtime.%s"
+                   text_format_names.module_alias
+                   text_format_names.runtime_module_name;
+              List.map enums ~f:(generate_enum ~options)
+              |> Code.make_modules ~recursive:false ~with_implementation:true
+              |> block ~indented:false;
+              List.map messages ~f:(generate_message ~options syntax)
+              |> Code.make_modules ~recursive:true ~with_implementation:true
+              |> block ~indented:false;
+            ])
+        |> Code.emit
+      in
+      Some {file_name; contents}
 
 let generate_files : options:options -> Protobuf.t -> Generated_code.t =
- fun ~options {files} -> List.map ~f:(generate_file ~options) files
+ fun ~options {files} -> List.filter_map ~f:(generate_file ~options) files

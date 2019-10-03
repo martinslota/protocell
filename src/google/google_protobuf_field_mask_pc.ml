@@ -15,13 +15,13 @@ module rec Field_mask : sig
     paths : string list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     paths : string list;

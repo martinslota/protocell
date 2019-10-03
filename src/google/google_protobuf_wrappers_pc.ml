@@ -15,13 +15,13 @@ module rec Double_value : sig
     value' : float;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : float;
@@ -59,13 +59,13 @@ and Float_value : sig
     value' : float;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : float;
@@ -103,13 +103,13 @@ and Int64_value : sig
     value' : int;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : int;
@@ -147,13 +147,13 @@ and U_int64_value : sig
     value' : int;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : int;
@@ -191,13 +191,13 @@ and Int32_value : sig
     value' : int;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : int;
@@ -235,13 +235,13 @@ and U_int32_value : sig
     value' : int;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : int;
@@ -279,13 +279,13 @@ and Bool_value : sig
     value' : bool;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : bool;
@@ -323,13 +323,13 @@ and String_value : sig
     value' : string;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : string;
@@ -367,13 +367,13 @@ and Bytes_value : sig
     value' : string;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     value' : string;

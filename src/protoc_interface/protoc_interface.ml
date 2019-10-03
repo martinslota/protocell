@@ -127,11 +127,14 @@ module Protobuf = struct
     }
 
   let file_of_request
-      : (string, File.t) List.Assoc.t -> Descriptor.File_descriptor_proto.t -> File.t
+      :  files_seen:(string, File.t) List.Assoc.t -> should_be_generated:bool ->
+      Descriptor.File_descriptor_proto.t -> File.t
     =
-   fun known_files {name; package; enum_type; message_type; dependency; syntax; _} ->
+   fun ~files_seen
+       ~should_be_generated
+       {name; package; enum_type; message_type; dependency; syntax; _} ->
     let dependencies =
-      List.filter_map known_files ~f:(fun (file_name, file) ->
+      List.filter_map files_seen ~f:(fun (file_name, file) ->
           match List.exists dependency ~f:(String.equal file_name) with
           | true -> Some file
           | false -> None)
@@ -194,14 +197,31 @@ module Protobuf = struct
       List.map ~f:(message_of_request ~package ~substitutions) message_type
     in
     let syntax = Option.value syntax ~default:"proto2" in
-    {file_name; package; module_name; enums; messages; dependencies; syntax}
+    {
+      file_name;
+      package;
+      module_name;
+      enums;
+      messages;
+      dependencies;
+      syntax;
+      should_be_generated;
+    }
 
   let of_request : Plugin.Code_generator_request.t -> t =
-   fun {proto_file; file_to_generate = _; _} ->
+   fun {proto_file; file_to_generate; _} ->
     let files =
       proto_file
-      |> List.fold ~init:([], []) ~f:(fun (files_seen, accumulator) proto ->
-             let file' = file_of_request files_seen proto in
+      |> List.fold
+           ~init:([], [])
+           ~f:(fun (files_seen, accumulator)
+                   (Descriptor.File_descriptor_proto.{name; _} as proto)
+                   ->
+             let name = unwrap ~expected:"file_name" name in
+             let should_be_generated =
+               List.mem file_to_generate name ~equal:String.equal
+             in
+             let file' = file_of_request ~files_seen ~should_be_generated proto in
              let file_name = unwrap ~expected:"file_name" proto.name in
              let files_seen = (file_name, file') :: files_seen in
              files_seen, file' :: accumulator)

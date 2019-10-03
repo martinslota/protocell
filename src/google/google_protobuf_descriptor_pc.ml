@@ -15,13 +15,13 @@ module rec File_descriptor_set : sig
     file : File_descriptor_proto.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     file : File_descriptor_proto.t list;
@@ -70,13 +70,13 @@ and File_descriptor_proto : sig
     syntax : string option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string option;
@@ -172,13 +172,13 @@ and Descriptor_proto : sig
       options : Extension_range_options.t option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
   
   and Reserved_range : sig
@@ -187,13 +187,13 @@ and Descriptor_proto : sig
       end' : int option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
 
   type t = {
@@ -209,13 +209,13 @@ and Descriptor_proto : sig
     reserved_name : string list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module rec Extension_range : sig
     type t = {
@@ -224,13 +224,13 @@ end = struct
       options : Extension_range_options.t option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       start : int option;
@@ -279,13 +279,13 @@ end = struct
       end' : int option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       start : int option;
@@ -404,13 +404,13 @@ and Extension_range_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     uninterpreted_option : Uninterpreted_option.t list;
@@ -506,13 +506,13 @@ and Field_descriptor_proto : sig
     options : Field_options.t option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module Type' : sig
     type t =
@@ -788,13 +788,13 @@ and Oneof_descriptor_proto : sig
     options : Oneof_options.t option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string option;
@@ -839,13 +839,13 @@ and Enum_descriptor_proto : sig
       end' : int option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
 
   type t = {
@@ -856,13 +856,13 @@ and Enum_descriptor_proto : sig
     reserved_name : string list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module rec Enum_reserved_range : sig
     type t = {
@@ -870,13 +870,13 @@ end = struct
       end' : int option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       start : int option;
@@ -972,13 +972,13 @@ and Enum_value_descriptor_proto : sig
     options : Enum_value_options.t option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string option;
@@ -1028,13 +1028,13 @@ and Service_descriptor_proto : sig
     options : Service_options.t option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string option;
@@ -1087,13 +1087,13 @@ and Method_descriptor_proto : sig
     server_streaming : bool option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     name : string option;
@@ -1193,13 +1193,13 @@ and File_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module Optimize_mode : sig
     type t =
@@ -1392,13 +1392,13 @@ and Message_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     message_set_wire_format : bool option;
@@ -1496,13 +1496,13 @@ and Field_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module C_type : sig
     type t =
@@ -1672,13 +1672,13 @@ and Oneof_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     uninterpreted_option : Uninterpreted_option.t list;
@@ -1718,13 +1718,13 @@ and Enum_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     allow_alias : bool option;
@@ -1773,13 +1773,13 @@ and Enum_value_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     deprecated : bool option;
@@ -1823,13 +1823,13 @@ and Service_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
     deprecated : bool option;
@@ -1891,13 +1891,13 @@ and Method_options : sig
     uninterpreted_option : Uninterpreted_option.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module Idempotency_level : sig
     type t =
@@ -1998,13 +1998,13 @@ and Uninterpreted_option : sig
       is_extension : bool option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
 
   type t = {
@@ -2017,13 +2017,13 @@ and Uninterpreted_option : sig
     aggregate_value : string option;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module rec Name_part : sig
     type t = {
@@ -2031,13 +2031,13 @@ end = struct
       is_extension : bool option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       name_part : string option;
@@ -2146,26 +2146,26 @@ and Source_code_info : sig
       leading_detached_comments : string list;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
 
   type t = {
     location : Source_code_info.Location.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module rec Location : sig
     type t = {
@@ -2176,13 +2176,13 @@ end = struct
       leading_detached_comments : string list;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       path : int list;
@@ -2275,26 +2275,26 @@ and Generated_code_info : sig
       end' : int option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end
 
   type t = {
     annotation : Generated_code_info.Annotation.t list;
   }
 
-val to_binary : t -> (string, [> Bin'.serialization_error]) result
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
-val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
 
-val to_text : t -> (string, [> Text'.serialization_error]) result
+  val to_text : t -> (string, [> Text'.serialization_error]) result
 
-val of_text : string -> (t, [> Text'.deserialization_error]) result
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   module rec Annotation : sig
     type t = {
@@ -2304,13 +2304,13 @@ end = struct
       end' : int option;
     }
   
-  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+    val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
-  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+    val of_binary : string -> (t, [> Bin'.deserialization_error]) result
   
-  val to_text : t -> (string, [> Text'.serialization_error]) result
+    val to_text : t -> (string, [> Text'.serialization_error]) result
   
-  val of_text : string -> (t, [> Text'.deserialization_error]) result
+    val of_text : string -> (t, [> Text'.deserialization_error]) result
   end = struct
     type t = {
       path : int list;

@@ -317,6 +317,7 @@ module File = struct
     dependencies : t list;
     enums : Enum.t list;
     messages : Message.t list;
+    should_be_generated : bool;
   }
 end
 
