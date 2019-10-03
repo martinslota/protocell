@@ -1,5 +1,3 @@
-PROTOC_INTERFACE_FOLDER := src/protoc_interface
-
 .PHONY: build
 build: ## Build the code
 	dune build
