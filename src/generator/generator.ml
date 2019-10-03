@@ -179,8 +179,10 @@ let generate_enum : options:options -> Enum.t -> Code.module_ =
       ]
   in
   let unique_values =
-    List.dedup_and_sort values ~compare:(fun Enum.{id = id1; _} {id = id2; _} ->
-        id1 - id2)
+    values
+    |> List.stable_sort ~compare:(fun Enum.{id = id1; _} {id = id2; _} -> id1 - id2)
+    |> List.group ~break:(fun Enum.{id = id1; _} {id = id2; _} -> id1 <> id2)
+    |> List.map ~f:List.hd_exn
   in
   let implementation =
     let default_value =
@@ -234,7 +236,7 @@ let generate_enum : options:options -> Enum.t -> Code.module_ =
         Code.
           [
             [line "function"];
-            unique_values
+            values
             |> List.map ~f:(fun Enum.{variant_name; original_name; _} ->
                    let variant_name = Variant_name.to_string variant_name in
                    line (Printf.sprintf {|| "%s" -> Some %s|} original_name variant_name));
@@ -308,7 +310,7 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
                 |> List.map ~f:(fun Field.{field_name; variant_name; _} ->
                        let field_name = Field_name.to_string field_name in
                        let variant_name = Variant_name.to_string variant_name in
-                       Printf.sprintf "let %s value = %s value " field_name variant_name)
+                       Printf.sprintf "let %s value = %s value" field_name variant_name)
                 |> Code.lines;
               ];
           }
