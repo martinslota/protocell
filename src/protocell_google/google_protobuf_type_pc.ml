@@ -14,6 +14,7 @@ module Syntax : sig
   type t =
     | Syntax_proto2
     | Syntax_proto3
+  [@@deriving eq, show]
 
   val default : unit -> t
 
@@ -28,6 +29,7 @@ end = struct
   type t =
     | Syntax_proto2
     | Syntax_proto3
+  [@@deriving eq, show]
 
   let default =
     fun () -> Syntax_proto2
@@ -64,6 +66,7 @@ module rec Type' : sig
     source_context : Google_protobuf_source_context_pc.Source_context.t option;
     syntax : Syntax.t;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -81,6 +84,7 @@ end = struct
     source_context : Google_protobuf_source_context_pc.Source_context.t option;
     syntax : Syntax.t;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; fields; oneofs; options; source_context; syntax } ->
@@ -151,6 +155,7 @@ and Field : sig
       | Type_sfixed64
       | Type_sint32
       | Type_sint64
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -169,6 +174,7 @@ and Field : sig
       | Cardinality_optional
       | Cardinality_required
       | Cardinality_repeated
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -193,6 +199,7 @@ and Field : sig
     json_name : string;
     default_value : string;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -223,6 +230,7 @@ end = struct
       | Type_sfixed64
       | Type_sint32
       | Type_sint64
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -254,6 +262,7 @@ end = struct
       | Type_sfixed64
       | Type_sint32
       | Type_sint64
+    [@@deriving eq, show]
   
     let default =
       fun () -> Type_unknown
@@ -355,6 +364,7 @@ end = struct
       | Cardinality_optional
       | Cardinality_required
       | Cardinality_repeated
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -371,6 +381,7 @@ end = struct
       | Cardinality_optional
       | Cardinality_required
       | Cardinality_repeated
+    [@@deriving eq, show]
   
     let default =
       fun () -> Cardinality_unknown
@@ -418,6 +429,7 @@ end = struct
     json_name : string;
     default_value : string;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { kind; cardinality; number; name; type_url; oneof_index; packed; options; json_name; default_value } ->
@@ -490,6 +502,7 @@ and Enum : sig
     source_context : Google_protobuf_source_context_pc.Source_context.t option;
     syntax : Syntax.t;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -506,6 +519,7 @@ end = struct
     source_context : Google_protobuf_source_context_pc.Source_context.t option;
     syntax : Syntax.t;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; enumvalue; options; source_context; syntax } ->
@@ -556,6 +570,7 @@ and Enum_value : sig
     number : int;
     options : Option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -570,6 +585,7 @@ end = struct
     number : int;
     options : Option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; number; options } ->
@@ -611,6 +627,7 @@ and Option : sig
     name : string;
     value' : Google_protobuf_any_pc.Any.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -624,6 +641,7 @@ end = struct
     name : string;
     value' : Google_protobuf_any_pc.Any.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; value' } ->

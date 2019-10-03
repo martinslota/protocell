@@ -26,10 +26,10 @@ release: ## Create a new release on Github. Prepare the release for publishing o
 generate-spec: build
 generate-spec: 
 	$(eval PROTOBUF_INCLUDE := $(shell find /usr -type d -path '*include/google/protobuf' 2>/dev/null | head -n 1 | xargs dirname | xargs dirname))
-	@find $(PROTOBUF_INCLUDE) -iname '*.proto' | xargs protoc \
+	@find $(PROTOBUF_INCLUDE) -iname '*.proto' | WITH_DERIVERS="eq,show" xargs protoc \
 		-I $(PROTOBUF_INCLUDE) \
 		--plugin=protoc-gen-ocaml=_build/default/src/protocell/protocell.exe \
-		--ocaml_out=src/google
+		--ocaml_out=src/protocell_google
 
 .PHONY: help
 help: ## Display this help

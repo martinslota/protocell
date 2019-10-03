@@ -13,6 +13,7 @@ module Text' = Runtime.Text_format
 module Null_value : sig
   type t =
     | Null_value
+  [@@deriving eq, show]
 
   val default : unit -> t
 
@@ -26,6 +27,7 @@ module Null_value : sig
 end = struct
   type t =
     | Null_value
+  [@@deriving eq, show]
 
   let default =
     fun () -> Null_value
@@ -55,6 +57,7 @@ module rec Struct' : sig
       key : string;
       value' : Value'.t option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -68,6 +71,7 @@ module rec Struct' : sig
   type t = {
     fields : Struct'.Fields_entry.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -82,6 +86,7 @@ end = struct
       key : string;
       value' : Value'.t option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -95,6 +100,7 @@ end = struct
       key : string;
       value' : Value'.t option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { key; value' } ->
@@ -130,6 +136,7 @@ end = struct
   type t = {
     fields : Struct'.Fields_entry.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { fields } ->
@@ -167,6 +174,7 @@ and Value' : sig
       | Bool_value of bool
       | Struct_value of Struct'.t
       | List_value of List_value.t
+    [@@deriving eq, show]
   
     val null_value : Null_value.t -> t
     val number_value : float -> t
@@ -179,6 +187,7 @@ and Value' : sig
   type t = {
     kind : Kind.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -196,6 +205,7 @@ end = struct
       | Bool_value of bool
       | Struct_value of Struct'.t
       | List_value of List_value.t
+    [@@deriving eq, show]
   
     val null_value : Null_value.t -> t
     val number_value : float -> t
@@ -211,6 +221,7 @@ end = struct
       | Bool_value of bool
       | Struct_value of Struct'.t
       | List_value of List_value.t
+    [@@deriving eq, show]
   
     let null_value value = Null_value value
     let number_value value = Number_value value
@@ -223,6 +234,7 @@ end = struct
   type t = {
     kind : Kind.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { kind } ->
@@ -283,6 +295,7 @@ and List_value : sig
   type t = {
     values : Value'.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -295,6 +308,7 @@ end = struct
   type t = {
     values : Value'.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { values } ->

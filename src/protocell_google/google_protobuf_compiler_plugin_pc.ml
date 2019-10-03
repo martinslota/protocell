@@ -17,6 +17,7 @@ module rec Version : sig
     patch : int option;
     suffix : string option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -32,6 +33,7 @@ end = struct
     patch : int option;
     suffix : string option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { major; minor; patch; suffix } ->
@@ -79,6 +81,7 @@ and Code_generator_request : sig
     proto_file : Google_protobuf_descriptor_pc.File_descriptor_proto.t list;
     compiler_version : Version.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -94,6 +97,7 @@ end = struct
     proto_file : Google_protobuf_descriptor_pc.File_descriptor_proto.t list;
     compiler_version : Version.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { file_to_generate; parameter; proto_file; compiler_version } ->
@@ -141,6 +145,7 @@ and Code_generator_response : sig
       insertion_point : string option;
       content : string option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -155,6 +160,7 @@ and Code_generator_response : sig
     error : string option;
     file : Code_generator_response.File.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -170,6 +176,7 @@ end = struct
       insertion_point : string option;
       content : string option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -184,6 +191,7 @@ end = struct
       insertion_point : string option;
       content : string option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { name; insertion_point; content } ->
@@ -224,6 +232,7 @@ end = struct
     error : string option;
     file : Code_generator_response.File.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { error; file } ->

@@ -10,11 +10,11 @@ module Bin' = Runtime.Binary_format
 
 module Text' = Runtime.Text_format
 
-module rec Any : sig
+module rec Field_mask : sig
   type t = {
-    type_url : string;
-    value' : string;
+    paths : string list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -25,37 +25,33 @@ module rec Any : sig
   val of_text : string -> (t, [> Text'.deserialization_error]) result
 end = struct
   type t = {
-    type_url : string;
-    value' : string;
+    paths : string list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
-    fun { type_url; value' } ->
+    fun { paths } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_field 1 Field'.String_t type_url _o >>= fun () ->
-      Bin'.serialize_field 2 Field'.Bytes_t value' _o >>= fun () ->
+      Bin'.serialize_repeated_field 1 Field'.String_t paths _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_field 1 Field'.String_t _m >>= fun type_url ->
-      Bin'.decode_field 2 Field'.Bytes_t _m >>= fun value' ->
-      Ok { type_url; value' }
+      Bin'.decode_repeated_field 1 Field'.String_t _m >>= fun paths ->
+      Ok { paths }
 
   let rec to_text =
-    fun { type_url; value' } ->
+    fun { paths } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "type_url" Field'.String_t type_url _o >>= fun () ->
-      Text'.serialize_field "value" Field'.Bytes_t value' _o >>= fun () ->
+      Text'.serialize_repeated_field "paths" Field'.String_t paths _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "type_url" Field'.String_t _m >>= fun type_url ->
-      Text'.decode_field "value" Field'.Bytes_t _m >>= fun value' ->
-      Ok { type_url; value' }
+      Text'.decode_repeated_field "paths" Field'.String_t _m >>= fun paths ->
+      Ok { paths }
 end

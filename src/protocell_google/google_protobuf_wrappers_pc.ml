@@ -14,6 +14,7 @@ module rec Double_value : sig
   type t = {
     value' : float;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -26,6 +27,7 @@ end = struct
   type t = {
     value' : float;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -58,6 +60,7 @@ and Float_value : sig
   type t = {
     value' : float;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -70,6 +73,7 @@ end = struct
   type t = {
     value' : float;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -102,6 +106,7 @@ and Int64_value : sig
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -114,6 +119,7 @@ end = struct
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -146,6 +152,7 @@ and U_int64_value : sig
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -158,6 +165,7 @@ end = struct
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -190,6 +198,7 @@ and Int32_value : sig
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -202,6 +211,7 @@ end = struct
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -234,6 +244,7 @@ and U_int32_value : sig
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -246,6 +257,7 @@ end = struct
   type t = {
     value' : int;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -278,6 +290,7 @@ and Bool_value : sig
   type t = {
     value' : bool;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -290,6 +303,7 @@ end = struct
   type t = {
     value' : bool;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -322,6 +336,7 @@ and String_value : sig
   type t = {
     value' : string;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -334,6 +349,7 @@ end = struct
   type t = {
     value' : string;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->
@@ -366,6 +382,7 @@ and Bytes_value : sig
   type t = {
     value' : string;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -378,6 +395,7 @@ end = struct
   type t = {
     value' : string;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { value' } ->

@@ -14,6 +14,7 @@ module rec File_descriptor_set : sig
   type t = {
     file : File_descriptor_proto.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -26,6 +27,7 @@ end = struct
   type t = {
     file : File_descriptor_proto.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { file } ->
@@ -69,6 +71,7 @@ and File_descriptor_proto : sig
     source_code_info : Source_code_info.t option;
     syntax : string option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -92,6 +95,7 @@ end = struct
     source_code_info : Source_code_info.t option;
     syntax : string option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; package; dependency; public_dependency; weak_dependency; message_type; enum_type; service; extension; options; source_code_info; syntax } ->
@@ -171,6 +175,7 @@ and Descriptor_proto : sig
       end' : int option;
       options : Extension_range_options.t option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -186,6 +191,7 @@ and Descriptor_proto : sig
       start : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -208,6 +214,7 @@ and Descriptor_proto : sig
     reserved_range : Descriptor_proto.Reserved_range.t list;
     reserved_name : string list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -223,6 +230,7 @@ end = struct
       end' : int option;
       options : Extension_range_options.t option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -237,6 +245,7 @@ end = struct
       end' : int option;
       options : Extension_range_options.t option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { start; end'; options } ->
@@ -278,6 +287,7 @@ end = struct
       start : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -291,6 +301,7 @@ end = struct
       start : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { start; end' } ->
@@ -335,6 +346,7 @@ end = struct
     reserved_range : Descriptor_proto.Reserved_range.t list;
     reserved_name : string list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; field; extension; nested_type; enum_type; extension_range; oneof_decl; options; reserved_range; reserved_name } ->
@@ -403,6 +415,7 @@ and Extension_range_options : sig
   type t = {
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -415,6 +428,7 @@ end = struct
   type t = {
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { uninterpreted_option } ->
@@ -464,6 +478,7 @@ and Field_descriptor_proto : sig
       | Type_sfixed64
       | Type_sint32
       | Type_sint64
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -481,6 +496,7 @@ and Field_descriptor_proto : sig
       | Label_optional
       | Label_required
       | Label_repeated
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -505,6 +521,7 @@ and Field_descriptor_proto : sig
     json_name : string option;
     options : Field_options.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -534,6 +551,7 @@ end = struct
       | Type_sfixed64
       | Type_sint32
       | Type_sint64
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -564,6 +582,7 @@ end = struct
       | Type_sfixed64
       | Type_sint32
       | Type_sint64
+    [@@deriving eq, show]
   
     let default =
       fun () -> Type_double
@@ -660,6 +679,7 @@ end = struct
       | Label_optional
       | Label_required
       | Label_repeated
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -675,6 +695,7 @@ end = struct
       | Label_optional
       | Label_required
       | Label_repeated
+    [@@deriving eq, show]
   
     let default =
       fun () -> Label_optional
@@ -718,6 +739,7 @@ end = struct
     json_name : string option;
     options : Field_options.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; number; label; type'; type_name; extendee; default_value; oneof_index; json_name; options } ->
@@ -787,6 +809,7 @@ and Oneof_descriptor_proto : sig
     name : string option;
     options : Oneof_options.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -800,6 +823,7 @@ end = struct
     name : string option;
     options : Oneof_options.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; options } ->
@@ -838,6 +862,7 @@ and Enum_descriptor_proto : sig
       start : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -855,6 +880,7 @@ and Enum_descriptor_proto : sig
     reserved_range : Enum_descriptor_proto.Enum_reserved_range.t list;
     reserved_name : string list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -869,6 +895,7 @@ end = struct
       start : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -882,6 +909,7 @@ end = struct
       start : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { start; end' } ->
@@ -921,6 +949,7 @@ end = struct
     reserved_range : Enum_descriptor_proto.Enum_reserved_range.t list;
     reserved_name : string list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; value'; options; reserved_range; reserved_name } ->
@@ -971,6 +1000,7 @@ and Enum_value_descriptor_proto : sig
     number : int option;
     options : Enum_value_options.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -985,6 +1015,7 @@ end = struct
     number : int option;
     options : Enum_value_options.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; number; options } ->
@@ -1027,6 +1058,7 @@ and Service_descriptor_proto : sig
     method' : Method_descriptor_proto.t list;
     options : Service_options.t option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1041,6 +1073,7 @@ end = struct
     method' : Method_descriptor_proto.t list;
     options : Service_options.t option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; method'; options } ->
@@ -1086,6 +1119,7 @@ and Method_descriptor_proto : sig
     client_streaming : bool option;
     server_streaming : bool option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1103,6 +1137,7 @@ end = struct
     client_streaming : bool option;
     server_streaming : bool option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; input_type; output_type; options; client_streaming; server_streaming } ->
@@ -1157,6 +1192,7 @@ and File_options : sig
       | Speed
       | Code_size
       | Lite_runtime
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1192,6 +1228,7 @@ and File_options : sig
     ruby_package : string option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1206,6 +1243,7 @@ end = struct
       | Speed
       | Code_size
       | Lite_runtime
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1221,6 +1259,7 @@ end = struct
       | Speed
       | Code_size
       | Lite_runtime
+    [@@deriving eq, show]
   
     let default =
       fun () -> Speed
@@ -1275,6 +1314,7 @@ end = struct
     ruby_package : string option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { java_package; java_outer_classname; java_multiple_files; java_generate_equals_and_hash; java_string_check_utf8; optimize_for; go_package; cc_generic_services; java_generic_services; py_generic_services; php_generic_services; deprecated; cc_enable_arenas; objc_class_prefix; csharp_namespace; swift_prefix; php_class_prefix; php_namespace; php_metadata_namespace; ruby_package; uninterpreted_option } ->
@@ -1391,6 +1431,7 @@ and Message_options : sig
     map_entry : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1407,6 +1448,7 @@ end = struct
     map_entry : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { message_set_wire_format; no_standard_descriptor_accessor; deprecated; map_entry; uninterpreted_option } ->
@@ -1457,6 +1499,7 @@ and Field_options : sig
       | String
       | Cord
       | String_piece
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1474,6 +1517,7 @@ and Field_options : sig
       | Js_normal
       | Js_string
       | Js_number
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1495,6 +1539,7 @@ and Field_options : sig
     weak : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1509,6 +1554,7 @@ end = struct
       | String
       | Cord
       | String_piece
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1524,6 +1570,7 @@ end = struct
       | String
       | Cord
       | String_piece
+    [@@deriving eq, show]
   
     let default =
       fun () -> String
@@ -1560,6 +1607,7 @@ end = struct
       | Js_normal
       | Js_string
       | Js_number
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1575,6 +1623,7 @@ end = struct
       | Js_normal
       | Js_string
       | Js_number
+    [@@deriving eq, show]
   
     let default =
       fun () -> Js_normal
@@ -1615,6 +1664,7 @@ end = struct
     weak : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { ctype; packed; jstype; lazy'; deprecated; weak; uninterpreted_option } ->
@@ -1671,6 +1721,7 @@ and Oneof_options : sig
   type t = {
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1683,6 +1734,7 @@ end = struct
   type t = {
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { uninterpreted_option } ->
@@ -1717,6 +1769,7 @@ and Enum_options : sig
     deprecated : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1731,6 +1784,7 @@ end = struct
     deprecated : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { allow_alias; deprecated; uninterpreted_option } ->
@@ -1772,6 +1826,7 @@ and Enum_value_options : sig
     deprecated : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1785,6 +1840,7 @@ end = struct
     deprecated : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { deprecated; uninterpreted_option } ->
@@ -1822,6 +1878,7 @@ and Service_options : sig
     deprecated : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1835,6 +1892,7 @@ end = struct
     deprecated : bool option;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { deprecated; uninterpreted_option } ->
@@ -1873,6 +1931,7 @@ and Method_options : sig
       | Idempotency_unknown
       | No_side_effects
       | Idempotent
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1890,6 +1949,7 @@ and Method_options : sig
     idempotency_level : Method_options.Idempotency_level.t;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -1904,6 +1964,7 @@ end = struct
       | Idempotency_unknown
       | No_side_effects
       | Idempotent
+    [@@deriving eq, show]
   
     val default : unit -> t
   
@@ -1919,6 +1980,7 @@ end = struct
       | Idempotency_unknown
       | No_side_effects
       | Idempotent
+    [@@deriving eq, show]
   
     let default =
       fun () -> Idempotency_unknown
@@ -1955,6 +2017,7 @@ end = struct
     idempotency_level : Method_options.Idempotency_level.t;
     uninterpreted_option : Uninterpreted_option.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { deprecated; idempotency_level; uninterpreted_option } ->
@@ -1997,6 +2060,7 @@ and Uninterpreted_option : sig
       name_part : string option;
       is_extension : bool option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -2016,6 +2080,7 @@ and Uninterpreted_option : sig
     string_value : string option;
     aggregate_value : string option;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -2030,6 +2095,7 @@ end = struct
       name_part : string option;
       is_extension : bool option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -2043,6 +2109,7 @@ end = struct
       name_part : string option;
       is_extension : bool option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { name_part; is_extension } ->
@@ -2084,6 +2151,7 @@ end = struct
     string_value : string option;
     aggregate_value : string option;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; identifier_value; positive_int_value; negative_int_value; double_value; string_value; aggregate_value } ->
@@ -2145,6 +2213,7 @@ and Source_code_info : sig
       trailing_comments : string option;
       leading_detached_comments : string list;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -2158,6 +2227,7 @@ and Source_code_info : sig
   type t = {
     location : Source_code_info.Location.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -2175,6 +2245,7 @@ end = struct
       trailing_comments : string option;
       leading_detached_comments : string list;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -2191,6 +2262,7 @@ end = struct
       trailing_comments : string option;
       leading_detached_comments : string list;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { path; span; leading_comments; trailing_comments; leading_detached_comments } ->
@@ -2238,6 +2310,7 @@ end = struct
   type t = {
     location : Source_code_info.Location.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { location } ->
@@ -2274,6 +2347,7 @@ and Generated_code_info : sig
       begin' : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -2287,6 +2361,7 @@ and Generated_code_info : sig
   type t = {
     annotation : Generated_code_info.Annotation.t list;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -2303,6 +2378,7 @@ end = struct
       begin' : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     val to_binary : t -> (string, [> Bin'.serialization_error]) result
   
@@ -2318,6 +2394,7 @@ end = struct
       begin' : int option;
       end' : int option;
     }
+    [@@deriving eq, show]
   
     let rec to_binary =
       fun { path; source_file; begin'; end' } ->
@@ -2361,6 +2438,7 @@ end = struct
   type t = {
     annotation : Generated_code_info.Annotation.t list;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { annotation } ->

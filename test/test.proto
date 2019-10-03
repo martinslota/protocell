@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "test_import.proto";
+import "google/protobuf/timestamp.proto";
 
 enum EnumWithAlias {
   option allow_alias = true;
@@ -137,4 +138,8 @@ message WithMap {
 
 message WithImportedMessage {
   Imported imported = 987;
+}
+
+message WithTimestamp {
+  google.protobuf.Timestamp timestamp = 1;
 }

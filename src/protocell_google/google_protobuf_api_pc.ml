@@ -20,6 +20,7 @@ module rec Api : sig
     mixins : Mixin.t list;
     syntax : Google_protobuf_type_pc.Syntax.t;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -38,6 +39,7 @@ end = struct
     mixins : Mixin.t list;
     syntax : Google_protobuf_type_pc.Syntax.t;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; methods; options; version; source_context; mixins; syntax } ->
@@ -100,6 +102,7 @@ and Method' : sig
     options : Google_protobuf_type_pc.Option.t list;
     syntax : Google_protobuf_type_pc.Syntax.t;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -118,6 +121,7 @@ end = struct
     options : Google_protobuf_type_pc.Option.t list;
     syntax : Google_protobuf_type_pc.Syntax.t;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; request_type_url; request_streaming; response_type_url; response_streaming; options; syntax } ->
@@ -175,6 +179,7 @@ and Mixin : sig
     name : string;
     root : string;
   }
+  [@@deriving eq, show]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -188,6 +193,7 @@ end = struct
     name : string;
     root : string;
   }
+  [@@deriving eq, show]
 
   let rec to_binary =
     fun { name; root } ->
