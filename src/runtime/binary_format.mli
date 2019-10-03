@@ -75,11 +75,6 @@ val serialize_repeated_enum_field
 
 val deserialize_message : Byte_input.t -> (parsed_message, [> parse_error]) Result.t
 
-val find_oneof_id
-  :  id list ->
-  parsed_message ->
-  (id option, [> sort Types.decoding_error]) Result.t
-
 val decode_field
   :  id ->
   'v Field_value.typ ->
