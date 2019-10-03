@@ -5,21 +5,21 @@ let unwrap ~expected option =
   Option.value_exn ~message option
 
 module Plugin = struct
-  include Google_protobuf_compiler_plugin_pc
+  include Google.Google_protobuf_compiler_plugin_pc
 
-  let decode_request = Code_generator_request.deserialize
+  let decode_request = Code_generator_request.of_binary
 
-  let encode_response = Code_generator_response.serialize
+  let encode_response = Code_generator_response.to_binary
 
   let error_response =
     let bytes_result =
-      Code_generator_response.serialize {error = Some "Protocell error"; file = []}
+      Code_generator_response.to_binary {error = Some "Protocell error"; file = []}
     in
     unwrap ~expected:"serialized protocell error" (Result.ok bytes_result)
 end
 
 module Descriptor = struct
-  include Google_protobuf_descriptor_pc
+  include Google.Google_protobuf_descriptor_pc
 end
 
 module Protobuf = struct
@@ -196,7 +196,7 @@ module Protobuf = struct
     {file_name; package; module_name; enums; messages; dependencies; syntax}
 
   let of_request : Plugin.Code_generator_request.t -> t =
-   fun {proto_file; _} ->
+   fun {proto_file; file_to_generate = _; _} ->
     let files =
       proto_file
       |> List.fold ~init:([], []) ~f:(fun (files_seen, accumulator) proto ->

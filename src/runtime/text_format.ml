@@ -293,6 +293,8 @@ let serialize_user_field id serializer value output =
   | None -> Ok ()
   | Some value -> serialize_user_value id serializer value output
 
+let serialize_user_oneof_field = serialize_user_value
+
 let serialize_repeated_user_field id serializer values output =
   List.map values ~f:(fun value -> serialize_user_value id serializer value output)
   |> Result.all_unit
@@ -360,6 +362,10 @@ let decode_user_value deserializer value =
   match value with
   | Message encoding -> deserializer encoding
   | _ as value -> Error (`Wrong_value_sort_for_user_field (to_sort value))
+
+let decode_user_oneof_field id deserializer records =
+  let values = Hashtbl.find_exn records id in
+  decode_user_value deserializer (List.hd_exn values)
 
 let decode_user_field id deserializer records =
   let open Result.Let_syntax in

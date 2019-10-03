@@ -3,8 +3,8 @@ module P = Test_pc
 
 module Strings = struct
   let tests =
-    Utils.suite (module P.String) "String"
-    @@ List.map ["just a string"] ~f:(fun field -> P.String.{field})
+    Utils.suite (module P.String') "String"
+    @@ List.map ["just a string"] ~f:(fun field -> P.String'.{field})
 end
 
 module Bytes = struct
@@ -59,12 +59,12 @@ module Integers = struct
     List.concat [common_non_negative_test_values; [Int.max_value]]
 
   let int32_tests =
-    Utils.suite (module P.Int32) "Int32"
-    @@ List.map signed_32_bit_test_values ~f:(fun field -> P.Int32.{field})
+    Utils.suite (module P.Int32') "Int32"
+    @@ List.map signed_32_bit_test_values ~f:(fun field -> P.Int32'.{field})
 
   let int64_tests =
-    Utils.suite (module P.Int64) "Int64"
-    @@ List.map signed_64_bit_test_values ~f:(fun field -> P.Int64.{field})
+    Utils.suite (module P.Int64') "Int64"
+    @@ List.map signed_64_bit_test_values ~f:(fun field -> P.Int64'.{field})
 
   let sint32_tests =
     Utils.suite (module P.Sint32) "Sint32"
@@ -103,10 +103,10 @@ module Floats = struct
   let common_test_values = [0.0; 1.1; -2.8; Float.atan 0.5; 1.234e7; -1.937465623e-6]
 
   let float_tests =
-    Utils.suite (module P.Float) "Float"
+    Utils.suite (module P.Float') "Float"
     @@ List.map common_test_values ~f:(fun field ->
            let field = field |> Int32.bits_of_float |> Int32.float_of_bits in
-           P.Float.{field})
+           P.Float'.{field})
 
   let double_tests =
     Utils.suite (module P.Double) "Double"
@@ -115,8 +115,8 @@ end
 
 module Bools = struct
   let tests =
-    Utils.suite (module P.Bool) "Bool"
-    @@ List.map [true; false] ~f:(fun field -> P.Bool.{field})
+    Utils.suite (module P.Bool') "Bool"
+    @@ List.map [true; false] ~f:(fun field -> P.Bool'.{field})
 end
 
 module Messages = struct

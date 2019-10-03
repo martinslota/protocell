@@ -52,6 +52,13 @@ val serialize_user_field
   Byte_output.t ->
   (unit, 'e) Result.t
 
+val serialize_user_oneof_field
+  :  id ->
+  ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
+  'v ->
+  Byte_output.t ->
+  (unit, 'e) Result.t
+
 val serialize_repeated_user_field
   :  id ->
   ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
@@ -98,6 +105,12 @@ val decode_user_field
   (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
   parsed_message ->
   ('v option, 'e) Result.t
+
+val decode_user_oneof_field
+  :  id ->
+  (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
+  parsed_message ->
+  ('v, 'e) Result.t
 
 val decode_repeated_user_field
   :  id ->

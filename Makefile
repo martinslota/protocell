@@ -25,9 +25,13 @@ release: ## Create a new release on Github. Prepare the release for publishing o
 	dune-release opam pkg
 
 .PHONY: generate-spec
+generate-spec: build
 generate-spec: 
 	$(eval PROTOBUF_INCLUDE := $(shell find /usr -type d -path '*include/google/protobuf' 2>/dev/null | head -n 1 | xargs dirname | xargs dirname))
-	@protoc -I $(PROTOBUF_INCLUDE) --plugin=protoc-gen-ocaml=_build/default/src/protocell/protocell.exe --ocaml_out=src/protoc_interface $(PROTOBUF_INCLUDE)/google/protobuf/compiler/plugin.proto $(PROTOBUF_INCLUDE)/google/protobuf/descriptor.proto
+	@find $(PROTOBUF_INCLUDE) -iname '*.proto' | xargs protoc \
+		-I $(PROTOBUF_INCLUDE) \
+		--plugin=protoc-gen-ocaml=_build/default/src/protocell/protocell.exe \
+		--ocaml_out=src/google
 
 .PHONY: help
 help: ## Display this help

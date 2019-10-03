@@ -1,2 +1,12 @@
-src/protoc_interface/google_protobuf_compiler_plugin_pc.ml
-src/protoc_interface/google_protobuf_descriptor_pc.ml
+src/google/google_protobuf_any_pc.ml
+src/google/google_protobuf_api_pc.ml
+src/google/google_protobuf_compiler_plugin_pc.ml
+src/google/google_protobuf_descriptor_pc.ml
+src/google/google_protobuf_duration_pc.ml
+src/google/google_protobuf_empty_pc.ml
+src/google/google_protobuf_field_mask_pc.ml
+src/google/google_protobuf_source_context_pc.ml
+src/google/google_protobuf_struct_pc.ml
+src/google/google_protobuf_timestamp_pc.ml
+src/google/google_protobuf_type_pc.ml
+src/google/google_protobuf_wrappers_pc.ml

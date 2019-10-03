@@ -483,6 +483,8 @@ let serialize_user_field id serializer value output =
   | None -> Ok ()
   | Some value -> serialize_user_value id serializer value output
 
+let serialize_user_oneof_field = serialize_user_value
+
 let serialize_repeated_user_field id serializer values output =
   List.map values ~f:(fun value -> serialize_user_value id serializer value output)
   |> Result.all_unit
@@ -592,6 +594,10 @@ let decode_user_field id deserializer records =
     match List.hd values with
     | None -> Ok None
     | Some value -> decode_user_value deserializer value >>| Option.some)
+
+let decode_user_oneof_field id deserializer records =
+  let values = Hashtbl.find_exn records id in
+  decode_user_value deserializer (List.last_exn values)
 
 let decode_repeated_user_field id deserializer records =
   match Hashtbl.find records id with

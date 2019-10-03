@@ -19,13 +19,13 @@ let execute_process_with_input ~prog ~args ~input =
 module type Serdes_testable = sig
   type t [@@deriving eq, show]
 
-  val serialize : t -> (string, [> Runtime.Binary_format.serialization_error]) result
+  val to_binary : t -> (string, [> Runtime.Binary_format.serialization_error]) result
 
-  val deserialize : string -> (t, [> Runtime.Binary_format.deserialization_error]) result
+  val of_binary : string -> (t, [> Runtime.Binary_format.deserialization_error]) result
 
-  val stringify : t -> (string, [> Runtime.Text_format.serialization_error]) result
+  val to_text : t -> (string, [> Runtime.Text_format.serialization_error]) result
 
-  val unstringify : string -> (t, [> Runtime.Text_format.deserialization_error]) result
+  val of_text : string -> (t, [> Runtime.Text_format.deserialization_error]) result
 end
 
 let byte_input_error_to_string = function
@@ -38,7 +38,7 @@ let field_validation_error_to_string = function
         int
         (Runtime.Field_value.typ_to_string typ)
 
-let wire_format_parse_error_to_string = function
+let binary_format_parse_error_to_string = function
   | `Unknown_wire_type int -> Printf.sprintf "Unknown wire type ID %d" int
   | `Varint_too_long -> "Varint value was longer than 64 bits"
   | `Invalid_string_length int -> Printf.sprintf "Invalid string length: %d" int
@@ -47,7 +47,7 @@ let wire_format_parse_error_to_string = function
       @@ Int64.to_string int64
   | #Runtime.Byte_input.error as e -> byte_input_error_to_string e
 
-let wire_format_deserialization_error_to_string error =
+let binary_format_deserialization_error_to_string error =
   let wrong_sort_msg field_type_name sort typ =
     Printf.sprintf
       "%s field type %s cannot accept value type %s"
@@ -56,7 +56,7 @@ let wire_format_deserialization_error_to_string error =
       (Runtime.Binary_format.sort_to_string sort)
   in
   match error with
-  | #Runtime.Binary_format.parse_error as e -> wire_format_parse_error_to_string e
+  | #Runtime.Binary_format.parse_error as e -> binary_format_parse_error_to_string e
   | `Wrong_value_sort_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
   | `Wrong_value_sort_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
   | `Wrong_value_sort_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
@@ -77,10 +77,10 @@ let process_error_to_string = function
   | `Process_execution_error message ->
       Printf.sprintf "Process execution error: %s" message
 
-let wire_error_to_string = function
+let binary_error_to_string = function
   | #process_error as e -> process_error_to_string e
   | #Runtime.Binary_format.deserialization_error as e ->
-      wire_format_deserialization_error_to_string e
+      binary_format_deserialization_error_to_string e
 
 let text_format_parse_error_to_string = function
   | `Unexpected_character char -> Printf.sprintf "Unexpected character: %c" char
@@ -128,50 +128,49 @@ let suite (type t) (module T : Serdes_testable with type t = t) protobuf_type_na
   =
   let t_testable : T.t Alcotest.testable = Alcotest.testable T.pp T.equal in
   let protobuf_file_name = "test.proto" in
-  let wire_format_roundtrip value () =
+  let binary_format_roundtrip value () =
     let open Result.Let_syntax in
-    match value |> T.serialize >>= T.deserialize with
+    match value |> T.to_binary >>= T.of_binary with
     | Ok actual ->
-        Alcotest.(check t_testable "serialize |> deserialize mismatch" value actual)
-    | Error e -> Alcotest.fail (wire_error_to_string e)
+        Alcotest.(check t_testable "to_binary |> of_binary mismatch" value actual)
+    | Error e -> Alcotest.fail (binary_error_to_string e)
   in
   let text_format_roundtrip value () =
     let open Result.Let_syntax in
-    match value |> T.stringify >>= T.unstringify with
-    | Ok actual ->
-        Alcotest.(check t_testable "stringify |> unstringify mismatch" value actual)
+    match value |> T.to_text >>= T.of_text with
+    | Ok actual -> Alcotest.(check t_testable "to_text |> of_text mismatch" value actual)
     | Error e -> Alcotest.fail (text_error_to_string e)
   in
-  let deserialize_protoc_wire_output value () =
+  let decode_protoc_binary_output value () =
     let open Result.Let_syntax in
     match
-      T.stringify value
+      T.to_text value
       >>= (fun input ->
             execute_process_with_input
               ~prog:"protoc"
               ~args:[Printf.sprintf "--encode=%s" protobuf_type_name; protobuf_file_name]
               ~input)
-      >>= T.deserialize
+      >>= T.of_binary
     with
     | Ok actual ->
         Alcotest.(
-          check t_testable "stringify |> protoc |> deserialize mismatch" value actual)
-    | Error e -> Alcotest.fail (wire_error_to_string e)
+          check t_testable "to_text |> protoc |> of_binary mismatch" value actual)
+    | Error e -> Alcotest.fail (binary_error_to_string e)
   in
-  let serialize_protoc_wire_input value () =
+  let generate_protoc_binary_input value () =
     let open Result.Let_syntax in
     match
-      T.serialize value
+      T.to_binary value
       >>= (fun input ->
             execute_process_with_input
               ~prog:"protoc"
               ~args:[Printf.sprintf "--decode=%s" protobuf_type_name; protobuf_file_name]
               ~input)
-      >>= T.unstringify
+      >>= T.of_text
     with
     | Ok actual ->
         Alcotest.(
-          check t_testable "serialize |> protoc |> unstringify mismatch" value actual)
+          check t_testable "to_binary |> protoc |> of_text mismatch" value actual)
     | Error e -> Alcotest.fail (text_error_to_string e)
   in
   let value_count = List.length values_to_test in
@@ -182,13 +181,13 @@ let suite (type t) (module T : Serdes_testable with type t = t) protobuf_type_na
   in
   ( protobuf_type_name,
     [
-      make_tests "Invariant: serialize |> deserialize is identity" wire_format_roundtrip;
-      make_tests "Invariant: stringify |> unstringify is identity" text_format_roundtrip;
+      make_tests "Invariant: to_binary |> of_binary is identity" binary_format_roundtrip;
+      make_tests "Invariant: to_text |> of_text is identity" text_format_roundtrip;
       make_tests
-        "Invariant: stringify |> protoc |> deserialize is identity"
-        deserialize_protoc_wire_output;
+        "Invariant: to_text |> protoc |> of_binary is identity"
+        decode_protoc_binary_output;
       make_tests
-        "Invariant: serialize |> protoc |> unstringify is identity"
-        serialize_protoc_wire_input;
+        "Invariant: to_binary |> protoc |> of_text is identity"
+        generate_protoc_binary_input;
     ]
     |> List.concat )

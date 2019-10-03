@@ -64,10 +64,28 @@ let reserved_words =
     ]
   in
   let output_format_words format =
-    let names = Generated_code.names_of_output_format format in
-    [names.serialize; names.deserialize]
+    let Generated_code.
+          {
+            serialize;
+            deserialize;
+            byte_output_var_name;
+            parsed_message_var_name;
+            runtime_module_name = _;
+            module_alias = _;
+          }
+      =
+      Generated_code.names_of_output_format format
+    in
+    [serialize; deserialize; byte_output_var_name; parsed_message_var_name]
   in
-  List.concat [ocaml_keywords; output_format_words Binary; output_format_words Text]
+  let extra_reserved_words = ["bool"; "float"; "int"; "int32"; "int64"; "string"] in
+  List.concat
+    [
+      ocaml_keywords;
+      output_format_words Binary;
+      output_format_words Text;
+      extra_reserved_words;
+    ]
   |> Hash_set.of_list (module String)
 
 let is_lowercase_letter character = Char.between character ~low:'a' ~high:'z'
