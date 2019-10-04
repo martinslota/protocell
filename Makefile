@@ -16,15 +16,15 @@ test: ## Run the tests
 	dune runtest --force
 
 .PHONY: release
-release: ## Create a new release on Github. Prepare the release for publishing on opam repositories.
+release: ## Create a new release on Github and prepare for publishing on opam repositories
 	dune-release tag
 	dune-release distrib
 	dune-release publish
 	dune-release opam pkg
 
-.PHONY: generate-spec
-generate-spec: build
-generate-spec: 
+.PHONY: generate-embedded
+generate-embedded: build
+generate-embedded: ## Generates code for Protocol Buffer definition files shipped along with protoc
 	$(eval PROTOBUF_INCLUDE := $(shell find /usr -type d -path '*include/google/protobuf' 2>/dev/null | head -n 1 | xargs dirname | xargs dirname))
 	@find $(PROTOBUF_INCLUDE) -iname '*.proto' | WITH_DERIVERS="eq,show" xargs protoc \
 		-I $(PROTOBUF_INCLUDE) \
