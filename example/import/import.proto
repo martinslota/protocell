@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package import.main;
+
+import "ingredient.proto";
+import "timestamp.proto";
+
+message MainMessage {
+  import.ingredient.ImportedMessage ingredient = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+

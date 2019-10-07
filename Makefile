@@ -1,6 +1,8 @@
 .PHONY: build
 build: ## Build the code
 	dune build
+	dune install
+	dune build @examples
 
 .PHONY: clean
 clean: ## Clean the source tree

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+enum Platypus {
+  SITTING = 0;
+  STANDING = 1;
+  LYING = 2;
+  OTHER = 3;
+}
+
+message Exposition {
+  int32 alpaca = 1;
+  int64 bear = 2;
+  sint32 cuckoo = 3;
+  sint64 dolphin = 4;
+  uint32 elephant = 5;
+  uint64 fox = 6;
+  fixed32 giraffe = 7;
+  repeated fixed64 hest = 8;
+  sfixed32 indri = 9;
+  sfixed64 jellyfish = 10;
+  float kingfisher = 11;
+  double llama = 12;
+  bool meerkat = 13;
+  string nightingale = 14;
+  bytes octopus = 15;
+  Platypus platypus = 16;
+  oneof cute {
+    string quetzal = 17;
+    string redPanda = 18;
+  }
+  repeated Exposition pavilion = 19;
+};

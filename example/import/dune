@@ -1,0 +1,22 @@
+(executable
+ (name import)
+ (libraries protocell.runtime stdio)
+ (preprocess
+  (pps ppx_deriving.eq ppx_deriving.show)))
+
+(env
+ (_
+  (env-vars
+   (WITH_DERIVERS eq,show))))
+
+(rule
+ (targets import_pc.ml ingredient_pc.ml timestamp_pc.ml)
+ (deps
+  (:plugin %{ocaml_bin}/protocell)
+  (:proto import.proto ingredient.proto timestamp.proto))
+ (action
+  (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
+
+(alias
+ (name examples)
+ (deps import.exe))
