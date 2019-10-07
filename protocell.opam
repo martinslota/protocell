@@ -24,7 +24,7 @@ depends: [
   "alcotest" {with-test}
   "base" {>= "v0.10"}
   "core" {with-test & >= "v0.10"}
-  "dune" {build}
+  "dune" {>= "1.11"}
   "ocaml" {>= "4.04.1"}
   "ocplib-endian"
   "ppx_deriving"
@@ -32,5 +32,6 @@ depends: [
 ]
 synopsis: "A Protobuf plugin for OCaml"
 description: """
-Rapidly evolving.
+Conjures up convenient OCaml types and serialization functions based on
+Protocol Buffer (protobuf) definition files.
 """
