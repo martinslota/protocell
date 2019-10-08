@@ -184,21 +184,21 @@ Protocell is available on OPAM, so you just need to
 opam install protocell
 ```
 
-The [examples](examples) folder shows how Protocell can be used in a number
+The [example](example) folder shows how Protocell can be used in a number
 of scenarios. Thanks to `dune`'s composability, it is straightforward to copy
 any of these and adapt it to a real use-case.
 
-1. [simple](examples/simple): How to serialize and deserialize a simplistic
+1. [simple](example/simple): How to serialize and deserialize a simplistic
 message consisting of a single `string` field.
 
-1. [type_zoo](examples/type_zoo): Similar to the above but for a recursively
+1. [type_zoo](example/type_zoo): Similar to the above but for a recursively
 defined message that uses a variety of Protocol Buffer types including an
 enum and a oneof. The `WITH_DERIVERS` environment variable is used here to
 add a custom list of derivers to the generated types.
 
-1. [import](examples/import): Exemplifies how imports are handled by Protocell.
+1. [import](example/import): Exemplifies how imports are handled by Protocell.
 
-1. [auto_import](examples/auto_import): Similar to the above but takes
+1. [auto_import](example/auto_import): Similar to the above but takes
 advantage of Protocell's ability to auto-supply Google's "well-known types"
 (i.e. all the `.proto` files in [under this
 folder](https://github.com/protocolbuffers/protobuf/tree/master/src/google/protobuf)).
