@@ -37,8 +37,117 @@ OCaml code.
 
 ## Show me the codez!
 
-Primitive and user-defined Protocol Buffer types are mapped to OCaml types as
-follows:
+Consider the following Prototocol Buffer definition file:
+
+<details>
+  <summary><a href="examples/type_zoo/type_zoo.proto">type_zoo.proto</a></summary>
+  
+```protobuf
+syntax = "proto3";
+
+enum Platypus {
+  SITTING = 0;
+  STANDING = 1;
+  LYING = 2;
+  OTHER = 3;
+}
+
+message Exposition {
+  int32 alpaca = 1;
+  int64 bear = 2;
+  sint32 cuckoo = 3;
+  sint64 dolphin = 4;
+  uint32 elephant = 5;
+  uint64 fox = 6;
+  fixed32 giraffe = 7;
+  repeated fixed64 hest = 8;
+  sfixed32 indri = 9;
+  sfixed64 jellyfish = 10;
+  float kingfisher = 11;
+  double llama = 12;
+  bool meerkat = 13;
+  string nightingale = 14;
+  bytes octopus = 15;
+  Platypus platypus = 16;
+  oneof cute {
+    string quetzal = 17;
+    string redPanda = 18;
+  }
+  repeated Exposition pavilion = 19;
+}
+```
+</details>
+
+Here are the OCaml signatures that get generated from it:
+
+<details>
+  <summary>Generated OCaml signatures (see <a href="examples/type_zoo/type_zoo.ml">type_zoo.ml</a> for how they can be used)</summary>
+  
+```ocaml
+module Platypus : sig
+  type t =
+    | Sitting
+    | Standing
+    | Lying
+    | Other
+  [@@deriving eq, show]
+
+  val default : unit -> t
+
+  val to_int : t -> int
+
+  val of_int : int -> t option
+
+  val to_string : t -> string
+
+  val of_string : string -> t option
+end
+
+module rec Exposition : sig
+  module Cute : sig
+    type t =
+      | Quetzal of string
+      | Red_panda of string
+    [@@deriving eq, show]
+
+    val quetzal : string -> t
+    val red_panda : string -> t
+  end
+
+  type t = {
+    alpaca : int;
+    bear : int;
+    cuckoo : int;
+    dolphin : int;
+    elephant : int;
+    fox : int;
+    giraffe : int;
+    hest : int list;
+    indri : int;
+    jellyfish : int;
+    kingfisher : float;
+    llama : float;
+    meerkat : bool;
+    nightingale : string;
+    octopus : string;
+    platypus : Platypus.t;
+    cute : Cute.t option;
+    pavilion : Exposition.t list;
+  }
+  [@@deriving eq, show]
+
+  val to_binary : t -> (string, [> Bin'.serialization_error]) result
+
+  val of_binary : string -> (t, [> Bin'.deserialization_error]) result
+
+  val to_text : t -> (string, [> Text'.serialization_error]) result
+
+  val of_text : string -> (t, [> Text'.deserialization_error]) result
+end
+```
+</details>
+
+More generally speaking, primitive and user-defined Protocol Buffer types are mapped to OCaml types as follows:
 
 | Protobuf type(s) | OCaml type |
 | --- | --- |

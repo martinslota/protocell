@@ -1,8 +1,6 @@
 .PHONY: build
 build: ## Build the code
 	dune build
-	dune install
-	dune build @examples
 
 .PHONY: clean
 clean: ## Clean the source tree
@@ -16,6 +14,8 @@ format: ## Reformat all code
 test: build
 test: ## Run the tests
 	dune runtest --force
+	dune install
+	dune build @examples
 
 .PHONY: release
 release: ## Create a new release on Github and prepare for publishing on opam repositories
