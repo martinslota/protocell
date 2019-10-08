@@ -40,7 +40,7 @@ OCaml code.
 Consider the following Prototocol Buffer definition file:
 
 <details>
-  <summary><a href="examples/type_zoo/type_zoo.proto">type_zoo.proto</a></summary>
+  <summary><a href="example/type_zoo/type_zoo.proto">type_zoo.proto</a></summary>
   
 ```protobuf
 syntax = "proto3";
@@ -81,7 +81,7 @@ message Exposition {
 Here are the OCaml signatures that get generated from it:
 
 <details>
-  <summary>Generated OCaml signatures (see <a href="examples/type_zoo/type_zoo.ml">type_zoo.ml</a> for how they can be used)</summary>
+  <summary>Generated OCaml signatures (see <a href="example/type_zoo/type_zoo.ml">type_zoo.ml</a> for how they can be used)</summary>
   
 ```ocaml
 module Platypus : sig
