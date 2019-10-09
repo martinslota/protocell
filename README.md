@@ -225,16 +225,17 @@ nor `show`.
     Protocell.
   * A more detailed comparison may come later.
 * [ocaml-protoc](https://github.com/mransan/ocaml-protoc)
-  * A battle-tested Protobuf compiler written in pure OCaml
+  * A battle-tested Protobuf compiler written in pure OCaml.
   * The generated types for each `.proto` file end up in a single module which
-    may make their usage more cumbersome
+    may make their usage more cumbersome.
   * Pulls in a heavier set of dependencies, occasionally causing headaches when
-    upgrading to a newer compiler
-  * Does not generate code for empty messages
+    upgrading to a newer compiler.
+  * Does not generate code for empty messages.
+  * The last released version cannot process `.proto` files with `service` blocks.
 * [ocaml-pb-plugin](https://github.com/yallop/ocaml-pb-plugin)
   * Appears to not have full support for `proto3` types, specifically for
-    `oneof` fields
-  * A deeper comparison may come later
+    `oneof` fields.
+  * A deeper comparison may come later.
 
 ## Contributing
 
