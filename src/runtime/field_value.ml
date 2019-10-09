@@ -83,15 +83,15 @@ let create : type v. v typ -> v -> (v t, [> validation_error]) Result.t =
   match typ with
   | String_t -> Ok (typ, value)
   | Bytes_t -> Ok (typ, value)
-  | Int32_t -> validate_i32 Int32_t value
+  | Int32_t -> validate_i32 typ value
   | Int64_t -> Ok (typ, value)
-  | Sint32_t -> validate_i32 Sint32_t value
+  | Sint32_t -> validate_i32 typ value
   | Sint64_t -> Ok (typ, value)
-  | Uint32_t -> validate_u32 Uint32_t value
-  | Uint64_t -> validate_u64 Uint64_t value
-  | Fixed32_t -> validate_u32 Fixed32_t value
-  | Fixed64_t -> validate_u64 Fixed64_t value
-  | Sfixed32_t -> validate_i32 Fixed32_t value
+  | Uint32_t -> validate_u32 typ value
+  | Uint64_t -> validate_u64 typ value
+  | Fixed32_t -> validate_u32 typ value
+  | Fixed64_t -> validate_u64 typ value
+  | Sfixed32_t -> validate_i32 typ value
   | Sfixed64_t -> Ok (typ, value)
   | Float_t -> Ok (typ, value)
   | Double_t -> Ok (typ, value)
