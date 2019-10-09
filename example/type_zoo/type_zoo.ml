@@ -20,8 +20,8 @@ let message =
       meerkat = true;
       nightingale = "56";
       octopus = "57";
-      platypus = Platypus.Standing;
-      cute = Some (Exposition.Cute.Quetzal "58");
+      platypus = Standing;
+      cute = Some (Quetzal "58");
       pavilion =
         [
           {
@@ -29,7 +29,7 @@ let message =
             bear = -43;
             cuckoo = -44;
             dolphin = -45;
-            elephant = 46;
+            elephant = 0;
             fox = 0;
             giraffe = 0;
             hest = [0; 0; 0];
@@ -40,8 +40,8 @@ let message =
             meerkat = false;
             nightingale = "-56";
             octopus = "-57";
-            platypus = Platypus.Lying;
-            cute = Some (Exposition.Cute.Quetzal "-58");
+            platypus = Lying;
+            cute = Some (Quetzal "-58");
             pavilion = [];
           };
         ];
