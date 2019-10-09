@@ -16,13 +16,13 @@ let message =
       indri = 52;
       jellyfish = 53;
       kingfisher = 54.1;
-      llama = 54.2;
+      llama = 55.2;
       meerkat = true;
       nightingale = "56";
       octopus = "57";
       platypus = Standing;
       cute = Some (Quetzal "58");
-      pavilion =
+      sub_pavilions =
         [
           {
             alpaca = -42;
@@ -36,13 +36,13 @@ let message =
             indri = -52;
             jellyfish = -53;
             kingfisher = -54.1;
-            llama = -54.2;
+            llama = -55.2;
             meerkat = false;
             nightingale = "-56";
             octopus = "-57";
             platypus = Lying;
             cute = Some (Quetzal "-58");
-            pavilion = [];
+            sub_pavilions = [];
           };
         ];
     }

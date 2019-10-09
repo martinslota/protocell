@@ -28,5 +28,5 @@ message Exposition {
     string quetzal = 17;
     string redPanda = 18;
   }
-  repeated Exposition pavilion = 19;
+  repeated Exposition subPavilions = 19;
 }
