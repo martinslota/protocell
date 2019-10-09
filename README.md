@@ -8,23 +8,28 @@ definition files.
 
 ## Feature highlights
 
-:camel: Full support for all `proto3` primitive and user-defined types
+:camel: Full support for all `proto3` primitive and user-defined types.
 
-:camel: Supports imports and generates one `.ml` file per `.proto` file
+:camel: Supports imports and generates one `.ml` file per `.proto` file.
 
-:camel: Automagically supplies code for imports of Google's "well-known types" when needed
+:camel: Automagically supplies code for imports of Google's "well-known
+types" when needed.
 
-:camel: Concise yet comprehensive test framework that cross-checks serializations with those of `protoc` itself
+:camel: Concise yet comprehensive test framework that cross-checks
+serializations with those of `protoc` itself.
 
-:camel: Fully bootstrapped: Protocell uses Protocell-generated code to interact with `protoc`
+:camel: Fully bootstrapped: Protocell uses Protocell-generated code to
+interact with `protoc`.
 
-:camel: Lean on dependencies, especially when it comes to the runtime library
+:camel: Lean on dependencies, especially when it comes to the runtime
+library.
 
-:camel: Supports OCaml compiler versions 4.04.1 and above
+:camel: Supports OCaml compiler versions 4.04.1 and above.
 
-:camel: Decent `proto2` support
+:camel: Decent `proto2` support.
 
-:camel: Supports `protoc`'s text format (mostly for testing and debugging purposes)
+:camel: Supports `protoc`'s text format (mostly for testing and debugging
+purposes).
 
 ## How does it work?
 
@@ -40,7 +45,9 @@ OCaml code.
 Consider the following Prototocol Buffer definition file:
 
 <details>
-  <summary><a href="example/type_zoo/type_zoo.proto">type_zoo.proto</a></summary>
+  <summary>
+    <a href="example/type_zoo/type_zoo.proto">type_zoo.proto</a>
+  </summary>
   
 ```protobuf
 syntax = "proto3";
@@ -73,7 +80,7 @@ message Exposition {
     string quetzal = 17;
     string redPanda = 18;
   }
-  repeated Exposition pavilion = 19;
+  repeated Exposition subPavilions = 19;
 }
 ```
 </details>
@@ -81,7 +88,11 @@ message Exposition {
 Here are the OCaml signatures that get generated from it:
 
 <details>
-  <summary>Generated OCaml signatures (see <a href="example/type_zoo/type_zoo.ml">type_zoo.ml</a> for how they can be used)</summary>
+  <summary>
+    Generated OCaml signatures (see <a
+    href="example/type_zoo/type_zoo.ml">type_zoo.ml</a> for how these can be
+    used)
+  </summary>
   
 ```ocaml
 module Platypus : sig
@@ -132,7 +143,7 @@ module rec Exposition : sig
     octopus : string;
     platypus : Platypus.t;
     cute : Cute.t option;
-    pavilion : Exposition.t list;
+    sub_pavilions : Exposition.t list;
   }
   [@@deriving eq, show]
 
@@ -147,7 +158,8 @@ end
 ```
 </details>
 
-More generally speaking, primitive and user-defined Protocol Buffer types are mapped to OCaml types as follows:
+More generally speaking, primitive and user-defined Protocol Buffer types are
+mapped to OCaml types as follows:
 
 | Protobuf type(s) | OCaml type |
 | --- | --- |
@@ -155,11 +167,11 @@ More generally speaking, primitive and user-defined Protocol Buffer types are ma
 | All integer types | `int` |
 | `float` and `double` | `float` |
 | `string` and `bytes` | `string` |
-| Message | Record type `t` in a separate recursive module |
+| Message | Unit or record type `t` in a separate recursive module |
 | Enum | ADT `t` in a separate module |
 | Oneof message field | ADT `t` in a separate module |
 
-Each module surrounding a generated message or enum type also contains
+Each module surrounding a generated message type also contains
 serialization/deserialization functions of the following form:
 
 ```ocaml
@@ -200,11 +212,11 @@ add a custom list of derivers to the generated types.
 
 1. [auto_import](example/auto_import): Similar to the above but takes
 advantage of Protocell's ability to auto-supply Google's "well-known types"
-(i.e. all the `.proto` files in [under this
+(i.e. all the `.proto` files [under this
 folder](https://github.com/protocolbuffers/protobuf/tree/master/src/google/protobuf)).
 Currently, there's one caveat here: The resulting code won't compile if the
-`WITH_DERIVERS` environment variable is contains a deriver that is neither
-`eq` nor `show`.
+`WITH_DERIVERS` environment variable contains a deriver that is neither `eq`
+nor `show`.
 
 ## Alternatives
 
