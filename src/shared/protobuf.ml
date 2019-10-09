@@ -88,11 +88,11 @@ let reserved_words =
     ]
   |> Hash_set.of_list (module String)
 
-let is_lowercase_letter character = Char.between character ~low:'a' ~high:'z'
+let is_lowercase_letter = Char.between ~low:'a' ~high:'z'
 
-let is_uppercase_letter character = Char.between character ~low:'A' ~high:'Z'
+let is_uppercase_letter = Char.between ~low:'A' ~high:'Z'
 
-let is_digit character = Char.between character ~low:'0' ~high:'9'
+let is_digit = Char.between ~low:'0' ~high:'9'
 
 let is_valid_identifier = function
   | "" -> false
