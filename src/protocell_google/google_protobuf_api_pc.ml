@@ -45,11 +45,11 @@ end = struct
     fun { name; methods; options; version; source_context; mixins; syntax } ->
       let _o = Runtime.Byte_output.create () in
       Bin'.serialize_field 1 Field'.String_t name _o >>= fun () ->
-      Bin'.serialize_repeated_user_field 2 Method'.to_binary methods _o >>= fun () ->
-      Bin'.serialize_repeated_user_field 3 Google_protobuf_type_pc.Option.to_binary options _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 2 Method'.to_binary methods _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 3 Google_protobuf_type_pc.Option.to_binary options _o >>= fun () ->
       Bin'.serialize_field 4 Field'.String_t version _o >>= fun () ->
-      Bin'.serialize_user_field 5 Google_protobuf_source_context_pc.Source_context.to_binary source_context _o >>= fun () ->
-      Bin'.serialize_repeated_user_field 6 Mixin.to_binary mixins _o >>= fun () ->
+      Bin'.serialize_message_field 5 Google_protobuf_source_context_pc.Source_context.to_binary source_context _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 6 Mixin.to_binary mixins _o >>= fun () ->
       Bin'.serialize_enum_field 7 Google_protobuf_type_pc.Syntax.to_int syntax _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -58,11 +58,11 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
       Bin'.decode_field 1 Field'.String_t _m >>= fun name ->
-      Bin'.decode_repeated_user_field 2 Method'.of_binary _m >>= fun methods ->
-      Bin'.decode_repeated_user_field 3 Google_protobuf_type_pc.Option.of_binary _m >>= fun options ->
+      Bin'.decode_repeated_message_field 2 Method'.of_binary _m >>= fun methods ->
+      Bin'.decode_repeated_message_field 3 Google_protobuf_type_pc.Option.of_binary _m >>= fun options ->
       Bin'.decode_field 4 Field'.String_t _m >>= fun version ->
-      Bin'.decode_user_field 5 Google_protobuf_source_context_pc.Source_context.of_binary _m >>= fun source_context ->
-      Bin'.decode_repeated_user_field 6 Mixin.of_binary _m >>= fun mixins ->
+      Bin'.decode_message_field 5 Google_protobuf_source_context_pc.Source_context.of_binary _m >>= fun source_context ->
+      Bin'.decode_repeated_message_field 6 Mixin.of_binary _m >>= fun mixins ->
       Bin'.decode_enum_field 7 Google_protobuf_type_pc.Syntax.of_int Google_protobuf_type_pc.Syntax.default _m >>= fun syntax ->
       Ok { name; methods; options; version; source_context; mixins; syntax }
 
@@ -70,11 +70,11 @@ end = struct
     fun { name; methods; options; version; source_context; mixins; syntax } ->
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_field "name" Field'.String_t name _o >>= fun () ->
-      Text'.serialize_repeated_user_field "methods" Method'.to_text methods _o >>= fun () ->
-      Text'.serialize_repeated_user_field "options" Google_protobuf_type_pc.Option.to_text options _o >>= fun () ->
+      Text'.serialize_repeated_message_field "methods" Method'.to_text methods _o >>= fun () ->
+      Text'.serialize_repeated_message_field "options" Google_protobuf_type_pc.Option.to_text options _o >>= fun () ->
       Text'.serialize_field "version" Field'.String_t version _o >>= fun () ->
-      Text'.serialize_user_field "source_context" Google_protobuf_source_context_pc.Source_context.to_text source_context _o >>= fun () ->
-      Text'.serialize_repeated_user_field "mixins" Mixin.to_text mixins _o >>= fun () ->
+      Text'.serialize_message_field "source_context" Google_protobuf_source_context_pc.Source_context.to_text source_context _o >>= fun () ->
+      Text'.serialize_repeated_message_field "mixins" Mixin.to_text mixins _o >>= fun () ->
       Text'.serialize_enum_field "syntax" Google_protobuf_type_pc.Syntax.to_string syntax _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -83,11 +83,11 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_field "name" Field'.String_t _m >>= fun name ->
-      Text'.decode_repeated_user_field "methods" Method'.of_text _m >>= fun methods ->
-      Text'.decode_repeated_user_field "options" Google_protobuf_type_pc.Option.of_text _m >>= fun options ->
+      Text'.decode_repeated_message_field "methods" Method'.of_text _m >>= fun methods ->
+      Text'.decode_repeated_message_field "options" Google_protobuf_type_pc.Option.of_text _m >>= fun options ->
       Text'.decode_field "version" Field'.String_t _m >>= fun version ->
-      Text'.decode_user_field "source_context" Google_protobuf_source_context_pc.Source_context.of_text _m >>= fun source_context ->
-      Text'.decode_repeated_user_field "mixins" Mixin.of_text _m >>= fun mixins ->
+      Text'.decode_message_field "source_context" Google_protobuf_source_context_pc.Source_context.of_text _m >>= fun source_context ->
+      Text'.decode_repeated_message_field "mixins" Mixin.of_text _m >>= fun mixins ->
       Text'.decode_enum_field "syntax" Google_protobuf_type_pc.Syntax.of_string Google_protobuf_type_pc.Syntax.default _m >>= fun syntax ->
       Ok { name; methods; options; version; source_context; mixins; syntax }
 end
@@ -131,7 +131,7 @@ end = struct
       Bin'.serialize_field 3 Field'.Bool_t request_streaming _o >>= fun () ->
       Bin'.serialize_field 4 Field'.String_t response_type_url _o >>= fun () ->
       Bin'.serialize_field 5 Field'.Bool_t response_streaming _o >>= fun () ->
-      Bin'.serialize_repeated_user_field 6 Google_protobuf_type_pc.Option.to_binary options _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 6 Google_protobuf_type_pc.Option.to_binary options _o >>= fun () ->
       Bin'.serialize_enum_field 7 Google_protobuf_type_pc.Syntax.to_int syntax _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -144,7 +144,7 @@ end = struct
       Bin'.decode_field 3 Field'.Bool_t _m >>= fun request_streaming ->
       Bin'.decode_field 4 Field'.String_t _m >>= fun response_type_url ->
       Bin'.decode_field 5 Field'.Bool_t _m >>= fun response_streaming ->
-      Bin'.decode_repeated_user_field 6 Google_protobuf_type_pc.Option.of_binary _m >>= fun options ->
+      Bin'.decode_repeated_message_field 6 Google_protobuf_type_pc.Option.of_binary _m >>= fun options ->
       Bin'.decode_enum_field 7 Google_protobuf_type_pc.Syntax.of_int Google_protobuf_type_pc.Syntax.default _m >>= fun syntax ->
       Ok { name; request_type_url; request_streaming; response_type_url; response_streaming; options; syntax }
 
@@ -156,7 +156,7 @@ end = struct
       Text'.serialize_field "request_streaming" Field'.Bool_t request_streaming _o >>= fun () ->
       Text'.serialize_field "response_type_url" Field'.String_t response_type_url _o >>= fun () ->
       Text'.serialize_field "response_streaming" Field'.Bool_t response_streaming _o >>= fun () ->
-      Text'.serialize_repeated_user_field "options" Google_protobuf_type_pc.Option.to_text options _o >>= fun () ->
+      Text'.serialize_repeated_message_field "options" Google_protobuf_type_pc.Option.to_text options _o >>= fun () ->
       Text'.serialize_enum_field "syntax" Google_protobuf_type_pc.Syntax.to_string syntax _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -169,7 +169,7 @@ end = struct
       Text'.decode_field "request_streaming" Field'.Bool_t _m >>= fun request_streaming ->
       Text'.decode_field "response_type_url" Field'.String_t _m >>= fun response_type_url ->
       Text'.decode_field "response_streaming" Field'.Bool_t _m >>= fun response_streaming ->
-      Text'.decode_repeated_user_field "options" Google_protobuf_type_pc.Option.of_text _m >>= fun options ->
+      Text'.decode_repeated_message_field "options" Google_protobuf_type_pc.Option.of_text _m >>= fun options ->
       Text'.decode_enum_field "syntax" Google_protobuf_type_pc.Syntax.of_string Google_protobuf_type_pc.Syntax.default _m >>= fun syntax ->
       Ok { name; request_type_url; request_streaming; response_type_url; response_streaming; options; syntax }
 end

@@ -104,8 +104,8 @@ end = struct
       let _o = Runtime.Byte_output.create () in
       Bin'.serialize_repeated_field 1 Field'.String_t file_to_generate _o >>= fun () ->
       Bin'.serialize_optional_field 2 Field'.String_t parameter _o >>= fun () ->
-      Bin'.serialize_repeated_user_field 15 Google_protobuf_descriptor_pc.File_descriptor_proto.to_binary proto_file _o >>= fun () ->
-      Bin'.serialize_user_field 3 Version.to_binary compiler_version _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 15 Google_protobuf_descriptor_pc.File_descriptor_proto.to_binary proto_file _o >>= fun () ->
+      Bin'.serialize_message_field 3 Version.to_binary compiler_version _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
@@ -114,8 +114,8 @@ end = struct
       Bin'.deserialize_message >>= fun _m ->
       Bin'.decode_repeated_field 1 Field'.String_t _m >>= fun file_to_generate ->
       Bin'.decode_optional_field 2 Field'.String_t _m >>= fun parameter ->
-      Bin'.decode_repeated_user_field 15 Google_protobuf_descriptor_pc.File_descriptor_proto.of_binary _m >>= fun proto_file ->
-      Bin'.decode_user_field 3 Version.of_binary _m >>= fun compiler_version ->
+      Bin'.decode_repeated_message_field 15 Google_protobuf_descriptor_pc.File_descriptor_proto.of_binary _m >>= fun proto_file ->
+      Bin'.decode_message_field 3 Version.of_binary _m >>= fun compiler_version ->
       Ok { file_to_generate; parameter; proto_file; compiler_version }
 
   let rec to_text =
@@ -123,8 +123,8 @@ end = struct
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_repeated_field "file_to_generate" Field'.String_t file_to_generate _o >>= fun () ->
       Text'.serialize_optional_field "parameter" Field'.String_t parameter _o >>= fun () ->
-      Text'.serialize_repeated_user_field "proto_file" Google_protobuf_descriptor_pc.File_descriptor_proto.to_text proto_file _o >>= fun () ->
-      Text'.serialize_user_field "compiler_version" Version.to_text compiler_version _o >>= fun () ->
+      Text'.serialize_repeated_message_field "proto_file" Google_protobuf_descriptor_pc.File_descriptor_proto.to_text proto_file _o >>= fun () ->
+      Text'.serialize_message_field "compiler_version" Version.to_text compiler_version _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
@@ -133,8 +133,8 @@ end = struct
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_repeated_field "file_to_generate" Field'.String_t _m >>= fun file_to_generate ->
       Text'.decode_optional_field "parameter" Field'.String_t _m >>= fun parameter ->
-      Text'.decode_repeated_user_field "proto_file" Google_protobuf_descriptor_pc.File_descriptor_proto.of_text _m >>= fun proto_file ->
-      Text'.decode_user_field "compiler_version" Version.of_text _m >>= fun compiler_version ->
+      Text'.decode_repeated_message_field "proto_file" Google_protobuf_descriptor_pc.File_descriptor_proto.of_text _m >>= fun proto_file ->
+      Text'.decode_message_field "compiler_version" Version.of_text _m >>= fun compiler_version ->
       Ok { file_to_generate; parameter; proto_file; compiler_version }
 end
 
@@ -238,7 +238,7 @@ end = struct
     fun { error; file } ->
       let _o = Runtime.Byte_output.create () in
       Bin'.serialize_optional_field 1 Field'.String_t error _o >>= fun () ->
-      Bin'.serialize_repeated_user_field 15 Code_generator_response.File.to_binary file _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 15 Code_generator_response.File.to_binary file _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
@@ -246,14 +246,14 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
       Bin'.decode_optional_field 1 Field'.String_t _m >>= fun error ->
-      Bin'.decode_repeated_user_field 15 Code_generator_response.File.of_binary _m >>= fun file ->
+      Bin'.decode_repeated_message_field 15 Code_generator_response.File.of_binary _m >>= fun file ->
       Ok { error; file }
 
   let rec to_text =
     fun { error; file } ->
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_optional_field "error" Field'.String_t error _o >>= fun () ->
-      Text'.serialize_repeated_user_field "file" Code_generator_response.File.to_text file _o >>= fun () ->
+      Text'.serialize_repeated_message_field "file" Code_generator_response.File.to_text file _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
@@ -261,6 +261,6 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_optional_field "error" Field'.String_t _m >>= fun error ->
-      Text'.decode_repeated_user_field "file" Code_generator_response.File.of_text _m >>= fun file ->
+      Text'.decode_repeated_message_field "file" Code_generator_response.File.of_text _m >>= fun file ->
       Ok { error; file }
 end

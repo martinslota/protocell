@@ -57,7 +57,7 @@ type decoding_error =
   | `Wrong_text_value_for_int_field of sort * int typ
   | `Wrong_text_value_for_float_field of sort * float typ
   | `Wrong_text_value_for_bool_field of sort * bool typ
-  | `Wrong_text_value_for_user_field of sort
+  | `Wrong_text_value_for_message_field of sort
   | `Wrong_text_value_for_enum_field of sort
   | `Unrecognized_enum_value of string
   | `Multiple_oneof_fields_set of id list
@@ -76,7 +76,7 @@ let show_decoding_error error =
   | `Wrong_text_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
   | `Wrong_text_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
   | `Wrong_text_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
-  | `Wrong_text_value_for_user_field sort ->
+  | `Wrong_text_value_for_message_field sort ->
       Printf.sprintf "Message field type cannot accept value type %s" (show_sort sort)
   | `Wrong_text_value_for_enum_field sort ->
       Printf.sprintf "Enum field type cannot accept value type %s" (show_sort sort)
@@ -354,19 +354,19 @@ let serialize_repeated_field id typ values output =
   List.map values ~f:(fun value -> serialize_field id typ value output)
   |> Result.all_unit
 
-let serialize_user_value id serializer value output =
+let serialize_message_value id serializer value output =
   let open Result.Let_syntax in
   serializer value >>| fun encoding -> Writer.write_field output (id, Message encoding)
 
-let serialize_user_field id serializer value output =
+let serialize_message_field id serializer value output =
   match value with
   | None -> Ok ()
-  | Some value -> serialize_user_value id serializer value output
+  | Some value -> serialize_message_value id serializer value output
 
-let serialize_user_oneof_field = serialize_user_value
+let serialize_oneof_message_field = serialize_message_value
 
-let serialize_repeated_user_field id serializer values output =
-  List.map values ~f:(fun value -> serialize_user_value id serializer value output)
+let serialize_repeated_message_field id serializer values output =
+  List.map values ~f:(fun value -> serialize_message_value id serializer value output)
   |> Result.all_unit
 
 let serialize_enum_field id to_string value output =
@@ -428,28 +428,28 @@ let decode_repeated_field id typ records =
   | None -> Ok []
   | Some values -> List.map values ~f:(decode_field_value typ) |> Result.all
 
-let decode_user_value deserializer value =
+let decode_message_value deserializer value =
   match value with
   | Message encoding -> deserializer encoding
-  | _ as value -> Error (`Wrong_text_value_for_user_field (to_sort value))
+  | _ as value -> Error (`Wrong_text_value_for_message_field (to_sort value))
 
-let decode_user_field id deserializer records =
+let decode_message_field id deserializer records =
   let open Result.Let_syntax in
   match Hashtbl.find records id with
   | None -> Ok None
   | Some values -> (
     match List.last values with
     | None -> Ok None
-    | Some value -> decode_user_value deserializer value >>| Option.some)
+    | Some value -> decode_message_value deserializer value >>| Option.some)
 
-let decode_user_oneof_field id deserializer records =
+let decode_oneof_message_field id deserializer records =
   let values = Hashtbl.find_exn records id in
-  decode_user_value deserializer (List.last_exn values)
+  decode_message_value deserializer (List.last_exn values)
 
-let decode_repeated_user_field id deserializer records =
+let decode_repeated_message_field id deserializer records =
   match Hashtbl.find records id with
   | None -> Ok []
-  | Some values -> List.map values ~f:(decode_user_value deserializer) |> Result.all
+  | Some values -> List.map values ~f:(decode_message_value deserializer) |> Result.all
 
 let decode_enum_value of_string = function
   | Enum name ->

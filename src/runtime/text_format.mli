@@ -26,7 +26,7 @@ type decoding_error =
   | `Wrong_text_value_for_int_field of sort * int Field_value.typ
   | `Wrong_text_value_for_float_field of sort * float Field_value.typ
   | `Wrong_text_value_for_bool_field of sort * bool Field_value.typ
-  | `Wrong_text_value_for_user_field of sort
+  | `Wrong_text_value_for_message_field of sort
   | `Wrong_text_value_for_enum_field of sort
   | `Unrecognized_enum_value of string
   | `Multiple_oneof_fields_set of id list
@@ -64,21 +64,21 @@ val serialize_repeated_field
   Byte_output.t ->
   (unit, [> serialization_error]) Result.t
 
-val serialize_user_field
+val serialize_message_field
   :  id ->
   ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
   'v option ->
   Byte_output.t ->
   (unit, 'e) Result.t
 
-val serialize_user_oneof_field
+val serialize_oneof_message_field
   :  id ->
   ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
   'v ->
   Byte_output.t ->
   (unit, 'e) Result.t
 
-val serialize_repeated_user_field
+val serialize_repeated_message_field
   :  id ->
   ('v -> (string, ([> serialization_error] as 'e)) Result.t) ->
   'v list ->
@@ -119,19 +119,19 @@ val decode_repeated_field
   parsed_message ->
   ('v list, [> decoding_error | Field_value.validation_error]) Result.t
 
-val decode_user_field
+val decode_message_field
   :  id ->
   (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
   parsed_message ->
   ('v option, 'e) Result.t
 
-val decode_user_oneof_field
+val decode_oneof_message_field
   :  id ->
   (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
   parsed_message ->
   ('v, 'e) Result.t
 
-val decode_repeated_user_field
+val decode_repeated_message_field
   :  id ->
   (string -> ('v, ([> deserialization_error] as 'e)) Result.t) ->
   parsed_message ->

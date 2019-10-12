@@ -373,10 +373,11 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
     | Message_t name -> Module_path.to_string name
     | Enum_t name -> Module_path.to_string name
   in
-  let fn_name_part_of_repeated data_type repeated =
-    match repeated with
-    | true -> "_repeated"
-    | false -> (
+  let fn_name_prefix data_type repeated for_oneof =
+    match repeated, for_oneof with
+    | true, _ -> "_repeated"
+    | _, true -> "_oneof"
+    | false, false -> (
       match syntax with
       | "proto3" -> ""
       | _ -> (
@@ -407,12 +408,9 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
         match data_type with
         | Message_t _ ->
             Printf.sprintf
-              {|%s.serialize%s_user%s_field %s %s.%s %s %s|}
+              {|%s.serialize%s_message_field %s %s.%s %s %s|}
               names.module_alias
-              (fn_name_part_of_repeated data_type repeated)
-              (match for_oneof with
-              | true -> "_oneof"
-              | false -> "")
+              (fn_name_prefix data_type repeated for_oneof)
               (field_to_id field)
               (type_to_constructor data_type)
               names.serialize
@@ -422,7 +420,7 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
             Printf.sprintf
               {|%s.serialize%s_enum_field %s %s.to_%s %s %s|}
               names.module_alias
-              (fn_name_part_of_repeated data_type repeated)
+              (fn_name_prefix data_type repeated false)
               (field_to_id field)
               (type_to_constructor data_type)
               serialized_enum_type
@@ -432,7 +430,7 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
             Printf.sprintf
               {|%s.serialize%s_field %s %s.%s %s %s|}
               names.module_alias
-              (fn_name_part_of_repeated data_type repeated)
+              (fn_name_prefix data_type repeated false)
               (field_to_id field)
               Generated_code.field_value_module_alias
               (type_to_constructor data_type)
@@ -488,12 +486,9 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
         match data_type with
         | Message_t _ ->
             Printf.sprintf
-              {|%s.decode%s_user%s_field %s %s.%s %s|}
+              {|%s.decode%s_message_field %s %s.%s %s|}
               names.module_alias
-              (fn_name_part_of_repeated data_type repeated)
-              (match for_oneof with
-              | true -> "_oneof"
-              | false -> "")
+              (fn_name_prefix data_type repeated for_oneof)
               (field_to_id field)
               (type_to_constructor data_type)
               names.deserialize
@@ -502,7 +497,7 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
             Printf.sprintf
               {|%s.decode%s_enum_field %s %s.of_%s %s.default %s|}
               names.module_alias
-              (fn_name_part_of_repeated data_type repeated)
+              (fn_name_prefix data_type repeated false)
               (field_to_id field)
               (type_to_constructor data_type)
               serialized_enum_type
@@ -512,7 +507,7 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
             Printf.sprintf
               "%s.decode%s_field %s %s.%s %s"
               names.module_alias
-              (fn_name_part_of_repeated data_type repeated)
+              (fn_name_prefix data_type repeated false)
               (field_to_id field)
               Generated_code.field_value_module_alias
               (type_to_constructor data_type)

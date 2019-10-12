@@ -106,7 +106,7 @@ end = struct
       fun { key; value' } ->
         let _o = Runtime.Byte_output.create () in
         Bin'.serialize_field 1 Field'.String_t key _o >>= fun () ->
-        Bin'.serialize_user_field 2 Value'.to_binary value' _o >>= fun () ->
+        Bin'.serialize_message_field 2 Value'.to_binary value' _o >>= fun () ->
         Ok (Runtime.Byte_output.contents _o)
   
     let rec of_binary =
@@ -114,14 +114,14 @@ end = struct
         Ok (Runtime.Byte_input.create input') >>=
         Bin'.deserialize_message >>= fun _m ->
         Bin'.decode_field 1 Field'.String_t _m >>= fun key ->
-        Bin'.decode_user_field 2 Value'.of_binary _m >>= fun value' ->
+        Bin'.decode_message_field 2 Value'.of_binary _m >>= fun value' ->
         Ok { key; value' }
   
     let rec to_text =
       fun { key; value' } ->
         let _o = Runtime.Byte_output.create () in
         Text'.serialize_field "key" Field'.String_t key _o >>= fun () ->
-        Text'.serialize_user_field "value" Value'.to_text value' _o >>= fun () ->
+        Text'.serialize_message_field "value" Value'.to_text value' _o >>= fun () ->
         Ok (Runtime.Byte_output.contents _o)
   
     let rec of_text =
@@ -129,7 +129,7 @@ end = struct
         Ok (Runtime.Byte_input.create input') >>=
         Text'.deserialize_message >>= fun _m ->
         Text'.decode_field "key" Field'.String_t _m >>= fun key ->
-        Text'.decode_user_field "value" Value'.of_text _m >>= fun value' ->
+        Text'.decode_message_field "value" Value'.of_text _m >>= fun value' ->
         Ok { key; value' }
   end
 
@@ -141,27 +141,27 @@ end = struct
   let rec to_binary =
     fun { fields } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_repeated_user_field 1 Struct'.Fields_entry.to_binary fields _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 1 Struct'.Fields_entry.to_binary fields _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_repeated_user_field 1 Struct'.Fields_entry.of_binary _m >>= fun fields ->
+      Bin'.decode_repeated_message_field 1 Struct'.Fields_entry.of_binary _m >>= fun fields ->
       Ok { fields }
 
   let rec to_text =
     fun { fields } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_repeated_user_field "fields" Struct'.Fields_entry.to_text fields _o >>= fun () ->
+      Text'.serialize_repeated_message_field "fields" Struct'.Fields_entry.to_text fields _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_repeated_user_field "fields" Struct'.Fields_entry.of_text _m >>= fun fields ->
+      Text'.decode_repeated_message_field "fields" Struct'.Fields_entry.of_text _m >>= fun fields ->
       Ok { fields }
 end
 
@@ -245,8 +245,8 @@ end = struct
        | Some Number_value number_value -> Bin'.serialize_field 2 Field'.Double_t number_value _o
        | Some String_value string_value -> Bin'.serialize_field 3 Field'.String_t string_value _o
        | Some Bool_value bool_value -> Bin'.serialize_field 4 Field'.Bool_t bool_value _o
-       | Some Struct_value struct_value -> Bin'.serialize_user_oneof_field 5 Struct'.to_binary struct_value _o
-       | Some List_value list_value -> Bin'.serialize_user_oneof_field 6 List_value.to_binary list_value _o) >>= fun () ->
+       | Some Struct_value struct_value -> Bin'.serialize_oneof_message_field 5 Struct'.to_binary struct_value _o
+       | Some List_value list_value -> Bin'.serialize_oneof_message_field 6 List_value.to_binary list_value _o) >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
@@ -258,8 +258,8 @@ end = struct
           2, (fun _m -> Bin'.decode_field 2 Field'.Double_t _m >>| Kind.number_value);
           3, (fun _m -> Bin'.decode_field 3 Field'.String_t _m >>| Kind.string_value);
           4, (fun _m -> Bin'.decode_field 4 Field'.Bool_t _m >>| Kind.bool_value);
-          5, (fun _m -> Bin'.decode_user_oneof_field 5 Struct'.of_binary _m >>| Kind.struct_value);
-          6, (fun _m -> Bin'.decode_user_oneof_field 6 List_value.of_binary _m >>| Kind.list_value);
+          5, (fun _m -> Bin'.decode_oneof_message_field 5 Struct'.of_binary _m >>| Kind.struct_value);
+          6, (fun _m -> Bin'.decode_oneof_message_field 6 List_value.of_binary _m >>| Kind.list_value);
         ] _m >>= fun kind ->
       Ok { kind }
 
@@ -272,8 +272,8 @@ end = struct
        | Some Number_value number_value -> Text'.serialize_field "number_value" Field'.Double_t number_value _o
        | Some String_value string_value -> Text'.serialize_field "string_value" Field'.String_t string_value _o
        | Some Bool_value bool_value -> Text'.serialize_field "bool_value" Field'.Bool_t bool_value _o
-       | Some Struct_value struct_value -> Text'.serialize_user_oneof_field "struct_value" Struct'.to_text struct_value _o
-       | Some List_value list_value -> Text'.serialize_user_oneof_field "list_value" List_value.to_text list_value _o) >>= fun () ->
+       | Some Struct_value struct_value -> Text'.serialize_oneof_message_field "struct_value" Struct'.to_text struct_value _o
+       | Some List_value list_value -> Text'.serialize_oneof_message_field "list_value" List_value.to_text list_value _o) >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
@@ -285,8 +285,8 @@ end = struct
           "number_value", (fun _m -> Text'.decode_field "number_value" Field'.Double_t _m >>| Kind.number_value);
           "string_value", (fun _m -> Text'.decode_field "string_value" Field'.String_t _m >>| Kind.string_value);
           "bool_value", (fun _m -> Text'.decode_field "bool_value" Field'.Bool_t _m >>| Kind.bool_value);
-          "struct_value", (fun _m -> Text'.decode_user_oneof_field "struct_value" Struct'.of_text _m >>| Kind.struct_value);
-          "list_value", (fun _m -> Text'.decode_user_oneof_field "list_value" List_value.of_text _m >>| Kind.list_value);
+          "struct_value", (fun _m -> Text'.decode_oneof_message_field "struct_value" Struct'.of_text _m >>| Kind.struct_value);
+          "list_value", (fun _m -> Text'.decode_oneof_message_field "list_value" List_value.of_text _m >>| Kind.list_value);
         ] _m >>= fun kind ->
       Ok { kind }
 end
@@ -313,26 +313,26 @@ end = struct
   let rec to_binary =
     fun { values } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_repeated_user_field 1 Value'.to_binary values _o >>= fun () ->
+      Bin'.serialize_repeated_message_field 1 Value'.to_binary values _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_repeated_user_field 1 Value'.of_binary _m >>= fun values ->
+      Bin'.decode_repeated_message_field 1 Value'.of_binary _m >>= fun values ->
       Ok { values }
 
   let rec to_text =
     fun { values } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_repeated_user_field "values" Value'.to_text values _o >>= fun () ->
+      Text'.serialize_repeated_message_field "values" Value'.to_text values _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_repeated_user_field "values" Value'.of_text _m >>= fun values ->
+      Text'.decode_repeated_message_field "values" Value'.of_text _m >>= fun values ->
       Ok { values }
 end
