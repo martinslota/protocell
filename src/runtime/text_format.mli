@@ -15,9 +15,20 @@ type parse_error =
   | `Nested_message_unfinished
   | Byte_input.error ]
 
+type decoding_error =
+  [ `Wrong_text_value_for_string_field of sort * string Field_value.typ
+  | `Wrong_text_value_for_int_field of sort * int Field_value.typ
+  | `Wrong_text_value_for_float_field of sort * float Field_value.typ
+  | `Wrong_text_value_for_bool_field of sort * bool Field_value.typ
+  | `Wrong_text_value_for_user_field of sort
+  | `Wrong_text_value_for_enum_field of sort
+  | `Unrecognized_enum_value
+  | `Multiple_oneof_fields_set
+  | `Integer_outside_int_type_range of int64 ]
+
 type deserialization_error =
   [ parse_error
-  | sort Types.decoding_error
+  | decoding_error
   | Field_value.validation_error ]
 
 type parsed_message
@@ -86,19 +97,19 @@ val decode_field
   :  id ->
   'v Field_value.typ ->
   parsed_message ->
-  ('v, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+  ('v, [> decoding_error | Field_value.validation_error]) Result.t
 
 val decode_optional_field
   :  id ->
   'v Field_value.typ ->
   parsed_message ->
-  ('v option, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+  ('v option, [> decoding_error | Field_value.validation_error]) Result.t
 
 val decode_repeated_field
   :  id ->
   'v Field_value.typ ->
   parsed_message ->
-  ('v list, [> sort Types.decoding_error | Field_value.validation_error]) Result.t
+  ('v list, [> decoding_error | Field_value.validation_error]) Result.t
 
 val decode_user_field
   :  id ->

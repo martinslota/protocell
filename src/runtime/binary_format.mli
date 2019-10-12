@@ -15,9 +15,20 @@ type parse_error =
   | `Invalid_string_length of int
   | Byte_input.error ]
 
+type decoding_error =
+  [ `Wrong_binary_value_for_string_field of sort * string Field_value.typ
+  | `Wrong_binary_value_for_int_field of sort * int Field_value.typ
+  | `Wrong_binary_value_for_float_field of sort * float Field_value.typ
+  | `Wrong_binary_value_for_bool_field of sort * bool Field_value.typ
+  | `Wrong_binary_value_for_user_field of sort
+  | `Wrong_binary_value_for_enum_field of sort
+  | `Unrecognized_enum_value
+  | `Multiple_oneof_fields_set
+  | `Integer_outside_int_type_range of int64 ]
+
 type deserialization_error =
   [ parse_error
-  | sort Types.decoding_error
+  | decoding_error
   | Field_value.validation_error ]
 
 type parsed_message

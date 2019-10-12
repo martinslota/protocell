@@ -57,15 +57,15 @@ let binary_format_deserialization_error_to_string error =
   in
   match error with
   | #Runtime.Binary_format.parse_error as e -> binary_format_parse_error_to_string e
-  | `Wrong_value_sort_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
-  | `Wrong_value_sort_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
-  | `Wrong_value_sort_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
-  | `Wrong_value_sort_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
-  | `Wrong_value_sort_for_user_field sort ->
+  | `Wrong_binary_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
+  | `Wrong_binary_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
+  | `Wrong_binary_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
+  | `Wrong_binary_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
+  | `Wrong_binary_value_for_user_field sort ->
       Printf.sprintf
         "Message field type cannot accept value type %s"
         (Runtime.Binary_format.sort_to_string sort)
-  | `Wrong_value_sort_for_enum_field sort ->
+  | `Wrong_binary_value_for_enum_field sort ->
       Printf.sprintf
         "Enum field type cannot accept value type %s"
         (Runtime.Binary_format.sort_to_string sort)
@@ -99,15 +99,15 @@ let text_format_deserialization_error_to_string error =
   in
   match error with
   | #Runtime.Text_format.parse_error as e -> text_format_parse_error_to_string e
-  | `Wrong_value_sort_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
-  | `Wrong_value_sort_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
-  | `Wrong_value_sort_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
-  | `Wrong_value_sort_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
-  | `Wrong_value_sort_for_user_field sort ->
+  | `Wrong_text_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
+  | `Wrong_text_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
+  | `Wrong_text_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
+  | `Wrong_text_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
+  | `Wrong_text_value_for_user_field sort ->
       Printf.sprintf
         "Message field type cannot accept value type %s"
         (Runtime.Text_format.sort_to_string sort)
-  | `Wrong_value_sort_for_enum_field sort ->
+  | `Wrong_text_value_for_enum_field sort ->
       Printf.sprintf
         "Enum field type cannot accept value type %s"
         (Runtime.Text_format.sort_to_string sort)

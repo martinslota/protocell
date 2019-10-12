@@ -4,4 +4,3 @@ module Byte_output = Byte_output
 module Field_value = Field_value
 module Result = Base.Result
 module Text_format = Text_format
-module Types = Types

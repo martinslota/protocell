@@ -18,9 +18,15 @@ type sort =
 
 type id = string
 
-type serialization_error = Field_value.validation_error
+module Id = String
+
+type 'v typ = 'v Field_value.typ
+
+type 'v value = 'v Field_value.t
 
 type parsed_message = (id, t list) Hashtbl.t
+
+type serialization_error = Field_value.validation_error
 
 type parse_error =
   [ `Unexpected_character of char
@@ -29,12 +35,21 @@ type parse_error =
   | `Nested_message_unfinished
   | Byte_input.error ]
 
+type decoding_error =
+  [ `Wrong_text_value_for_string_field of sort * string typ
+  | `Wrong_text_value_for_int_field of sort * int typ
+  | `Wrong_text_value_for_float_field of sort * float typ
+  | `Wrong_text_value_for_bool_field of sort * bool typ
+  | `Wrong_text_value_for_user_field of sort
+  | `Wrong_text_value_for_enum_field of sort
+  | `Unrecognized_enum_value
+  | `Multiple_oneof_fields_set
+  | `Integer_outside_int_type_range of int64 ]
+
 type deserialization_error =
   [ parse_error
-  | sort Types.decoding_error
+  | decoding_error
   | Field_value.validation_error ]
-
-module Id = String
 
 let to_sort = function
   | String _ -> String_sort
@@ -52,13 +67,29 @@ let sort_to_string = function
   | Message_sort -> "Message"
   | Enum_sort -> "Enum"
 
-module Encoding : Types.Encoding with type t := t with type sort := sort = struct
+module Encoding : sig
+  val encode_string : string value -> t
+
+  val decode_string : string typ -> t -> (string, [> decoding_error]) Result.t
+
+  val encode_int : int value -> t
+
+  val decode_int : int typ -> t -> (int, [> decoding_error]) Result.t
+
+  val encode_float : float value -> t
+
+  val decode_float : float typ -> t -> (float, [> decoding_error]) Result.t
+
+  val encode_bool : bool value -> t
+
+  val decode_bool : bool typ -> t -> (bool, [> decoding_error]) Result.t
+end = struct
   let encode_string value = String (Field_value.unpack value)
 
   let decode_string typ value =
     match value with
     | String string -> Ok string
-    | _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+    | _ -> Error (`Wrong_text_value_for_string_field (to_sort value, typ))
 
   let encode_int value = Integer (value |> Field_value.unpack |> Int64.of_int)
 
@@ -68,7 +99,7 @@ module Encoding : Types.Encoding with type t := t with type sort := sort = struc
       match Int64.to_int int64 with
       | None -> Error (`Integer_outside_int_type_range int64)
       | Some i -> Ok i)
-    | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ))
+    | _ -> Error (`Wrong_text_value_for_int_field (to_sort value, typ))
 
   let encode_float value = Float (value |> Field_value.unpack)
 
@@ -83,14 +114,14 @@ module Encoding : Types.Encoding with type t := t with type sort := sort = struc
         match typ with
         | Field_value.Float_t -> Ok (float |> Int32.bits_of_float |> Int32.float_of_bits)
         | Field_value.Double_t -> Ok float)
-    | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ))
+    | _ -> Error (`Wrong_text_value_for_float_field (to_sort value, typ))
 
   let encode_bool value = Bool (value |> Field_value.unpack)
 
   let decode_bool typ value =
     match value with
     | Bool bool -> Ok bool
-    | _ -> Error (`Wrong_value_sort_for_bool_field (to_sort value, typ))
+    | _ -> Error (`Wrong_text_value_for_bool_field (to_sort value, typ))
 end
 
 module Writer = struct
@@ -249,7 +280,7 @@ module Reader = struct
     tokenize input >>= read_key_value_pairs
 end
 
-let encode : type v. v Field_value.t -> t =
+let encode : type v. v value -> t =
  fun value ->
   let module F = Field_value in
   let typ = F.typ value in
@@ -312,7 +343,7 @@ let deserialize_message input =
   Reader.read input >>| fun records ->
   Hashtbl.of_alist_multi ~growth_allowed:false (module Id) records
 
-let decode_value : type v. t -> v Field_value.typ -> (v, _) Result.t =
+let decode_value : type v. t -> v typ -> (v, _) Result.t =
  fun value typ ->
   let module F = Field_value in
   match typ with
@@ -361,7 +392,7 @@ let decode_repeated_field id typ records =
 let decode_user_value deserializer value =
   match value with
   | Message encoding -> deserializer encoding
-  | _ as value -> Error (`Wrong_value_sort_for_user_field (to_sort value))
+  | _ as value -> Error (`Wrong_text_value_for_user_field (to_sort value))
 
 let decode_user_field id deserializer records =
   let open Result.Let_syntax in
@@ -383,7 +414,7 @@ let decode_repeated_user_field id deserializer records =
 
 let decode_enum_value of_string = function
   | Enum name -> of_string name |> Result.of_option ~error:`Unrecognized_enum_value
-  | _ as value -> Error (`Wrong_value_sort_for_enum_field (to_sort value))
+  | _ as value -> Error (`Wrong_text_value_for_enum_field (to_sort value))
 
 let decode_enum_field id of_string default records =
   match Hashtbl.find records id with

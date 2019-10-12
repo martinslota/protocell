@@ -14,6 +14,14 @@ type sort =
 
 type id = int
 
+module Id = Int
+
+type 'v value = 'v Field_value.t
+
+type 'v typ = 'v Field_value.typ
+
+type parsed_message = (id, t list) Hashtbl.t
+
 type serialization_error = Field_value.validation_error
 
 type parse_error =
@@ -23,14 +31,21 @@ type parse_error =
   | `Invalid_string_length of int
   | Byte_input.error ]
 
+type decoding_error =
+  [ `Wrong_binary_value_for_string_field of sort * string typ
+  | `Wrong_binary_value_for_int_field of sort * int typ
+  | `Wrong_binary_value_for_float_field of sort * float typ
+  | `Wrong_binary_value_for_bool_field of sort * bool typ
+  | `Wrong_binary_value_for_user_field of sort
+  | `Wrong_binary_value_for_enum_field of sort
+  | `Unrecognized_enum_value
+  | `Multiple_oneof_fields_set
+  | `Integer_outside_int_type_range of int64 ]
+
 type deserialization_error =
   [ parse_error
-  | sort Types.decoding_error
+  | decoding_error
   | Field_value.validation_error ]
-
-type parsed_message = (id, t list) Hashtbl.t
-
-module Id = Int
 
 let to_sort = function
   | Varint _ -> Varint_type
@@ -198,23 +213,37 @@ module Reader = struct
 end
 
 module Encoding : sig
-  include Types.Encoding with type t := t and type sort := sort
+  val encode_string : string value -> t
+
+  val decode_string : string typ -> t -> (string, [> decoding_error]) Result.t
+
+  val encode_int : int value -> t
 
   val encode_ints : int Field_value.t list -> t list
+
+  val decode_int : int typ -> t -> (int, [> decoding_error]) Result.t
 
   val decode_ints
     :  int Field_value.typ ->
     t ->
     (int list, [> deserialization_error]) Result.t
 
+  val encode_float : float value -> t
+
   val encode_floats : float Field_value.t list -> t list
+
+  val decode_float : float typ -> t -> (float, [> decoding_error]) Result.t
 
   val decode_floats
     :  float Field_value.typ ->
     t ->
     (float list, [> deserialization_error]) Result.t
 
+  val encode_bool : bool value -> t
+
   val encode_bools : bool Field_value.t list -> t list
+
+  val decode_bool : bool typ -> t -> (bool, [> decoding_error]) Result.t
 
   val decode_bools
     :  bool Field_value.typ ->
@@ -228,7 +257,7 @@ end = struct
   let decode_string typ value =
     match value with
     | Length_delimited string -> Ok string
-    | _ -> Error (`Wrong_value_sort_for_string_field (to_sort value, typ))
+    | _ -> Error (`Wrong_binary_value_for_string_field (to_sort value, typ))
 
   let zigzag_encode_64 i = Int64.((i asr 63) lxor (i lsl 1))
 
@@ -291,27 +320,27 @@ end = struct
     | F.Int32_t | F.Int64_t | F.Uint32_t | F.Uint64_t -> (
       match value with
       | Varint int64 -> decode_64_bit_int int64
-      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_int_field (to_sort value, typ)))
     | F.Sint32_t | F.Sint64_t -> (
       match value with
       | Varint int64 -> decode_64_bit_sint int64
-      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_int_field (to_sort value, typ)))
     | F.Fixed32_t -> (
       match value with
       | Fixed_32_bits int32 -> decode_32_bit_uint int32
-      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_int_field (to_sort value, typ)))
     | F.Fixed64_t -> (
       match value with
       | Fixed_64_bits int64 -> decode_64_bit_int int64
-      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_int_field (to_sort value, typ)))
     | F.Sfixed32_t -> (
       match value with
       | Fixed_32_bits int32 -> decode_32_bit_int int32
-      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_int_field (to_sort value, typ)))
     | F.Sfixed64_t -> (
       match value with
       | Fixed_64_bits int64 -> decode_64_bit_int int64
-      | _ -> Error (`Wrong_value_sort_for_int_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_int_field (to_sort value, typ)))
 
   let decode_ints typ value =
     let open Result.Let_syntax in
@@ -359,11 +388,11 @@ end = struct
     | F.Float_t -> (
       match value with
       | Fixed_32_bits int32 -> Ok (Int32.float_of_bits int32)
-      | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_float_field (to_sort value, typ)))
     | F.Double_t -> (
       match value with
       | Fixed_64_bits int64 -> Ok (Int64.float_of_bits int64)
-      | _ -> Error (`Wrong_value_sort_for_float_field (to_sort value, typ)))
+      | _ -> Error (`Wrong_binary_value_for_float_field (to_sort value, typ)))
 
   let decode_floats typ value =
     let open Result.Let_syntax in
@@ -399,7 +428,7 @@ end = struct
   let decode_bool typ value =
     match value with
     | Varint int64 -> Ok Int64.(int64 <> zero)
-    | _ -> Error (`Wrong_value_sort_for_bool_field (to_sort value, typ))
+    | _ -> Error (`Wrong_binary_value_for_bool_field (to_sort value, typ))
 
   let decode_bools typ value =
     let open Result.Let_syntax in
@@ -584,7 +613,7 @@ let decode_repeated_field id typ records =
 let decode_user_value deserializer value =
   match value with
   | Length_delimited encoding -> deserializer encoding
-  | _ as value -> Error (`Wrong_value_sort_for_user_field (to_sort value))
+  | _ as value -> Error (`Wrong_binary_value_for_user_field (to_sort value))
 
 let decode_user_field id deserializer records =
   let open Result.Let_syntax in
@@ -609,7 +638,7 @@ let decode_enum_value of_int = function
     match Int64.to_int int with
     | None -> Error (`Integer_outside_int_type_range int)
     | Some int -> of_int int |> Result.of_option ~error:`Unrecognized_enum_value)
-  | _ as value -> Error (`Wrong_value_sort_for_enum_field (to_sort value))
+  | _ as value -> Error (`Wrong_binary_value_for_enum_field (to_sort value))
 
 let decode_enum_field id of_int default records =
   match Hashtbl.find records id with
