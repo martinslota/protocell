@@ -17,11 +17,7 @@ type _ typ =
   | Double_t : float typ
   | Bool_t : bool typ
 
-type 'v t = 'v typ * 'v
-
-type validation_error = [`Integer_outside_field_type_range of int typ * int]
-
-let typ_to_string : type v. v typ -> string = function
+let show_typ : type v. v typ -> string = function
   | String_t -> "string"
   | Bytes_t -> "bytes"
   | Int32_t -> "int32"
@@ -37,6 +33,17 @@ let typ_to_string : type v. v typ -> string = function
   | Float_t -> "float"
   | Double_t -> "double"
   | Bool_t -> "bool"
+
+type 'v t = 'v typ * 'v
+
+type validation_error = [`Integer_outside_field_type_range of int typ * int]
+
+let show_validation_error = function
+  | `Integer_outside_field_type_range (typ, int) ->
+      Printf.sprintf
+        "Integer %d is outside of the range of field type %s"
+        int
+        (show_typ typ)
 
 let default : type v. v typ -> v = function
   | String_t -> ""

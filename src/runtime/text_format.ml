@@ -16,6 +16,14 @@ type sort =
   | Message_sort
   | Enum_sort
 
+let show_sort = function
+  | String_sort -> "String"
+  | Integer_sort -> "Integer"
+  | Float_sort -> "Float"
+  | Bool_sort -> "Boolean"
+  | Message_sort -> "Message"
+  | Enum_sort -> "Enum"
+
 type id = string
 
 module Id = String
@@ -28,12 +36,21 @@ type parsed_message = (id, t list) Hashtbl.t
 
 type serialization_error = Field_value.validation_error
 
+let show_serialization_error = Field_value.show_validation_error
+
 type parse_error =
   [ `Unexpected_character of char
   | `Invalid_number_string of string
   | `Identifier_expected
   | `Nested_message_unfinished
   | Byte_input.error ]
+
+let show_parse_error = function
+  | `Unexpected_character char -> Printf.sprintf "Unexpected character: %c" char
+  | `Invalid_number_string string -> Printf.sprintf "Invalid number string: %s" string
+  | `Identifier_expected -> "Identifier expected"
+  | `Nested_message_unfinished -> "Nested message unfinished"
+  | #Byte_input.error as e -> Byte_input.show_error e
 
 type decoding_error =
   [ `Wrong_text_value_for_string_field of sort * string typ
@@ -45,6 +62,36 @@ type decoding_error =
   | `Unrecognized_enum_value of string
   | `Multiple_oneof_fields_set of id list
   | `Integer_outside_int_type_range of int64 ]
+
+let show_decoding_error error =
+  let wrong_sort_msg field_type_name sort typ =
+    Printf.sprintf
+      "%s field type %s cannot accept value type %s"
+      field_type_name
+      (Field_value.show_typ typ)
+      (show_sort sort)
+  in
+  match error with
+  | `Wrong_text_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
+  | `Wrong_text_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
+  | `Wrong_text_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
+  | `Wrong_text_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
+  | `Wrong_text_value_for_user_field sort ->
+      Printf.sprintf "Message field type cannot accept value type %s" (show_sort sort)
+  | `Wrong_text_value_for_enum_field sort ->
+      Printf.sprintf "Enum field type cannot accept value type %s" (show_sort sort)
+  | `Integer_outside_int_type_range int64 ->
+      Printf.sprintf "Varint value %s outside OCaml int type range"
+      @@ Int64.to_string int64
+  | `Unrecognized_enum_value enum_value ->
+      Printf.sprintf "Unrecognized enum value %s" enum_value
+  | `Multiple_oneof_fields_set ids ->
+      ids |> String.concat ~sep:", " |> Printf.sprintf "Multiple oneof fields set: %s"
+
+let show_deserialization_error = function
+  | #parse_error as e -> show_parse_error e
+  | #decoding_error as e -> show_decoding_error e
+  | #Field_value.validation_error as e -> Field_value.show_validation_error e
 
 type deserialization_error =
   [ parse_error
@@ -58,14 +105,6 @@ let to_sort = function
   | Bool _ -> Bool_sort
   | Message _ -> Message_sort
   | Enum _ -> Enum_sort
-
-let sort_to_string = function
-  | String_sort -> "String"
-  | Integer_sort -> "Integer"
-  | Float_sort -> "Float"
-  | Bool_sort -> "Boolean"
-  | Message_sort -> "Message"
-  | Enum_sort -> "Enum"
 
 module Encoding : sig
   val encode_string : string value -> t

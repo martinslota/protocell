@@ -4,9 +4,13 @@ type t
 
 type sort
 
+val show_sort : sort -> string
+
 type id = int
 
 type serialization_error = Field_value.validation_error
+
+val show_serialization_error : serialization_error -> string
 
 type parse_error =
   [ `Unknown_wire_type of int
@@ -14,6 +18,8 @@ type parse_error =
   | `Varint_too_long
   | `Invalid_string_length of int
   | Byte_input.error ]
+
+val show_parse_error : parse_error -> string
 
 type decoding_error =
   [ `Wrong_binary_value_for_string_field of sort * string Field_value.typ
@@ -26,14 +32,16 @@ type decoding_error =
   | `Multiple_oneof_fields_set of int list
   | `Integer_outside_int_type_range of int64 ]
 
+val show_decoding_error : decoding_error -> string
+
 type deserialization_error =
   [ parse_error
   | decoding_error
   | Field_value.validation_error ]
 
-type parsed_message
+val show_deserialization_error : deserialization_error -> string
 
-val sort_to_string : sort -> string
+type parsed_message
 
 val serialize_field
   :  id ->

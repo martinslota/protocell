@@ -19,9 +19,11 @@ type _ typ =
   | Double_t : float typ
   | Bool_t : bool typ
 
+val show_typ : 'v typ -> string
+
 type validation_error = [`Integer_outside_field_type_range of int typ * int]
 
-val typ_to_string : 'v typ -> string
+val show_validation_error : validation_error -> string
 
 val default : 'v typ -> 'v
 

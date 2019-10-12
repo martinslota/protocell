@@ -28,56 +28,6 @@ module type Serdes_testable = sig
   val of_text : string -> (t, [> Runtime.Text_format.deserialization_error]) result
 end
 
-let byte_input_error_to_string = function
-  | `Not_enough_bytes -> "Unexpected end of input"
-
-let field_validation_error_to_string = function
-  | `Integer_outside_field_type_range (typ, int) ->
-      Printf.sprintf
-        "Integer %d is outside of the range of field type %s"
-        int
-        (Runtime.Field_value.typ_to_string typ)
-
-let binary_format_parse_error_to_string = function
-  | `Unknown_wire_type int -> Printf.sprintf "Unknown wire type ID %d" int
-  | `Varint_too_long -> "Varint value was longer than 64 bits"
-  | `Invalid_string_length int -> Printf.sprintf "Invalid string length: %d" int
-  | `Integer_outside_int_type_range int64 ->
-      Printf.sprintf "Varint value %s outside OCaml int type range"
-      @@ Int64.to_string int64
-  | #Runtime.Byte_input.error as e -> byte_input_error_to_string e
-
-let binary_format_deserialization_error_to_string error =
-  let wrong_sort_msg field_type_name sort typ =
-    Printf.sprintf
-      "%s field type %s cannot accept value type %s"
-      field_type_name
-      (Runtime.Field_value.typ_to_string typ)
-      (Runtime.Binary_format.sort_to_string sort)
-  in
-  match error with
-  | #Runtime.Binary_format.parse_error as e -> binary_format_parse_error_to_string e
-  | `Wrong_binary_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
-  | `Wrong_binary_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
-  | `Wrong_binary_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
-  | `Wrong_binary_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
-  | `Wrong_binary_value_for_user_field sort ->
-      Printf.sprintf
-        "Message field type cannot accept value type %s"
-        (Runtime.Binary_format.sort_to_string sort)
-  | `Wrong_binary_value_for_enum_field sort ->
-      Printf.sprintf
-        "Enum field type cannot accept value type %s"
-        (Runtime.Binary_format.sort_to_string sort)
-  | `Unrecognized_enum_value enum_value ->
-      Printf.sprintf "Unrecognized enum value %d" enum_value
-  | `Multiple_oneof_fields_set ids ->
-      ids
-      |> List.map ~f:Int.to_string
-      |> String.concat ~sep:", "
-      |> Printf.sprintf "Multiple oneof fields set: %s"
-  | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
-
 let process_error_to_string = function
   | `Process_execution_error message ->
       Printf.sprintf "Process execution error: %s" message
@@ -85,50 +35,12 @@ let process_error_to_string = function
 let binary_error_to_string = function
   | #process_error as e -> process_error_to_string e
   | #Runtime.Binary_format.deserialization_error as e ->
-      binary_format_deserialization_error_to_string e
-
-let text_format_parse_error_to_string = function
-  | `Unexpected_character char -> Printf.sprintf "Unexpected character: %c" char
-  | `Invalid_number_string string -> Printf.sprintf "Invalid number string: %s" string
-  | `Identifier_expected -> "Identifier expected"
-  | `Nested_message_unfinished -> "Nested message unfinished"
-  | #Runtime.Byte_input.error as e -> byte_input_error_to_string e
-
-let text_format_deserialization_error_to_string error =
-  let wrong_sort_msg field_type_name sort typ =
-    Printf.sprintf
-      "%s field type %s cannot accept value type %s"
-      field_type_name
-      (Runtime.Field_value.typ_to_string typ)
-      (Runtime.Text_format.sort_to_string sort)
-  in
-  match error with
-  | #Runtime.Text_format.parse_error as e -> text_format_parse_error_to_string e
-  | `Wrong_text_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
-  | `Wrong_text_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
-  | `Wrong_text_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
-  | `Wrong_text_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
-  | `Wrong_text_value_for_user_field sort ->
-      Printf.sprintf
-        "Message field type cannot accept value type %s"
-        (Runtime.Text_format.sort_to_string sort)
-  | `Wrong_text_value_for_enum_field sort ->
-      Printf.sprintf
-        "Enum field type cannot accept value type %s"
-        (Runtime.Text_format.sort_to_string sort)
-  | `Integer_outside_int_type_range int64 ->
-      Printf.sprintf "Varint value %s outside OCaml int type range"
-      @@ Int64.to_string int64
-  | `Unrecognized_enum_value enum_value ->
-      Printf.sprintf "Unrecognized enum value %s" enum_value
-  | `Multiple_oneof_fields_set ids ->
-      ids |> String.concat ~sep:", " |> Printf.sprintf "Multiple oneof fields set: %s"
-  | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
+      Runtime.Binary_format.show_deserialization_error e
 
 let text_error_to_string = function
   | #process_error as e -> process_error_to_string e
   | #Runtime.Text_format.deserialization_error as e ->
-      text_format_deserialization_error_to_string e
+      Runtime.Text_format.show_deserialization_error e
 
 let make_tests title test_fn values_to_test =
   let value_count = List.length values_to_test in

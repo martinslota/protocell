@@ -12,6 +12,12 @@ type sort =
   | Length_delimited_type
   | Fixed_32_bits_type
 
+let show_sort = function
+  | Varint_type -> "Varint"
+  | Fixed_64_bits_type -> "64-bit"
+  | Length_delimited_type -> "Length-delimited"
+  | Fixed_32_bits_type -> "32-bit"
+
 type id = int
 
 module Id = Int
@@ -24,12 +30,23 @@ type parsed_message = (id, t list) Hashtbl.t
 
 type serialization_error = Field_value.validation_error
 
+let show_serialization_error = Field_value.show_validation_error
+
 type parse_error =
   [ `Unknown_wire_type of int
   | `Integer_outside_int_type_range of int64
   | `Varint_too_long
   | `Invalid_string_length of int
   | Byte_input.error ]
+
+let show_parse_error = function
+  | `Unknown_wire_type int -> Printf.sprintf "Unknown wire type ID %d" int
+  | `Varint_too_long -> "Varint value was longer than 64 bits"
+  | `Invalid_string_length int -> Printf.sprintf "Invalid string length: %d" int
+  | `Integer_outside_int_type_range int64 ->
+      Printf.sprintf "Varint value %s outside OCaml int type range"
+      @@ Int64.to_string int64
+  | #Byte_input.error as e -> Byte_input.show_error e
 
 type decoding_error =
   [ `Wrong_binary_value_for_string_field of sort * string typ
@@ -42,10 +59,43 @@ type decoding_error =
   | `Multiple_oneof_fields_set of id list
   | `Integer_outside_int_type_range of int64 ]
 
+let show_decoding_error error =
+  let wrong_sort_msg field_type_name sort typ =
+    Printf.sprintf
+      "%s field type %s cannot accept value type %s"
+      field_type_name
+      (Field_value.show_typ typ)
+      (show_sort sort)
+  in
+  match error with
+  | `Wrong_binary_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
+  | `Wrong_binary_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
+  | `Wrong_binary_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
+  | `Wrong_binary_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
+  | `Wrong_binary_value_for_user_field sort ->
+      Printf.sprintf "Message field type cannot accept value type %s" (show_sort sort)
+  | `Wrong_binary_value_for_enum_field sort ->
+      Printf.sprintf "Enum field type cannot accept value type %s" (show_sort sort)
+  | `Unrecognized_enum_value enum_value ->
+      Printf.sprintf "Unrecognized enum value %d" enum_value
+  | `Multiple_oneof_fields_set ids ->
+      ids
+      |> List.map ~f:Int.to_string
+      |> String.concat ~sep:", "
+      |> Printf.sprintf "Multiple oneof fields set: %s"
+  | `Integer_outside_int_type_range int64 ->
+      Printf.sprintf "Varint value %s outside OCaml int type range"
+      @@ Int64.to_string int64
+
 type deserialization_error =
   [ parse_error
   | decoding_error
   | Field_value.validation_error ]
+
+let show_deserialization_error = function
+  | #parse_error as e -> show_parse_error e
+  | #decoding_error as e -> show_decoding_error e
+  | #Field_value.validation_error as e -> Field_value.show_validation_error e
 
 let to_sort = function
   | Varint _ -> Varint_type
@@ -65,12 +115,6 @@ let sort_of_id = function
   | 2 -> Some Length_delimited_type
   | 5 -> Some Fixed_32_bits_type
   | _ -> None
-
-let sort_to_string = function
-  | Varint_type -> "Varint"
-  | Fixed_64_bits_type -> "64-bit"
-  | Length_delimited_type -> "Length-delimited"
-  | Fixed_32_bits_type -> "32-bit"
 
 module Writer = struct
   let seven_bit_mask = Int64.of_int 0b0111_1111

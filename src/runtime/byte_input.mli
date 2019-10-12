@@ -4,6 +4,8 @@ type t
 
 type error = [`Not_enough_bytes]
 
+val show_error : error -> string
+
 val create : string -> t
 
 val has_more_bytes : t -> bool

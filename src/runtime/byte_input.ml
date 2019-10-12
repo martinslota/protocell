@@ -8,6 +8,9 @@ type t = {
 
 type error = [`Not_enough_bytes]
 
+let show_error = function
+  | `Not_enough_bytes -> "Unexpected end of input"
+
 let create bytes = {bytes; byte_count = String.length bytes; position = ref 0}
 
 let has_more_bytes {byte_count; position; _} = !position < byte_count
