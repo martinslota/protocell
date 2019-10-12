@@ -124,27 +124,27 @@ end = struct
   let rec to_binary =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_field 1 Field'.Int64_t value' _o >>= fun () ->
+      Bin'.serialize_field 1 Field'.(Int64_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_field 1 Field'.Int64_t _m >>= fun value' ->
+      Bin'.decode_field 1 Field'.(Int64_t As_int) _m >>= fun value' ->
       Ok { value' }
 
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value" Field'.Int64_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.(Int64_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value" Field'.Int64_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.(Int64_t As_int) _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -170,27 +170,27 @@ end = struct
   let rec to_binary =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_field 1 Field'.Uint64_t value' _o >>= fun () ->
+      Bin'.serialize_field 1 Field'.(Uint64_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_field 1 Field'.Uint64_t _m >>= fun value' ->
+      Bin'.decode_field 1 Field'.(Uint64_t As_int) _m >>= fun value' ->
       Ok { value' }
 
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value" Field'.Uint64_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.(Uint64_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value" Field'.Uint64_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.(Uint64_t As_int) _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -216,27 +216,27 @@ end = struct
   let rec to_binary =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_field 1 Field'.Int32_t value' _o >>= fun () ->
+      Bin'.serialize_field 1 Field'.(Int32_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_field 1 Field'.Int32_t _m >>= fun value' ->
+      Bin'.decode_field 1 Field'.(Int32_t As_int) _m >>= fun value' ->
       Ok { value' }
 
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value" Field'.Int32_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.(Int32_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value" Field'.Int32_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.(Int32_t As_int) _m >>= fun value' ->
       Ok { value' }
 end
 
@@ -262,27 +262,27 @@ end = struct
   let rec to_binary =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_field 1 Field'.Uint32_t value' _o >>= fun () ->
+      Bin'.serialize_field 1 Field'.(Uint32_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_binary =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_field 1 Field'.Uint32_t _m >>= fun value' ->
+      Bin'.decode_field 1 Field'.(Uint32_t As_int) _m >>= fun value' ->
       Ok { value' }
 
   let rec to_text =
     fun { value' } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_field "value" Field'.Uint32_t value' _o >>= fun () ->
+      Text'.serialize_field "value" Field'.(Uint32_t As_int) value' _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
   let rec of_text =
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_field "value" Field'.Uint32_t _m >>= fun value' ->
+      Text'.decode_field "value" Field'.(Uint32_t As_int) _m >>= fun value' ->
       Ok { value' }
 end
 

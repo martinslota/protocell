@@ -55,6 +55,8 @@ let show_parse_error = function
 type decoding_error =
   [ `Wrong_text_value_for_string_field of sort * string typ
   | `Wrong_text_value_for_int_field of sort * int typ
+  | `Wrong_text_value_for_int32_field of sort * int32 typ
+  | `Wrong_text_value_for_int64_field of sort * int64 typ
   | `Wrong_text_value_for_float_field of sort * float typ
   | `Wrong_text_value_for_bool_field of sort * bool typ
   | `Wrong_text_value_for_message_field of sort
@@ -73,7 +75,9 @@ let show_decoding_error error =
   in
   match error with
   | `Wrong_text_value_for_string_field (sort, typ) -> wrong_sort_msg "String" sort typ
-  | `Wrong_text_value_for_int_field (sort, typ) -> wrong_sort_msg "Integer" sort typ
+  | `Wrong_text_value_for_int_field (sort, typ) -> wrong_sort_msg "Int" sort typ
+  | `Wrong_text_value_for_int32_field (sort, typ) -> wrong_sort_msg "Int32" sort typ
+  | `Wrong_text_value_for_int64_field (sort, typ) -> wrong_sort_msg "Int64" sort typ
   | `Wrong_text_value_for_float_field (sort, typ) -> wrong_sort_msg "Float" sort typ
   | `Wrong_text_value_for_bool_field (sort, typ) -> wrong_sort_msg "Boolean" sort typ
   | `Wrong_text_value_for_message_field sort ->
@@ -113,7 +117,15 @@ module Encoding : sig
 
   val encode_int : int value -> t
 
+  val encode_int32 : int32 value -> t
+
+  val encode_int64 : int64 value -> t
+
   val decode_int : int typ -> t -> (int, [> decoding_error]) Result.t
+
+  val decode_int32 : int32 typ -> t -> (int32, [> decoding_error]) Result.t
+
+  val decode_int64 : int64 typ -> t -> (int64, [> decoding_error]) Result.t
 
   val encode_float : float value -> t
 
@@ -132,6 +144,10 @@ end = struct
 
   let encode_int value = Integer (value |> Field_value.unpack |> Int64.of_int)
 
+  let encode_int32 value = Integer (value |> Field_value.unpack |> Int64.of_int32)
+
+  let encode_int64 value = Integer (value |> Field_value.unpack)
+
   let decode_int typ value =
     match value with
     | Integer int64 -> (
@@ -140,6 +156,19 @@ end = struct
       | Some i -> Ok i)
     | _ -> Error (`Wrong_text_value_for_int_field (to_sort value, typ))
 
+  let decode_int32 typ value =
+    match value with
+    | Integer int64 -> (
+      match Int64.to_int32 int64 with
+      | None -> Error (`Integer_outside_int_type_range int64)
+      | Some i -> Ok i)
+    | _ -> Error (`Wrong_text_value_for_int32_field (to_sort value, typ))
+
+  let decode_int64 typ value =
+    match value with
+    | Integer int64 -> Ok int64
+    | _ -> Error (`Wrong_text_value_for_int64_field (to_sort value, typ))
+
   let encode_float value = Float (value |> Field_value.unpack)
 
   let decode_float typ value =
@@ -147,12 +176,14 @@ end = struct
     | Float float -> (
       match typ with
       | Field_value.Float_t -> Ok (float |> Int32.bits_of_float |> Int32.float_of_bits)
-      | Field_value.Double_t -> Ok float)
+      | Field_value.Double_t -> Ok float
+      | _ -> .)
     | Integer int -> (
         let float = Float.of_int64 int in
         match typ with
         | Field_value.Float_t -> Ok (float |> Int32.bits_of_float |> Int32.float_of_bits)
-        | Field_value.Double_t -> Ok float)
+        | Field_value.Double_t -> Ok float
+        | _ -> .)
     | _ -> Error (`Wrong_text_value_for_float_field (to_sort value, typ))
 
   let encode_bool value = Bool (value |> Field_value.unpack)
@@ -326,16 +357,26 @@ let encode : type v. v value -> t =
   match typ with
   | F.String_t -> Encoding.encode_string value
   | F.Bytes_t -> Encoding.encode_string value
-  | F.Int32_t -> Encoding.encode_int value
-  | F.Int64_t -> Encoding.encode_int value
-  | F.Sint32_t -> Encoding.encode_int value
-  | F.Sint64_t -> Encoding.encode_int value
-  | F.Uint32_t -> Encoding.encode_int value
-  | F.Uint64_t -> Encoding.encode_int value
-  | F.Fixed32_t -> Encoding.encode_int value
-  | F.Fixed64_t -> Encoding.encode_int value
-  | F.Sfixed32_t -> Encoding.encode_int value
-  | F.Sfixed64_t -> Encoding.encode_int value
+  | F.Int32_t As_int -> Encoding.encode_int value
+  | F.Int32_t As_int32 -> Encoding.encode_int32 value
+  | F.Int64_t As_int -> Encoding.encode_int value
+  | F.Int64_t As_int64 -> Encoding.encode_int64 value
+  | F.Sint32_t As_int -> Encoding.encode_int value
+  | F.Sint32_t As_int32 -> Encoding.encode_int32 value
+  | F.Sint64_t As_int -> Encoding.encode_int value
+  | F.Sint64_t As_int64 -> Encoding.encode_int64 value
+  | F.Uint32_t As_int -> Encoding.encode_int value
+  | F.Uint32_t As_int32 -> Encoding.encode_int32 value
+  | F.Uint64_t As_int -> Encoding.encode_int value
+  | F.Uint64_t As_int64 -> Encoding.encode_int64 value
+  | F.Fixed32_t As_int -> Encoding.encode_int value
+  | F.Fixed32_t As_int32 -> Encoding.encode_int32 value
+  | F.Fixed64_t As_int -> Encoding.encode_int value
+  | F.Fixed64_t As_int64 -> Encoding.encode_int64 value
+  | F.Sfixed32_t As_int -> Encoding.encode_int value
+  | F.Sfixed32_t As_int32 -> Encoding.encode_int32 value
+  | F.Sfixed64_t As_int -> Encoding.encode_int value
+  | F.Sfixed64_t As_int64 -> Encoding.encode_int64 value
   | F.Float_t -> Encoding.encode_float value
   | F.Double_t -> Encoding.encode_float value
   | F.Bool_t -> Encoding.encode_bool value
@@ -388,16 +429,26 @@ let decode_value : type v. t -> v typ -> (v, _) Result.t =
   match typ with
   | F.String_t -> Encoding.decode_string typ value
   | F.Bytes_t -> Encoding.decode_string typ value
-  | F.Int32_t -> Encoding.decode_int typ value
-  | F.Int64_t -> Encoding.decode_int typ value
-  | F.Sint32_t -> Encoding.decode_int typ value
-  | F.Sint64_t -> Encoding.decode_int typ value
-  | F.Uint32_t -> Encoding.decode_int typ value
-  | F.Uint64_t -> Encoding.decode_int typ value
-  | F.Fixed32_t -> Encoding.decode_int typ value
-  | F.Fixed64_t -> Encoding.decode_int typ value
-  | F.Sfixed32_t -> Encoding.decode_int typ value
-  | F.Sfixed64_t -> Encoding.decode_int typ value
+  | F.Int32_t As_int -> Encoding.decode_int typ value
+  | F.Int32_t As_int32 -> Encoding.decode_int32 typ value
+  | F.Int64_t As_int -> Encoding.decode_int typ value
+  | F.Int64_t As_int64 -> Encoding.decode_int64 typ value
+  | F.Sint32_t As_int -> Encoding.decode_int typ value
+  | F.Sint32_t As_int32 -> Encoding.decode_int32 typ value
+  | F.Sint64_t As_int -> Encoding.decode_int typ value
+  | F.Sint64_t As_int64 -> Encoding.decode_int64 typ value
+  | F.Uint32_t As_int -> Encoding.decode_int typ value
+  | F.Uint32_t As_int32 -> Encoding.decode_int32 typ value
+  | F.Uint64_t As_int -> Encoding.decode_int typ value
+  | F.Uint64_t As_int64 -> Encoding.decode_int64 typ value
+  | F.Fixed32_t As_int -> Encoding.decode_int typ value
+  | F.Fixed32_t As_int32 -> Encoding.decode_int32 typ value
+  | F.Fixed64_t As_int -> Encoding.decode_int typ value
+  | F.Fixed64_t As_int64 -> Encoding.decode_int64 typ value
+  | F.Sfixed32_t As_int -> Encoding.decode_int typ value
+  | F.Sfixed32_t As_int32 -> Encoding.decode_int32 typ value
+  | F.Sfixed64_t As_int -> Encoding.decode_int typ value
+  | F.Sfixed64_t As_int64 -> Encoding.decode_int64 typ value
   | F.Float_t -> Encoding.decode_float typ value
   | F.Double_t -> Encoding.decode_float typ value
   | F.Bool_t -> Encoding.decode_bool typ value

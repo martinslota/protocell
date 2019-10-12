@@ -436,10 +436,10 @@ end = struct
       let _o = Runtime.Byte_output.create () in
       Bin'.serialize_enum_field 1 Field.Kind.to_int kind _o >>= fun () ->
       Bin'.serialize_enum_field 2 Field.Cardinality.to_int cardinality _o >>= fun () ->
-      Bin'.serialize_field 3 Field'.Int32_t number _o >>= fun () ->
+      Bin'.serialize_field 3 Field'.(Int32_t As_int) number _o >>= fun () ->
       Bin'.serialize_field 4 Field'.String_t name _o >>= fun () ->
       Bin'.serialize_field 6 Field'.String_t type_url _o >>= fun () ->
-      Bin'.serialize_field 7 Field'.Int32_t oneof_index _o >>= fun () ->
+      Bin'.serialize_field 7 Field'.(Int32_t As_int) oneof_index _o >>= fun () ->
       Bin'.serialize_field 8 Field'.Bool_t packed _o >>= fun () ->
       Bin'.serialize_repeated_message_field 9 Option.to_binary options _o >>= fun () ->
       Bin'.serialize_field 10 Field'.String_t json_name _o >>= fun () ->
@@ -452,10 +452,10 @@ end = struct
       Bin'.deserialize_message >>= fun _m ->
       Bin'.decode_enum_field 1 Field.Kind.of_int Field.Kind.default _m >>= fun kind ->
       Bin'.decode_enum_field 2 Field.Cardinality.of_int Field.Cardinality.default _m >>= fun cardinality ->
-      Bin'.decode_field 3 Field'.Int32_t _m >>= fun number ->
+      Bin'.decode_field 3 Field'.(Int32_t As_int) _m >>= fun number ->
       Bin'.decode_field 4 Field'.String_t _m >>= fun name ->
       Bin'.decode_field 6 Field'.String_t _m >>= fun type_url ->
-      Bin'.decode_field 7 Field'.Int32_t _m >>= fun oneof_index ->
+      Bin'.decode_field 7 Field'.(Int32_t As_int) _m >>= fun oneof_index ->
       Bin'.decode_field 8 Field'.Bool_t _m >>= fun packed ->
       Bin'.decode_repeated_message_field 9 Option.of_binary _m >>= fun options ->
       Bin'.decode_field 10 Field'.String_t _m >>= fun json_name ->
@@ -467,10 +467,10 @@ end = struct
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_enum_field "kind" Field.Kind.to_string kind _o >>= fun () ->
       Text'.serialize_enum_field "cardinality" Field.Cardinality.to_string cardinality _o >>= fun () ->
-      Text'.serialize_field "number" Field'.Int32_t number _o >>= fun () ->
+      Text'.serialize_field "number" Field'.(Int32_t As_int) number _o >>= fun () ->
       Text'.serialize_field "name" Field'.String_t name _o >>= fun () ->
       Text'.serialize_field "type_url" Field'.String_t type_url _o >>= fun () ->
-      Text'.serialize_field "oneof_index" Field'.Int32_t oneof_index _o >>= fun () ->
+      Text'.serialize_field "oneof_index" Field'.(Int32_t As_int) oneof_index _o >>= fun () ->
       Text'.serialize_field "packed" Field'.Bool_t packed _o >>= fun () ->
       Text'.serialize_repeated_message_field "options" Option.to_text options _o >>= fun () ->
       Text'.serialize_field "json_name" Field'.String_t json_name _o >>= fun () ->
@@ -483,10 +483,10 @@ end = struct
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_enum_field "kind" Field.Kind.of_string Field.Kind.default _m >>= fun kind ->
       Text'.decode_enum_field "cardinality" Field.Cardinality.of_string Field.Cardinality.default _m >>= fun cardinality ->
-      Text'.decode_field "number" Field'.Int32_t _m >>= fun number ->
+      Text'.decode_field "number" Field'.(Int32_t As_int) _m >>= fun number ->
       Text'.decode_field "name" Field'.String_t _m >>= fun name ->
       Text'.decode_field "type_url" Field'.String_t _m >>= fun type_url ->
-      Text'.decode_field "oneof_index" Field'.Int32_t _m >>= fun oneof_index ->
+      Text'.decode_field "oneof_index" Field'.(Int32_t As_int) _m >>= fun oneof_index ->
       Text'.decode_field "packed" Field'.Bool_t _m >>= fun packed ->
       Text'.decode_repeated_message_field "options" Option.of_text _m >>= fun options ->
       Text'.decode_field "json_name" Field'.String_t _m >>= fun json_name ->
@@ -591,7 +591,7 @@ end = struct
     fun { name; number; options } ->
       let _o = Runtime.Byte_output.create () in
       Bin'.serialize_field 1 Field'.String_t name _o >>= fun () ->
-      Bin'.serialize_field 2 Field'.Int32_t number _o >>= fun () ->
+      Bin'.serialize_field 2 Field'.(Int32_t As_int) number _o >>= fun () ->
       Bin'.serialize_repeated_message_field 3 Option.to_binary options _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -600,7 +600,7 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
       Bin'.decode_field 1 Field'.String_t _m >>= fun name ->
-      Bin'.decode_field 2 Field'.Int32_t _m >>= fun number ->
+      Bin'.decode_field 2 Field'.(Int32_t As_int) _m >>= fun number ->
       Bin'.decode_repeated_message_field 3 Option.of_binary _m >>= fun options ->
       Ok { name; number; options }
 
@@ -608,7 +608,7 @@ end = struct
     fun { name; number; options } ->
       let _o = Runtime.Byte_output.create () in
       Text'.serialize_field "name" Field'.String_t name _o >>= fun () ->
-      Text'.serialize_field "number" Field'.Int32_t number _o >>= fun () ->
+      Text'.serialize_field "number" Field'.(Int32_t As_int) number _o >>= fun () ->
       Text'.serialize_repeated_message_field "options" Option.to_text options _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -617,7 +617,7 @@ end = struct
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
       Text'.decode_field "name" Field'.String_t _m >>= fun name ->
-      Text'.decode_field "number" Field'.Int32_t _m >>= fun number ->
+      Text'.decode_field "number" Field'.(Int32_t As_int) _m >>= fun number ->
       Text'.decode_repeated_message_field "options" Option.of_text _m >>= fun options ->
       Ok { name; number; options }
 end

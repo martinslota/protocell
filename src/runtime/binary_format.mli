@@ -24,6 +24,8 @@ val show_parse_error : parse_error -> string
 type decoding_error =
   [ `Wrong_binary_value_for_string_field of sort * string Field_value.typ
   | `Wrong_binary_value_for_int_field of sort * int Field_value.typ
+  | `Wrong_binary_value_for_int32_field of sort * int32 Field_value.typ
+  | `Wrong_binary_value_for_int64_field of sort * int64 Field_value.typ
   | `Wrong_binary_value_for_float_field of sort * float Field_value.typ
   | `Wrong_binary_value_for_bool_field of sort * bool Field_value.typ
   | `Wrong_binary_value_for_message_field of sort

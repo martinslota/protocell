@@ -1,18 +1,26 @@
 open Base
 
+type _ int32_typ =
+  | As_int32 : int32 int32_typ
+  | As_int : int int32_typ
+
+type _ int64_typ =
+  | As_int64 : int64 int64_typ
+  | As_int : int int64_typ
+
 type _ typ =
   | String_t : string typ
   | Bytes_t : string typ
-  | Int32_t : int typ
-  | Int64_t : int typ
-  | Sint32_t : int typ
-  | Sint64_t : int typ
-  | Uint32_t : int typ
-  | Uint64_t : int typ
-  | Fixed32_t : int typ
-  | Fixed64_t : int typ
-  | Sfixed32_t : int typ
-  | Sfixed64_t : int typ
+  | Int32_t : 'a int32_typ -> 'a typ
+  | Int64_t : 'a int64_typ -> 'a typ
+  | Sint32_t : 'a int32_typ -> 'a typ
+  | Sint64_t : 'a int64_typ -> 'a typ
+  | Uint32_t : 'a int32_typ -> 'a typ
+  | Uint64_t : 'a int64_typ -> 'a typ
+  | Fixed32_t : 'a int32_typ -> 'a typ
+  | Fixed64_t : 'a int64_typ -> 'a typ
+  | Sfixed32_t : 'a int32_typ -> 'a typ
+  | Sfixed64_t : 'a int64_typ -> 'a typ
   | Float_t : float typ
   | Double_t : float typ
   | Bool_t : bool typ
@@ -20,44 +28,77 @@ type _ typ =
 let show_typ : type v. v typ -> string = function
   | String_t -> "string"
   | Bytes_t -> "bytes"
-  | Int32_t -> "int32"
-  | Int64_t -> "int64"
-  | Sint32_t -> "sint32"
-  | Sint64_t -> "sint64"
-  | Uint32_t -> "uint32"
-  | Uint64_t -> "uint64"
-  | Fixed32_t -> "fixed32"
-  | Fixed64_t -> "fixed64"
-  | Sfixed32_t -> "sfixed32"
-  | Sfixed64_t -> "sfixed64"
+  | Int32_t As_int32 -> "int32"
+  | Int32_t As_int -> "int32_as_int"
+  | Int64_t As_int64 -> "int64"
+  | Int64_t As_int -> "int64_as_int"
+  | Sint32_t As_int32 -> "sint32"
+  | Sint32_t As_int -> "sint32_as_int"
+  | Sint64_t As_int64 -> "sint64"
+  | Sint64_t As_int -> "sint64_as_int"
+  | Uint32_t As_int32 -> "uint32"
+  | Uint32_t As_int -> "uint32_as_int"
+  | Uint64_t As_int64 -> "uint64"
+  | Uint64_t As_int -> "uint64_as_int"
+  | Fixed32_t As_int32 -> "fixed32"
+  | Fixed32_t As_int -> "fixed32_as_int"
+  | Fixed64_t As_int64 -> "fixed64"
+  | Fixed64_t As_int -> "fixed64_as_int"
+  | Sfixed32_t As_int32 -> "sfixed32"
+  | Sfixed32_t As_int -> "sfixed32_as_int"
+  | Sfixed64_t As_int64 -> "sfixed64"
+  | Sfixed64_t As_int -> "sfixed64_as_int"
   | Float_t -> "float"
   | Double_t -> "double"
   | Bool_t -> "bool"
 
 type 'v t = 'v typ * 'v
 
-type validation_error = [`Integer_outside_field_type_range of int typ * int]
+type validation_error =
+  [ `Int_outside_field_type_range of int typ * int
+  | `Int32_outside_field_type_range of int32 typ * int32
+  | `Int64_outside_field_type_range of int64 typ * int64 ]
 
 let show_validation_error = function
-  | `Integer_outside_field_type_range (typ, int) ->
+  | `Int_outside_field_type_range (typ, int) ->
       Printf.sprintf
         "Integer %d is outside of the range of field type %s"
+        int
+        (show_typ typ)
+  | `Int32_outside_field_type_range (typ, int) ->
+      Printf.sprintf
+        "Integer %ld is outside of the range of field type %s"
+        int
+        (show_typ typ)
+  | `Int64_outside_field_type_range (typ, int) ->
+      Printf.sprintf
+        "Integer %Ld is outside of the range of field type %s"
         int
         (show_typ typ)
 
 let default : type v. v typ -> v = function
   | String_t -> ""
   | Bytes_t -> ""
-  | Int32_t -> 0
-  | Int64_t -> 0
-  | Sint32_t -> 0
-  | Sint64_t -> 0
-  | Uint32_t -> 0
-  | Uint64_t -> 0
-  | Fixed32_t -> 0
-  | Fixed64_t -> 0
-  | Sfixed32_t -> 0
-  | Sfixed64_t -> 0
+  | Int32_t As_int32 -> 0l
+  | Int32_t As_int -> 0
+  | Int64_t As_int64 -> 0L
+  | Int64_t As_int -> 0
+  | Sint32_t As_int32 -> 0l
+  | Sint32_t As_int -> 0
+  | Sint64_t As_int64 -> 0L
+  | Sint64_t As_int -> 0
+  | Uint32_t As_int32 -> 0l
+  | Uint32_t As_int -> 0
+  | Uint64_t As_int64 -> 0L
+  | Uint64_t As_int -> 0
+  | Fixed32_t As_int32 -> 0l
+  | Fixed32_t As_int -> 0
+  | Fixed64_t As_int64 -> 0L
+  | Fixed64_t As_int -> 0
+  | Sfixed32_t As_int32 -> 0l
+  | Sfixed32_t As_int -> 0
+  | Sfixed64_t As_int64 -> 0L
+  | Sfixed64_t As_int -> 0
   | Float_t -> 0.0
   | Double_t -> 0.0
   | Bool_t -> false
@@ -72,34 +113,58 @@ let create : type v. v typ -> v -> (v t, [> validation_error]) Result.t =
   let validate_i32 : int typ -> int -> (int t, [> validation_error]) Result.t =
    fun typ value ->
     match Int.to_int32 value with
-    | None -> Error (`Integer_outside_field_type_range (typ, value))
+    | None -> Error (`Int_outside_field_type_range (typ, value))
     | Some _ -> Ok (typ, value)
   in
-  let validate_u32 : int typ -> int -> (int t, [> validation_error]) Result.t =
+  let validate_u32_int : int typ -> int -> (int t, [> validation_error]) Result.t =
    fun typ value ->
     match value < 0 || value > max_uint_32_value with
-    | true -> Error (`Integer_outside_field_type_range (typ, value))
+    | true -> Error (`Int_outside_field_type_range (typ, value))
     | false -> Ok (typ, value)
   in
-  let validate_u64 : int typ -> int -> (int t, [> validation_error]) Result.t =
+  let validate_u32_int32 : int32 typ -> int32 -> (int32 t, [> validation_error]) Result.t
+    =
+   fun typ value ->
+    match Int32.(value < zero) with
+    | true -> Error (`Int32_outside_field_type_range (typ, value))
+    | false -> Ok (typ, value)
+  in
+  let validate_u64_int : int typ -> int -> (int t, [> validation_error]) Result.t =
    fun typ value ->
     match value < 0 with
-    | true -> Error (`Integer_outside_field_type_range (typ, value))
+    | true -> Error (`Int_outside_field_type_range (typ, value))
+    | false -> Ok (typ, value)
+  in
+  let validate_u64_int64 : int64 typ -> int64 -> (int64 t, [> validation_error]) Result.t
+    =
+   fun typ value ->
+    match Int64.(value < zero) with
+    | true -> Error (`Int64_outside_field_type_range (typ, value))
     | false -> Ok (typ, value)
   in
   match typ with
   | String_t -> Ok (typ, value)
   | Bytes_t -> Ok (typ, value)
-  | Int32_t -> validate_i32 typ value
-  | Int64_t -> Ok (typ, value)
-  | Sint32_t -> validate_i32 typ value
-  | Sint64_t -> Ok (typ, value)
-  | Uint32_t -> validate_u32 typ value
-  | Uint64_t -> validate_u64 typ value
-  | Fixed32_t -> validate_u32 typ value
-  | Fixed64_t -> validate_u64 typ value
-  | Sfixed32_t -> validate_i32 typ value
-  | Sfixed64_t -> Ok (typ, value)
+  | Int32_t As_int32 -> Ok (typ, value)
+  | Int32_t As_int -> validate_i32 typ value
+  | Int64_t As_int64 -> Ok (typ, value)
+  | Int64_t As_int -> Ok (typ, value)
+  | Sint32_t As_int32 -> Ok (typ, value)
+  | Sint32_t As_int -> validate_i32 typ value
+  | Sint64_t As_int64 -> Ok (typ, value)
+  | Sint64_t As_int -> Ok (typ, value)
+  | Uint32_t As_int32 -> validate_u32_int32 typ value
+  | Uint32_t As_int -> validate_u32_int typ value
+  | Uint64_t As_int64 -> validate_u64_int64 typ value
+  | Uint64_t As_int -> validate_u64_int typ value
+  | Fixed32_t As_int32 -> validate_u32_int32 typ value
+  | Fixed32_t As_int -> validate_u32_int typ value
+  | Fixed64_t As_int64 -> validate_u64_int64 typ value
+  | Fixed64_t As_int -> validate_u64_int typ value
+  | Sfixed32_t As_int32 -> Ok (typ, value)
+  | Sfixed32_t As_int -> validate_i32 typ value
+  | Sfixed64_t As_int64 -> Ok (typ, value)
+  | Sfixed64_t As_int -> Ok (typ, value)
   | Float_t -> Ok (typ, value)
   | Double_t -> Ok (typ, value)
   | Bool_t -> Ok (typ, value)

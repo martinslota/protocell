@@ -38,9 +38,9 @@ end = struct
   let rec to_binary =
     fun { major; minor; patch; suffix } ->
       let _o = Runtime.Byte_output.create () in
-      Bin'.serialize_optional_field 1 Field'.Int32_t major _o >>= fun () ->
-      Bin'.serialize_optional_field 2 Field'.Int32_t minor _o >>= fun () ->
-      Bin'.serialize_optional_field 3 Field'.Int32_t patch _o >>= fun () ->
+      Bin'.serialize_optional_field 1 Field'.(Int32_t As_int) major _o >>= fun () ->
+      Bin'.serialize_optional_field 2 Field'.(Int32_t As_int) minor _o >>= fun () ->
+      Bin'.serialize_optional_field 3 Field'.(Int32_t As_int) patch _o >>= fun () ->
       Bin'.serialize_optional_field 4 Field'.String_t suffix _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -48,18 +48,18 @@ end = struct
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Bin'.deserialize_message >>= fun _m ->
-      Bin'.decode_optional_field 1 Field'.Int32_t _m >>= fun major ->
-      Bin'.decode_optional_field 2 Field'.Int32_t _m >>= fun minor ->
-      Bin'.decode_optional_field 3 Field'.Int32_t _m >>= fun patch ->
+      Bin'.decode_optional_field 1 Field'.(Int32_t As_int) _m >>= fun major ->
+      Bin'.decode_optional_field 2 Field'.(Int32_t As_int) _m >>= fun minor ->
+      Bin'.decode_optional_field 3 Field'.(Int32_t As_int) _m >>= fun patch ->
       Bin'.decode_optional_field 4 Field'.String_t _m >>= fun suffix ->
       Ok { major; minor; patch; suffix }
 
   let rec to_text =
     fun { major; minor; patch; suffix } ->
       let _o = Runtime.Byte_output.create () in
-      Text'.serialize_optional_field "major" Field'.Int32_t major _o >>= fun () ->
-      Text'.serialize_optional_field "minor" Field'.Int32_t minor _o >>= fun () ->
-      Text'.serialize_optional_field "patch" Field'.Int32_t patch _o >>= fun () ->
+      Text'.serialize_optional_field "major" Field'.(Int32_t As_int) major _o >>= fun () ->
+      Text'.serialize_optional_field "minor" Field'.(Int32_t As_int) minor _o >>= fun () ->
+      Text'.serialize_optional_field "patch" Field'.(Int32_t As_int) patch _o >>= fun () ->
       Text'.serialize_optional_field "suffix" Field'.String_t suffix _o >>= fun () ->
       Ok (Runtime.Byte_output.contents _o)
 
@@ -67,9 +67,9 @@ end = struct
     fun input' ->
       Ok (Runtime.Byte_input.create input') >>=
       Text'.deserialize_message >>= fun _m ->
-      Text'.decode_optional_field "major" Field'.Int32_t _m >>= fun major ->
-      Text'.decode_optional_field "minor" Field'.Int32_t _m >>= fun minor ->
-      Text'.decode_optional_field "patch" Field'.Int32_t _m >>= fun patch ->
+      Text'.decode_optional_field "major" Field'.(Int32_t As_int) _m >>= fun major ->
+      Text'.decode_optional_field "minor" Field'.(Int32_t As_int) _m >>= fun minor ->
+      Text'.decode_optional_field "patch" Field'.(Int32_t As_int) _m >>= fun patch ->
       Text'.decode_optional_field "suffix" Field'.String_t _m >>= fun suffix ->
       Ok { major; minor; patch; suffix }
 end
