@@ -42,8 +42,8 @@ type decoding_error =
   | `Wrong_text_value_for_bool_field of sort * bool typ
   | `Wrong_text_value_for_user_field of sort
   | `Wrong_text_value_for_enum_field of sort
-  | `Unrecognized_enum_value
-  | `Multiple_oneof_fields_set
+  | `Unrecognized_enum_value of string
+  | `Multiple_oneof_fields_set of id list
   | `Integer_outside_int_type_range of int64 ]
 
 type deserialization_error =
@@ -413,7 +413,8 @@ let decode_repeated_user_field id deserializer records =
   | Some values -> List.map values ~f:(decode_user_value deserializer) |> Result.all
 
 let decode_enum_value of_string = function
-  | Enum name -> of_string name |> Result.of_option ~error:`Unrecognized_enum_value
+  | Enum name ->
+      of_string name |> Result.of_option ~error:(`Unrecognized_enum_value name)
   | _ as value -> Error (`Wrong_text_value_for_enum_field (to_sort value))
 
 let decode_enum_field id of_string default records =
@@ -439,4 +440,4 @@ let decode_oneof_field deserializers records =
   | 1 ->
       applicable |> List.hd_exn |> snd |> fun deserializer ->
       deserializer records >>| Option.some
-  | _ -> Error `Multiple_oneof_fields_set
+  | _ -> Error (`Multiple_oneof_fields_set (List.map applicable ~f:fst))

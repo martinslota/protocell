@@ -22,8 +22,8 @@ type decoding_error =
   | `Wrong_binary_value_for_bool_field of sort * bool Field_value.typ
   | `Wrong_binary_value_for_user_field of sort
   | `Wrong_binary_value_for_enum_field of sort
-  | `Unrecognized_enum_value
-  | `Multiple_oneof_fields_set
+  | `Unrecognized_enum_value of int
+  | `Multiple_oneof_fields_set of int list
   | `Integer_outside_int_type_range of int64 ]
 
 type deserialization_error =

@@ -38,8 +38,8 @@ type decoding_error =
   | `Wrong_binary_value_for_bool_field of sort * bool typ
   | `Wrong_binary_value_for_user_field of sort
   | `Wrong_binary_value_for_enum_field of sort
-  | `Unrecognized_enum_value
-  | `Multiple_oneof_fields_set
+  | `Unrecognized_enum_value of int
+  | `Multiple_oneof_fields_set of id list
   | `Integer_outside_int_type_range of int64 ]
 
 type deserialization_error =
@@ -637,7 +637,7 @@ let decode_enum_value of_int = function
   | Varint int -> (
     match Int64.to_int int with
     | None -> Error (`Integer_outside_int_type_range int)
-    | Some int -> of_int int |> Result.of_option ~error:`Unrecognized_enum_value)
+    | Some int -> of_int int |> Result.of_option ~error:(`Unrecognized_enum_value int))
   | _ as value -> Error (`Wrong_binary_value_for_enum_field (to_sort value))
 
 let decode_enum_field id of_int default records =
@@ -663,4 +663,4 @@ let decode_oneof_field deserializers records =
   | 1 ->
       applicable |> List.hd_exn |> snd |> fun deserializer ->
       deserializer records >>| Option.some
-  | _ -> Error `Multiple_oneof_fields_set
+  | _ -> Error (`Multiple_oneof_fields_set (applicable |> List.map ~f:fst))

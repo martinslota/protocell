@@ -69,8 +69,13 @@ let binary_format_deserialization_error_to_string error =
       Printf.sprintf
         "Enum field type cannot accept value type %s"
         (Runtime.Binary_format.sort_to_string sort)
-  | `Unrecognized_enum_value -> "Unrecognized enum value"
-  | `Multiple_oneof_fields_set -> "Multiple oneof fields set"
+  | `Unrecognized_enum_value enum_value ->
+      Printf.sprintf "Unrecognized enum value %d" enum_value
+  | `Multiple_oneof_fields_set ids ->
+      ids
+      |> List.map ~f:Int.to_string
+      |> String.concat ~sep:", "
+      |> Printf.sprintf "Multiple oneof fields set: %s"
   | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
 
 let process_error_to_string = function
@@ -114,8 +119,10 @@ let text_format_deserialization_error_to_string error =
   | `Integer_outside_int_type_range int64 ->
       Printf.sprintf "Varint value %s outside OCaml int type range"
       @@ Int64.to_string int64
-  | `Unrecognized_enum_value -> "Unrecognized enum value"
-  | `Multiple_oneof_fields_set -> "Multiple oneof fields set"
+  | `Unrecognized_enum_value enum_value ->
+      Printf.sprintf "Unrecognized enum value %s" enum_value
+  | `Multiple_oneof_fields_set ids ->
+      ids |> String.concat ~sep:", " |> Printf.sprintf "Multiple oneof fields set: %s"
   | #Runtime.Field_value.validation_error as e -> field_validation_error_to_string e
 
 let text_error_to_string = function
