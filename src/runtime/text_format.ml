@@ -357,26 +357,26 @@ let encode : type v. v value -> t =
   match typ with
   | F.String_t -> Encoding.encode_string value
   | F.Bytes_t -> Encoding.encode_string value
-  | F.Int32_t As_int -> Encoding.encode_int value
-  | F.Int32_t As_int32 -> Encoding.encode_int32 value
-  | F.Int64_t As_int -> Encoding.encode_int value
-  | F.Int64_t As_int64 -> Encoding.encode_int64 value
-  | F.Sint32_t As_int -> Encoding.encode_int value
-  | F.Sint32_t As_int32 -> Encoding.encode_int32 value
-  | F.Sint64_t As_int -> Encoding.encode_int value
-  | F.Sint64_t As_int64 -> Encoding.encode_int64 value
-  | F.Uint32_t As_int -> Encoding.encode_int value
-  | F.Uint32_t As_int32 -> Encoding.encode_int32 value
-  | F.Uint64_t As_int -> Encoding.encode_int value
-  | F.Uint64_t As_int64 -> Encoding.encode_int64 value
-  | F.Fixed32_t As_int -> Encoding.encode_int value
-  | F.Fixed32_t As_int32 -> Encoding.encode_int32 value
-  | F.Fixed64_t As_int -> Encoding.encode_int value
-  | F.Fixed64_t As_int64 -> Encoding.encode_int64 value
-  | F.Sfixed32_t As_int -> Encoding.encode_int value
-  | F.Sfixed32_t As_int32 -> Encoding.encode_int32 value
-  | F.Sfixed64_t As_int -> Encoding.encode_int value
-  | F.Sfixed64_t As_int64 -> Encoding.encode_int64 value
+  | F.(Int32_t As_int) -> Encoding.encode_int value
+  | F.(Int32_t As_int32) -> Encoding.encode_int32 value
+  | F.(Int64_t F.As_int) -> Encoding.encode_int value
+  | F.(Int64_t As_int64) -> Encoding.encode_int64 value
+  | F.(Sint32_t As_int) -> Encoding.encode_int value
+  | F.(Sint32_t As_int32) -> Encoding.encode_int32 value
+  | F.(Sint64_t As_int) -> Encoding.encode_int value
+  | F.(Sint64_t As_int64) -> Encoding.encode_int64 value
+  | F.(Uint32_t As_int) -> Encoding.encode_int value
+  | F.(Uint32_t As_int32) -> Encoding.encode_int32 value
+  | F.(Uint64_t As_int) -> Encoding.encode_int value
+  | F.(Uint64_t As_int64) -> Encoding.encode_int64 value
+  | F.(Fixed32_t As_int) -> Encoding.encode_int value
+  | F.(Fixed32_t As_int32) -> Encoding.encode_int32 value
+  | F.(Fixed64_t As_int) -> Encoding.encode_int value
+  | F.(Fixed64_t As_int64) -> Encoding.encode_int64 value
+  | F.(Sfixed32_t As_int) -> Encoding.encode_int value
+  | F.(Sfixed32_t As_int32) -> Encoding.encode_int32 value
+  | F.(Sfixed64_t As_int) -> Encoding.encode_int value
+  | F.(Sfixed64_t As_int64) -> Encoding.encode_int64 value
   | F.Float_t -> Encoding.encode_float value
   | F.Double_t -> Encoding.encode_float value
   | F.Bool_t -> Encoding.encode_bool value
@@ -429,26 +429,26 @@ let decode_value : type v. t -> v typ -> (v, _) Result.t =
   match typ with
   | F.String_t -> Encoding.decode_string typ value
   | F.Bytes_t -> Encoding.decode_string typ value
-  | F.Int32_t As_int -> Encoding.decode_int typ value
-  | F.Int32_t As_int32 -> Encoding.decode_int32 typ value
-  | F.Int64_t As_int -> Encoding.decode_int typ value
-  | F.Int64_t As_int64 -> Encoding.decode_int64 typ value
-  | F.Sint32_t As_int -> Encoding.decode_int typ value
-  | F.Sint32_t As_int32 -> Encoding.decode_int32 typ value
-  | F.Sint64_t As_int -> Encoding.decode_int typ value
-  | F.Sint64_t As_int64 -> Encoding.decode_int64 typ value
-  | F.Uint32_t As_int -> Encoding.decode_int typ value
-  | F.Uint32_t As_int32 -> Encoding.decode_int32 typ value
-  | F.Uint64_t As_int -> Encoding.decode_int typ value
-  | F.Uint64_t As_int64 -> Encoding.decode_int64 typ value
-  | F.Fixed32_t As_int -> Encoding.decode_int typ value
-  | F.Fixed32_t As_int32 -> Encoding.decode_int32 typ value
-  | F.Fixed64_t As_int -> Encoding.decode_int typ value
-  | F.Fixed64_t As_int64 -> Encoding.decode_int64 typ value
-  | F.Sfixed32_t As_int -> Encoding.decode_int typ value
-  | F.Sfixed32_t As_int32 -> Encoding.decode_int32 typ value
-  | F.Sfixed64_t As_int -> Encoding.decode_int typ value
-  | F.Sfixed64_t As_int64 -> Encoding.decode_int64 typ value
+  | F.(Int32_t As_int) -> Encoding.decode_int typ value
+  | F.(Int32_t As_int32) -> Encoding.decode_int32 typ value
+  | F.(Int64_t As_int) -> Encoding.decode_int typ value
+  | F.(Int64_t As_int64) -> Encoding.decode_int64 typ value
+  | F.(Sint32_t As_int) -> Encoding.decode_int typ value
+  | F.(Sint32_t As_int32) -> Encoding.decode_int32 typ value
+  | F.(Sint64_t As_int) -> Encoding.decode_int typ value
+  | F.(Sint64_t As_int64) -> Encoding.decode_int64 typ value
+  | F.(Uint32_t As_int) -> Encoding.decode_int typ value
+  | F.(Uint32_t As_int32) -> Encoding.decode_int32 typ value
+  | F.(Uint64_t As_int) -> Encoding.decode_int typ value
+  | F.(Uint64_t As_int64) -> Encoding.decode_int64 typ value
+  | F.(Fixed32_t As_int) -> Encoding.decode_int typ value
+  | F.(Fixed32_t As_int32) -> Encoding.decode_int32 typ value
+  | F.(Fixed64_t As_int) -> Encoding.decode_int typ value
+  | F.(Fixed64_t As_int64) -> Encoding.decode_int64 typ value
+  | F.(Sfixed32_t As_int) -> Encoding.decode_int typ value
+  | F.(Sfixed32_t As_int32) -> Encoding.decode_int32 typ value
+  | F.(Sfixed64_t As_int) -> Encoding.decode_int typ value
+  | F.(Sfixed64_t As_int64) -> Encoding.decode_int64 typ value
   | F.Float_t -> Encoding.decode_float typ value
   | F.Double_t -> Encoding.decode_float typ value
   | F.Bool_t -> Encoding.decode_bool typ value
