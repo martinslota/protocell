@@ -1,4 +1,4 @@
 /_build/
-/_opam/
+/_opam
 /*.install
 .merlin

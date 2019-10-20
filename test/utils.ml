@@ -49,10 +49,9 @@ let make_tests title test_fn values_to_test =
       Alcotest.test_case test_name `Quick @@ test_fn value)
 
 let invariant_suite (type t) (module T : Serdes_testable with type t = t)
-    protobuf_type_name values_to_test
+    ~protobuf_file_name ~protobuf_type_name values_to_test
   =
   let t_testable : T.t Alcotest.testable = Alcotest.testable T.pp T.equal in
-  let protobuf_file_name = "test.proto" in
   let binary_format_roundtrip value () =
     let open Result.Let_syntax in
     match value |> T.to_binary >>= T.of_binary with
@@ -98,7 +97,7 @@ let invariant_suite (type t) (module T : Serdes_testable with type t = t)
           check t_testable "to_binary |> protoc |> of_text mismatch" value actual)
     | Error e -> Alcotest.fail (text_error_to_string e)
   in
-  ( protobuf_type_name,
+  ( Printf.sprintf "%s (%s)" protobuf_type_name protobuf_file_name,
     [
       make_tests "Invariant: to_binary |> of_binary is identity" binary_format_roundtrip;
       make_tests "Invariant: to_text |> of_text is identity" text_format_roundtrip;

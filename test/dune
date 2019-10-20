@@ -4,23 +4,28 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show)))
 
-(env
- (_
-  (env-vars
-   (WITH_DERIVERS eq,show))))
-
 (rule
- (targets test_pc.ml test_import_pc.ml)
+ (targets types_pc.ml types_import_pc.ml)
  (deps
   (:plugin ../src/protocell/protocell.exe)
-  (:proto test.proto test_import.proto))
+  (:proto types.proto types_import.proto))
  (action
-  (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
+  (run protoc --plugin=protoc-gen-ocaml=%{plugin}
+    "--ocaml_out=-with-derivers eq show:." %{proto})))
+
+(rule
+ (targets map_int_pc.ml)
+ (deps
+  (:plugin ../src/protocell/protocell.exe)
+  (:proto map_int.proto))
+ (action
+  (run protoc --plugin=protoc-gen-ocaml=%{plugin}
+    "--ocaml_out=-map-int sfixed32=int32 *fixed64=int64 -with-derivers eq show:."
+    %{proto})))
 
 (alias
  (name runtest)
  (deps
-  (:test test.exe)
-  test.proto)
+  (:test test.exe))
  (action
   (run %{test} --color=always)))

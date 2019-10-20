@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "test_import.proto";
+import "types_import.proto";
 import "google/protobuf/timestamp.proto";
 
 enum EnumWithAlias {

@@ -85,7 +85,13 @@ message Exposition {
 ```
 </details>
 
-Here are the OCaml signatures that get generated from it:
+[Invoking](#usage) Protocell [with the options](#options)
+
+```
+-with-derivers eq 'show { with_path = false }' -map-int sfixed32=int32 *fixed64=int64
+```
+
+leads to the following OCaml signatures:
 
 <details>
   <summary>
@@ -101,7 +107,7 @@ module Platypus : sig
     | Standing
     | Lying
     | Other
-  [@@deriving eq, show]
+  [@@deriving eq, show { with_path = false }]
 
   val default : unit -> t
 
@@ -119,8 +125,8 @@ module rec Exposition : sig
     type t =
       | Quetzal of string
       | Red_panda of string
-    [@@deriving eq, show]
-
+    [@@deriving eq, show { with_path = false }]
+  
     val quetzal : string -> t
     val red_panda : string -> t
   end
@@ -133,9 +139,9 @@ module rec Exposition : sig
     elephant : int;
     fox : int;
     giraffe : int;
-    hest : int list;
-    indri : int;
-    jellyfish : int;
+    hest : int64 list;
+    indri : int32;
+    jellyfish : int64;
     kingfisher : float;
     llama : float;
     meerkat : bool;
@@ -145,7 +151,7 @@ module rec Exposition : sig
     cute : Cute.t option;
     sub_pavilions : Exposition.t list;
   }
-  [@@deriving eq, show]
+  [@@deriving eq, show { with_path = false }]
 
   val to_binary : t -> (string, [> Bin'.serialization_error]) result
 
@@ -164,7 +170,7 @@ mapped to OCaml types as follows:
 | Protobuf type(s) | OCaml type |
 | --- | --- |
 | `bool` | `bool` |
-| All integer types | `int` |
+| All integer types | `int` (customizable [using the `-map-int` option](#options)) |
 | `float` and `double` | `float` |
 | `string` and `bytes` | `string` |
 | Message | Unit or record type `t` in a separate recursive module |
@@ -196,27 +202,103 @@ Protocell is available on OPAM, so you just need to
 opam install protocell
 ```
 
+Assuming you already have a file `stuff.proto` with some Protocol Buffer
+definitions, you can manually invoke `protoc` and use the plugin to generate
+the corresponding OCaml code in `stuff_pc.ml`:
+
+```sh
+protoc --plugin=protoc-gen-ocaml=${OPAM_SWITCH_PREFIX}/bin/protocell --ocaml_out=. stuff.proto
+```
+
+The suffix `pc` is a shorthand for "Protocell". It is appended in order to
+allow a more interesting `stuff.ml` to exist at the same time.
+
+In a `dune` file you can define the corresponding rule as follows:
+
+```lisp
+(rule
+ (targets stuff_pc.ml)
+ (deps
+  (:plugin %{ocaml_bin}/protocell)
+  (:proto stuff.proto))
+ (action
+  (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
+```
+
+### Options
+
+Protocell supports the following options:
+
+1. `-with-derivers`: A list of derivers to put in a `[@@deriving ...]`
+   annotation for each type generated for . For example:
+
+   ```
+   -with-derivers show 'yojson { strict = true }'
+   ```
+
+1. `-map-int`: Used to map Protocol Buffer integer types to OCaml types other
+   than `int`. Currently, the 32-bit integer types (`int32`, `sint32`,
+   `uint32`, `fixed32` and `sfixed32`) can be mapped to either `int32` or
+   `int` while the 64-bit integer types (`int64`, `sint64`, `uint64`,
+   `fixed64` and `sfixed64`) can be mapped to either `int64` or `int`.
+   
+   For example, to map `sfixed32` to `int32` and both `fixed64` as well as
+   `sfixed64` to `int64`, use:
+
+   ```
+   -map-int sfixed32=int32 *fixed64=int64
+   ```
+
+   The option accepts a list of arguments, each of the form
+   `<PATTERN>=<OCAML_TYPE>` where `<PATTERN>` is either the name of one of
+   the Protocol Buffer integer types or an asterisk followed by a suffix to
+   match several of them.
+
+These options can be passed to Protocell through the `--ocaml_out` flag of
+`protoc` as follows:
+
+```sh
+protoc \
+  --plugin=protoc-gen-ocaml=${OPAM_SWITCH_PREFIX}/bin/protocell \
+  --ocaml_out="-with-derivers eq -map-int sfixed32=int32 *fixed64=int64:." \
+  stuff.proto
+```
+
+Newer versions of `protoc` also accept a separate `--ocaml_opt` flag:
+
+```sh
+protoc \
+  --plugin=protoc-gen-ocaml=${OPAM_SWITCH_PREFIX}/bin/protocell \
+  --ocaml_opt="-with-derivers eq -map-int sfixed32=int32 *fixed64=int64" \
+  --ocaml_out=. \
+  stuff.proto
+```
+
+See [example/type_zoo/dune](example/type_zoo/dune) for the corresponding
+`dune` rule syntax.
+
+### Examples
+
 The [example](example) folder shows how Protocell can be used in a number
 of scenarios. Thanks to `dune`'s composability, it is straightforward to copy
 any of these and adapt it to a real use-case.
 
 1. [simple](example/simple): How to serialize and deserialize a simplistic
-message consisting of a single `string` field.
+   message consisting of a single `string` field.
 
 1. [type_zoo](example/type_zoo): Similar to the above but for a recursively
-defined message that uses a variety of Protocol Buffer types including an
-enum and a oneof. The `WITH_DERIVERS` environment variable is used here to
-add a custom list of derivers to the generated types.
+   defined message that uses a variety of Protocol Buffer types including an
+   enum and a oneof. It also shows how to use [Protocell's options](#options).
 
 1. [import](example/import): Exemplifies how imports are handled by Protocell.
 
 1. [auto_import](example/auto_import): Similar to the above but takes
-advantage of Protocell's ability to auto-supply Google's "well-known types"
-(i.e. all the `.proto` files [under this
-folder](https://github.com/protocolbuffers/protobuf/tree/master/src/google/protobuf)).
-Currently, there's one caveat here: The resulting code won't compile if the
-`WITH_DERIVERS` environment variable contains a deriver that is neither `eq`
-nor `show`.
+   advantage of Protocell's ability to auto-supply Google's "well-known
+   types" (i.e. all the `.proto` files [under this
+   folder](https://github.com/protocolbuffers/protobuf/tree/master/src/google/protobuf)).
+   Currently, there's one caveat here: The resulting code won't compile if
+   the `-with-derivers` option contains a deriver that is neither `eq` nor
+   `show`.
 
 ## Alternatives
 

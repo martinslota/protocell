@@ -209,24 +209,66 @@ module Module_path = struct
   let sexp_of_t path = List.sexp_of_t Module_name.sexp_of_t path
 end
 
-type field_data_type =
-  | String_t
-  | Bytes_t
-  | Int32_t
-  | Int64_t
-  | Sint32_t
-  | Sint64_t
-  | Uint32_t
-  | Uint64_t
-  | Fixed32_t
-  | Fixed64_t
-  | Sfixed32_t
-  | Sfixed64_t
-  | Float_t
-  | Double_t
-  | Bool_t
-  | Message_t of Module_path.t
-  | Enum_t of Module_path.t
+module Options = struct
+  type int32_typ =
+    | As_int32
+    | As_int
+
+  let int32_typ_to_string = function
+    | As_int32 -> "As_int32"
+    | As_int -> "As_int"
+
+  let int32_typ_to_ocaml_type = function
+    | As_int32 -> "int32"
+    | As_int -> "int"
+
+  type int64_typ =
+    | As_int64
+    | As_int
+
+  let int64_typ_to_string = function
+    | As_int64 -> "As_int64"
+    | As_int -> "As_int"
+
+  let int64_typ_to_ocaml_type = function
+    | As_int64 -> "int64"
+    | As_int -> "int"
+
+  type t = {
+    derivers : string list;
+    int32_typ : int32_typ;
+    int64_typ : int64_typ;
+    sint32_typ : int32_typ;
+    sint64_typ : int64_typ;
+    uint32_typ : int32_typ;
+    uint64_typ : int64_typ;
+    fixed32_typ : int32_typ;
+    fixed64_typ : int64_typ;
+    sfixed32_typ : int32_typ;
+    sfixed64_typ : int64_typ;
+  }
+end
+
+module Field_type = struct
+  type t =
+    | String_t
+    | Bytes_t
+    | Int32_t
+    | Int64_t
+    | Sint32_t
+    | Sint64_t
+    | Uint32_t
+    | Uint64_t
+    | Fixed32_t
+    | Fixed64_t
+    | Sfixed32_t
+    | Sfixed64_t
+    | Float_t
+    | Double_t
+    | Bool_t
+    | Message_t of Module_path.t
+    | Enum_t of Module_path.t
+end
 
 module Enum = struct
   type value = {
@@ -254,7 +296,7 @@ module Field = struct
     field_name : Field_name.t;
     variant_name : Variant_name.t;
     number : int;
-    data_type : field_data_type;
+    data_type : Field_type.t;
     repeated : bool;
     oneof_index : int option;
   }
@@ -321,4 +363,7 @@ module File = struct
   }
 end
 
-type t = {files : File.t list}
+type t = {
+  files : File.t list;
+  options : Options.t;
+}

@@ -11,9 +11,23 @@ module Plugin = struct
 
   let encode_response = Code_generator_response.to_binary
 
-  let error_response =
+  let error_response
+      :  [ Parameter.Flags.error
+         | Parameter.Options.error
+         | Runtime.Binary_format.deserialization_error ] ->
+      string
+    =
+   fun error ->
+    let message =
+      match error with
+      | #Parameter.Flags.error as e -> Parameter.Flags.show_error e
+      | #Parameter.Options.error as e -> Parameter.Options.show_error e
+      | #Runtime.Binary_format.deserialization_error as e ->
+          Runtime.Binary_format.show_deserialization_error e
+    in
+    let message = Printf.sprintf "Protocell error: %s" message in
     let bytes_result =
-      Code_generator_response.to_binary {error = Some "Protocell error"; file = []}
+      Code_generator_response.to_binary {error = Some message; file = []}
     in
     unwrap ~expected:"serialized protocell error" (Result.ok bytes_result)
 end
@@ -37,7 +51,7 @@ module Protobuf = struct
   let field_type_of_request
       :  package:Module_path.t ->
       substitutions:(Module_path.t, Module_path.t) Hashtbl.t ->
-      Descriptor.Field_descriptor_proto.t -> field_data_type
+      Descriptor.Field_descriptor_proto.t -> Field_type.t
     =
    fun ~package ~substitutions {type'; type_name; _} ->
     let determine_module_path type_name =
@@ -224,26 +238,61 @@ module Protobuf = struct
       should_be_generated;
     }
 
-  let of_request : Plugin.Code_generator_request.t -> t =
-   fun {proto_file; file_to_generate; _} ->
-    let files =
-      proto_file
-      |> List.fold
-           ~init:([], [])
-           ~f:(fun (files_seen, accumulator)
-                   (Descriptor.File_descriptor_proto.{name; _} as proto)
-                   ->
-             let name = unwrap ~expected:"file_name" name in
-             let should_be_generated =
-               List.mem file_to_generate name ~equal:String.equal
-             in
-             let file' = file_of_request ~files_seen ~should_be_generated proto in
-             let file_name = unwrap ~expected:"file_name" proto.name in
-             let files_seen = (file_name, file') :: files_seen in
-             files_seen, file' :: accumulator)
-      |> snd
+  let of_parameter parameter =
+    let options =
+      Shared.Protobuf.Options.
+        {
+          derivers = [];
+          int32_typ = As_int;
+          int64_typ = As_int;
+          sint32_typ = As_int;
+          sint64_typ = As_int;
+          uint32_typ = As_int;
+          uint64_typ = As_int;
+          fixed32_typ = As_int;
+          fixed64_typ = As_int;
+          sfixed32_typ = As_int;
+          sfixed64_typ = As_int;
+        }
     in
-    {files}
+    let options =
+      match Caml.Sys.getenv "WITH_DERIVERS" with
+      | derivers ->
+          let derivers =
+            Stdio.prerr_endline
+              "WARNING: The WITH_DERIVERS environment variable is deprecated.\n\
+               Support for it will be dropped in a future version of protocell.\n\
+               Please use the -with-derivers flag instead.";
+            String.split derivers ~on:','
+          in
+          {options with derivers}
+      | exception _ -> options
+    in
+    Parameter.apply options parameter
+
+  let of_request : Plugin.Code_generator_request.t -> (t, _) Result.t =
+   fun {proto_file; file_to_generate; parameter; _} ->
+    match of_parameter parameter with
+    | Error _ as error -> error
+    | Ok options ->
+        let files =
+          proto_file
+          |> List.fold
+               ~init:([], [])
+               ~f:(fun (files_seen, accumulator)
+                       (Descriptor.File_descriptor_proto.{name; _} as proto)
+                       ->
+                 let name = unwrap ~expected:"file_name" name in
+                 let should_be_generated =
+                   List.mem file_to_generate name ~equal:String.equal
+                 in
+                 let file' = file_of_request ~files_seen ~should_be_generated proto in
+                 let file_name = unwrap ~expected:"file_name" proto.name in
+                 let files_seen = (file_name, file') :: files_seen in
+                 files_seen, file' :: accumulator)
+          |> snd
+        in
+        Ok {files; options}
 end
 
 module Generated_code = struct

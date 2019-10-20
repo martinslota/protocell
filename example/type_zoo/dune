@@ -4,18 +4,15 @@
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show)))
 
-(env
- (_
-  (env-vars
-   (WITH_DERIVERS eq,show))))
-
 (rule
  (targets type_zoo_pc.ml)
  (deps
   (:plugin %{ocaml_bin}/protocell)
   (:proto type_zoo.proto))
  (action
-  (run protoc --plugin=protoc-gen-ocaml=%{plugin} --ocaml_out=. %{proto})))
+  (run protoc --plugin=protoc-gen-ocaml=%{plugin}
+    "--ocaml_out=-with-derivers eq 'show { with_path = false }' -map-int sfixed32=int32 *fixed64=int64:."
+    %{proto})))
 
 (alias
  (name examples)

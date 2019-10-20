@@ -10,8 +10,6 @@ module Field = Protobuf.Field
 module Message = Protobuf.Message
 module File = Protobuf.File
 
-type options = {derivers : string list}
-
 module Code = struct
   type t =
     | Line of string
@@ -45,7 +43,7 @@ module Code = struct
     | 0 -> line @@ Printf.sprintf "%s ()" prefix
     | _ -> make_record ~prefix elements
 
-  let with_deriving ~options:{derivers} type_code =
+  let with_deriving ~options:Protobuf.Options.{derivers; _} type_code =
     let deriving =
       match derivers with
       | [] -> []
@@ -74,7 +72,7 @@ module Code = struct
     | 0 -> make_unit_type ~options type_name
     | _ -> make_record_type ~options type_name elements
 
-  let make_variant_type ~options:{derivers} type_name values =
+  let make_variant_type ~options:Protobuf.Options.{derivers; _} type_name values =
     let deriving =
       match derivers with
       | [] -> []
@@ -172,7 +170,7 @@ module Code = struct
     append buffer ~indent:"" code; Buffer.contents buffer
 end
 
-let generate_enum : options:options -> Enum.t -> Code.module_ =
+let generate_enum : options:Protobuf.Options.t -> Enum.t -> Code.module_ =
  fun ~options {module_name; values; _} ->
   let type_declaration =
     values
@@ -268,28 +266,33 @@ let generate_enum : options:options -> Enum.t -> Code.module_ =
   in
   {module_name; signature; implementation}
 
-let rec generate_message : options:options -> string -> Message.t -> Code.module_ =
+let rec generate_message
+    : options:Protobuf.Options.t -> string -> Message.t -> Code.module_
+  =
  fun ~options syntax {module_name; enums; messages; field_groups; _} ->
-  let type_to_ocaml_type : Protobuf.field_data_type -> string = function
+  let type_to_ocaml_type : Protobuf.Field_type.t -> string =
+   fun typ ->
+    let module O = Protobuf.Options in
+    match typ with
     | String_t -> "string"
     | Bytes_t -> "string"
-    | Int32_t -> "int"
-    | Int64_t -> "int"
-    | Sint32_t -> "int"
-    | Sint64_t -> "int"
-    | Uint32_t -> "int"
-    | Uint64_t -> "int"
-    | Fixed32_t -> "int"
-    | Fixed64_t -> "int"
-    | Sfixed32_t -> "int"
-    | Sfixed64_t -> "int"
+    | Int32_t -> O.int32_typ_to_ocaml_type options.int32_typ
+    | Int64_t -> O.int64_typ_to_ocaml_type options.int64_typ
+    | Sint32_t -> O.int32_typ_to_ocaml_type options.sint32_typ
+    | Sint64_t -> O.int64_typ_to_ocaml_type options.sint64_typ
+    | Uint32_t -> O.int32_typ_to_ocaml_type options.uint32_typ
+    | Uint64_t -> O.int64_typ_to_ocaml_type options.uint64_typ
+    | Fixed32_t -> O.int32_typ_to_ocaml_type options.fixed32_typ
+    | Fixed64_t -> O.int64_typ_to_ocaml_type options.fixed64_typ
+    | Sfixed32_t -> O.int32_typ_to_ocaml_type options.sfixed32_typ
+    | Sfixed64_t -> O.int64_typ_to_ocaml_type options.sfixed64_typ
     | Float_t -> "float"
     | Double_t -> "float"
     | Bool_t -> "bool"
     | Message_t name -> name |> Module_path.to_string |> Printf.sprintf "%s.t"
     | Enum_t name -> name |> Module_path.to_string |> Printf.sprintf "%s.t"
   in
-  let generate_oneof : options:options -> Field.group -> Code.module_ option =
+  let generate_oneof : options:Protobuf.Options.t -> Field.group -> Code.module_ option =
    fun ~options -> function
     | Field.Single _ -> None
     | Oneof {module_name; fields; _} ->
@@ -354,19 +357,28 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
                  Printf.sprintf "%s.t option" (Module_name.to_string module_name) ))
     |> Code.make_record_type_or_unit ~options "t"
   in
-  let type_to_constructor : Protobuf.field_data_type -> string = function
-    | Protobuf.String_t -> "String_t"
+  let type_to_constructor : Protobuf.Field_type.t -> string =
+   fun typ ->
+    let module O = Protobuf.Options in
+    let make_int_32 typ subtyp =
+      Printf.sprintf "(%s %s)" typ @@ O.int32_typ_to_string subtyp
+    in
+    let make_int_64 typ subtyp =
+      Printf.sprintf "(%s %s)" typ @@ O.int64_typ_to_string subtyp
+    in
+    match typ with
+    | String_t -> "String_t"
     | Bytes_t -> "Bytes_t"
-    | Int32_t -> "(Int32_t As_int)"
-    | Int64_t -> "(Int64_t As_int)"
-    | Sint32_t -> "(Sint32_t As_int)"
-    | Sint64_t -> "(Sint64_t As_int)"
-    | Uint32_t -> "(Uint32_t As_int)"
-    | Uint64_t -> "(Uint64_t As_int)"
-    | Fixed32_t -> "(Fixed32_t As_int)"
-    | Fixed64_t -> "(Fixed64_t As_int)"
-    | Sfixed32_t -> "(Sfixed32_t As_int)"
-    | Sfixed64_t -> "(Sfixed64_t As_int)"
+    | Int32_t -> make_int_32 "Int32_t" options.int32_typ
+    | Int64_t -> make_int_64 "Int64_t" options.int64_typ
+    | Sint32_t -> make_int_32 "Sint32_t" options.sint32_typ
+    | Sint64_t -> make_int_64 "Sint64_t" options.sint64_typ
+    | Uint32_t -> make_int_32 "Uint32_t" options.uint32_typ
+    | Uint64_t -> make_int_64 "Uint64_t" options.uint64_typ
+    | Fixed32_t -> make_int_32 "Fixed32_t" options.fixed32_typ
+    | Fixed64_t -> make_int_64 "Fixed64_t" options.fixed64_typ
+    | Sfixed32_t -> make_int_32 "Sfixed32_t" options.sfixed32_typ
+    | Sfixed64_t -> make_int_64 "Sfixed64_t" options.sfixed64_typ
     | Float_t -> "Float_t"
     | Double_t -> "Double_t"
     | Bool_t -> "Bool_t"
@@ -382,7 +394,7 @@ let rec generate_message : options:options -> string -> Message.t -> Code.module
       | "proto3" -> ""
       | _ -> (
         match data_type with
-        | Protobuf.Message_t _ | Enum_t _ -> ""
+        | Protobuf.Field_type.Message_t _ | Enum_t _ -> ""
         | _ -> "_optional"))
   in
   let generate_serialization_function names field_to_id serialized_enum_type =
@@ -649,7 +661,7 @@ let rec generate_dependency_module package files =
           Code.line "end";
         ]
 
-let generate_file : options:options -> File.t -> Generated_code.File.t option =
+let generate_file : options:Protobuf.Options.t -> File.t -> Generated_code.File.t option =
  fun ~options {should_be_generated; file_name; enums; messages; syntax; _} ->
   match should_be_generated with
   | false -> None
@@ -689,5 +701,5 @@ let generate_file : options:options -> File.t -> Generated_code.File.t option =
       in
       Some {file_name; contents}
 
-let generate_files : options:options -> Protobuf.t -> Generated_code.t =
- fun ~options {files} -> List.filter_map ~f:(generate_file ~options) files
+let generate_files : Protobuf.t -> Generated_code.t =
+ fun {files; options} -> List.filter_map ~f:(generate_file ~options) files
