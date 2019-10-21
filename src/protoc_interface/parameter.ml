@@ -205,6 +205,7 @@ end = struct
               sfixed32_typ;
               sfixed64_typ;
             })
+    | "no-automatic-well-known-types" -> Ok {options with well_known_types = On_request}
     | flag -> Error (`Unknown_flag flag)
 
   let apply_flags ~init flags = List.fold_result flags ~init ~f:apply_flag

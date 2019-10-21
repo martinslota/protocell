@@ -5,7 +5,7 @@ let unwrap ~expected option =
   Option.value_exn ~message option
 
 module Plugin = struct
-  include Protocell_google.Google_protobuf_compiler_plugin_pc
+  include Google_protobuf_compiler_plugin_pc
 
   let decode_request = Code_generator_request.of_binary
 
@@ -33,7 +33,7 @@ module Plugin = struct
 end
 
 module Descriptor = struct
-  include Protocell_google.Google_protobuf_descriptor_pc
+  include Google_protobuf_descriptor_pc
 end
 
 module Protobuf = struct
@@ -140,26 +140,23 @@ module Protobuf = struct
       field_groups = Field.determine_groups fields oneofs;
     }
 
-  let embedded_packages =
+  let well_known_type_packages =
     ["google.protobuf"; "google.protobuf.compiler"]
     |> List.map ~f:Module_path.of_string
     |> Option.all
-    |> unwrap ~expected:"embedded_packages"
+    |> unwrap ~expected:"well_known_type_packages"
 
-  let is_embedded File.{package; _} =
-    List.mem embedded_packages package ~equal:Module_path.equal
-
-  let protocell_embedded_code_module =
-    "protocell_google"
-    |> Module_name.of_string
-    |> unwrap ~expected:"protocell_embedded_code_module"
+  let is_well_known_type package =
+    List.mem well_known_type_packages package ~equal:Module_path.equal
 
   let file_of_request
-      :  files_seen:(string, File.t) List.Assoc.t -> should_be_generated:bool ->
-      Descriptor.File_descriptor_proto.t -> File.t
+      :  options:Options.t -> file_to_generate:string list ->
+      files_seen:(string, File.t) List.Assoc.t -> Descriptor.File_descriptor_proto.t ->
+      File.t
     =
-   fun ~files_seen
-       ~should_be_generated
+   fun ~options
+       ~file_to_generate
+       ~files_seen
        {name; package; enum_type; message_type; dependency; syntax; _} ->
     let dependencies =
       List.filter_map files_seen ~f:(fun (file_name, file) ->
@@ -186,10 +183,9 @@ module Protobuf = struct
       in
       dependencies
       |> List.filter_map ~f:(fun (File.{should_be_generated; module_name; _} as file') ->
-             match should_be_generated, is_embedded file' with
-             | true, _ -> Some ([module_name], file')
-             | false, true -> Some ([protocell_embedded_code_module; module_name], file')
-             | false, false -> None)
+             match should_be_generated with
+             | true -> Some ([module_name], file')
+             | false -> None)
       |> List.concat_map ~f:(fun (to_prefix, File.{enums; package; messages; _}) ->
              List.concat
                [
@@ -227,6 +223,16 @@ module Protobuf = struct
       List.map ~f:(message_of_request ~package ~substitutions) message_type
     in
     let syntax = Option.value syntax ~default:"proto2" in
+    let should_be_generated =
+      let name = unwrap ~expected:"file_name" name in
+      match
+        ( List.mem file_to_generate name ~equal:String.equal,
+          is_well_known_type package,
+          options.well_known_types )
+      with
+      | true, _, _ | false, true, Automatic -> true
+      | _ -> false
+    in
     {
       file_name;
       package;
@@ -253,6 +259,7 @@ module Protobuf = struct
           fixed64_typ = As_int;
           sfixed32_typ = As_int;
           sfixed64_typ = As_int;
+          well_known_types = Automatic;
         }
     in
     let options =
@@ -277,16 +284,10 @@ module Protobuf = struct
     | Ok options ->
         let files =
           proto_file
-          |> List.fold
-               ~init:([], [])
-               ~f:(fun (files_seen, accumulator)
-                       (Descriptor.File_descriptor_proto.{name; _} as proto)
-                       ->
-                 let name = unwrap ~expected:"file_name" name in
-                 let should_be_generated =
-                   List.mem file_to_generate name ~equal:String.equal
+          |> List.fold ~init:([], []) ~f:(fun (files_seen, accumulator) proto ->
+                 let file' =
+                   file_of_request ~options ~file_to_generate ~files_seen proto
                  in
-                 let file' = file_of_request ~files_seen ~should_be_generated proto in
                  let file_name = unwrap ~expected:"file_name" proto.name in
                  let files_seen = (file_name, file') :: files_seen in
                  files_seen, file' :: accumulator)

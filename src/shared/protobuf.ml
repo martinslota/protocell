@@ -234,6 +234,10 @@ module Options = struct
     | As_int64 -> "int64"
     | As_int -> "int"
 
+  type well_known_types =
+    | Automatic
+    | On_request
+
   type t = {
     derivers : string list;
     int32_typ : int32_typ;
@@ -246,6 +250,7 @@ module Options = struct
     fixed64_typ : int64_typ;
     sfixed32_typ : int32_typ;
     sfixed64_typ : int64_typ;
+    well_known_types : well_known_types;
   }
 end
 
