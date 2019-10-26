@@ -335,4 +335,6 @@ make the change you want to see and send a pull request.
 
 ## Acknowledgement
 
-This project stands on the shoulders of many giants. Thank you, all!
+This project stands on the shoulders of many giants. :bulb: :heart: :muscle:
+
+Thank you, all! :pray:
