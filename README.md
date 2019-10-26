@@ -196,7 +196,7 @@ of `protoc`, respectively.
 
 ## Usage
 
-Protocell is available on OPAM, so you just need to
+Protocell is available on [OPAM](https://opam.ocaml.org/), so you just need to
 
 ```sh
 opam install protocell
@@ -230,7 +230,7 @@ In a `dune` file you can define the corresponding rule as follows:
 Protocell supports the following options:
 
 1. `-with-derivers`: A list of derivers to put in a `[@@deriving ...]`
-   annotation for each type generated for . For example:
+   annotation on each generated type. For example:
 
    ```
    -with-derivers show 'yojson { strict = true }'
