@@ -15,7 +15,7 @@ depends: [
   "conf-protoc" {>= "1.0.0"}
   "dune" {>= "1.11"}
   "ocaml" {>= "4.04.1"}
-  "ocplib-endian"
+  "ocplib-endian" {>= "1.0"}
   "ppx_deriving" {with-test}
   "stdio" {>= "0.11.0"}
 ]

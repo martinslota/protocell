@@ -3,7 +3,7 @@ syntax = "proto3";
 package import.main;
 
 import "ingredient.proto";
-import "timestamp.proto";
+import "google/protobuf/timestamp.proto";
 
 message MainMessage {
   import.ingredient.ImportedMessage ingredient = 1;

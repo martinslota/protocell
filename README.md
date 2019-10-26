@@ -254,6 +254,13 @@ Protocell supports the following options:
    the Protocol Buffer integer types or an asterisk followed by a suffix to
    match several of them.
 
+1. `-no-automatic-well-known-types`: By default, Protocell generates code for
+   imported [well-known
+   types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf)
+   even when the corresponding `.proto` files are not given as arguments to
+   `protoc`. This behavior, while very convenient, is non-standard. It can be
+   disabled using this option.
+
 These options can be passed to Protocell through the `--ocaml_out` flag of
 `protoc` as follows:
 
@@ -290,15 +297,13 @@ any of these and adapt it to a real use-case.
    defined message that uses a variety of Protocol Buffer types including an
    enum and a oneof. It also shows how to use [Protocell's options](#options).
 
-1. [import](example/import): Exemplifies how imports are handled by Protocell.
-
-1. [auto_import](example/auto_import): Similar to the above but takes
-   advantage of Protocell's ability to auto-supply Google's "well-known
-   types" (i.e. all the `.proto` files [under this
-   folder](https://github.com/protocolbuffers/protobuf/tree/master/src/google/protobuf)).
-   Currently, there's one caveat here: The resulting code won't compile if
-   the `-with-derivers` option contains a deriver that is neither `eq` nor
-   `show`.
+1. [import](example/import): Exemplifies how imports are handled by
+   Protocell. Note that code for the necessary [well-known
+   types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf)
+   gets generated without the need to supply the corresponding `.proto` files
+   as arguments to `protoc`. This behavior, while very convenient, is
+   non-standard. It can be disabled using the [option](#options)
+   `-no-automatic-well-known-types`.
 
 ## Alternatives
 
