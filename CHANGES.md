@@ -4,18 +4,19 @@
 
 * Introduced an option to flexibly map 32-bit integer types to `int32` and
   64-bit integer types to `int64` instead of the default `int`.
-* :broken_heart: Started generating code for well-known types automatically
+* :broken_heart: Started *generating* code for well-known types automatically
   whenever they are imported. As a consequence, the library with
   pre-generated code for well-known types has been entirely removed. Also,
   taking advantage of automatic imports of well-known types no longer
-  restricts the available Protocell options. 
+  restricts the available Protocell options.
 * Exposed `show` functions for error types.
 * :broken_heart: Added more information to some error variants.
 * Added examples.
 
 ### Bug fixes
 
-* Fixed errors generated for message fields of type `sfixed32`.
+* Stopped serializing default primitive values.
+* Fixed error returned for invalid values of message fields of type `sfixed32`.
 
 ### Other
 

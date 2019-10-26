@@ -655,36 +655,41 @@ end = struct
       | _ -> [decode_bool typ value] |> Result.all)
 end
 
-let encode : type v. v Field_value.t -> t =
+let encode : type v. v Field_value.t -> t option =
  fun value ->
   let module F = Field_value in
   let typ = F.typ value in
-  match typ with
-  | F.String_t -> Encoding.encode_string value
-  | F.Bytes_t -> Encoding.encode_string value
-  | F.(Int32_t As_int) -> Encoding.encode_int value
-  | F.(Int32_t As_int32) -> Encoding.encode_int32 value
-  | F.(Int64_t As_int) -> Encoding.encode_int value
-  | F.(Int64_t As_int64) -> Encoding.encode_int64 value
-  | F.(Sint32_t As_int) -> Encoding.encode_int value
-  | F.(Sint32_t As_int32) -> Encoding.encode_int32 value
-  | F.(Sint64_t As_int) -> Encoding.encode_int value
-  | F.(Sint64_t As_int64) -> Encoding.encode_int64 value
-  | F.(Uint32_t As_int) -> Encoding.encode_int value
-  | F.(Uint32_t As_int32) -> Encoding.encode_int32 value
-  | F.(Uint64_t As_int) -> Encoding.encode_int value
-  | F.(Uint64_t As_int64) -> Encoding.encode_int64 value
-  | F.(Fixed32_t As_int) -> Encoding.encode_int value
-  | F.(Fixed32_t As_int32) -> Encoding.encode_int32 value
-  | F.(Fixed64_t As_int) -> Encoding.encode_int value
-  | F.(Fixed64_t As_int64) -> Encoding.encode_int64 value
-  | F.(Sfixed32_t As_int) -> Encoding.encode_int value
-  | F.(Sfixed32_t As_int32) -> Encoding.encode_int32 value
-  | F.(Sfixed64_t As_int) -> Encoding.encode_int value
-  | F.(Sfixed64_t As_int64) -> Encoding.encode_int64 value
-  | F.Float_t -> Encoding.encode_float value
-  | F.Double_t -> Encoding.encode_float value
-  | F.Bool_t -> Encoding.encode_bool value
+  let v = F.unpack value in
+  match Field_value.is_default typ v with
+  | true -> None
+  | false ->
+      Some
+        (match typ with
+        | F.String_t -> Encoding.encode_string value
+        | F.Bytes_t -> Encoding.encode_string value
+        | F.(Int32_t As_int) -> Encoding.encode_int value
+        | F.(Int32_t As_int32) -> Encoding.encode_int32 value
+        | F.(Int64_t As_int) -> Encoding.encode_int value
+        | F.(Int64_t As_int64) -> Encoding.encode_int64 value
+        | F.(Sint32_t As_int) -> Encoding.encode_int value
+        | F.(Sint32_t As_int32) -> Encoding.encode_int32 value
+        | F.(Sint64_t As_int) -> Encoding.encode_int value
+        | F.(Sint64_t As_int64) -> Encoding.encode_int64 value
+        | F.(Uint32_t As_int) -> Encoding.encode_int value
+        | F.(Uint32_t As_int32) -> Encoding.encode_int32 value
+        | F.(Uint64_t As_int) -> Encoding.encode_int value
+        | F.(Uint64_t As_int64) -> Encoding.encode_int64 value
+        | F.(Fixed32_t As_int) -> Encoding.encode_int value
+        | F.(Fixed32_t As_int32) -> Encoding.encode_int32 value
+        | F.(Fixed64_t As_int) -> Encoding.encode_int value
+        | F.(Fixed64_t As_int64) -> Encoding.encode_int64 value
+        | F.(Sfixed32_t As_int) -> Encoding.encode_int value
+        | F.(Sfixed32_t As_int32) -> Encoding.encode_int32 value
+        | F.(Sfixed64_t As_int) -> Encoding.encode_int value
+        | F.(Sfixed64_t As_int64) -> Encoding.encode_int64 value
+        | F.Float_t -> Encoding.encode_float value
+        | F.Double_t -> Encoding.encode_float value
+        | F.Bool_t -> Encoding.encode_bool value)
 
 let encode_repeated : type v. v Field_value.typ -> v Field_value.t list -> t list =
  fun typ values ->
@@ -718,8 +723,9 @@ let encode_repeated : type v. v Field_value.typ -> v Field_value.t list -> t lis
 
 let serialize_field id typ value output =
   let open Result.Let_syntax in
-  Field_value.create typ value >>| encode >>| fun value ->
-  Writer.write_field output (id, value)
+  Field_value.create typ value >>| encode >>| function
+  | None -> ()
+  | Some value -> Writer.write_field output (id, value)
 
 let serialize_optional_field id typ value output =
   match value with
@@ -752,8 +758,9 @@ let serialize_repeated_message_field id serializer values output =
 
 let serialize_enum_field id to_int value output =
   let open Result.Let_syntax in
-  Field_value.(create (Int64_t As_int) @@ to_int value) >>| encode >>| fun value ->
-  Writer.write_field output (id, value)
+  Field_value.(create (Int64_t As_int) @@ to_int value) >>| encode >>| function
+  | None -> ()
+  | Some value -> Writer.write_field output (id, value)
 
 let serialize_repeated_enum_field id to_int values output =
   List.map values ~f:(fun value -> serialize_enum_field id to_int value output)

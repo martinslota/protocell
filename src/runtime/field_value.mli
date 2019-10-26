@@ -38,6 +38,8 @@ val show_validation_error : validation_error -> string
 
 val default : 'v typ -> 'v
 
+val is_default : 'v typ -> 'v -> bool
+
 val create : 'v typ -> 'v -> ('v t, [> validation_error]) Result.t
 
 val typ : 'v t -> 'v typ

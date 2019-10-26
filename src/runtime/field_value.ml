@@ -76,6 +76,33 @@ let show_validation_error = function
         int
         (show_typ typ)
 
+let equal : type v. v typ -> v -> v -> bool = function
+  | String_t -> String.equal
+  | Bytes_t -> String.equal
+  | Int32_t As_int32 -> Int32.equal
+  | Int32_t As_int -> Int.equal
+  | Int64_t As_int64 -> Int64.equal
+  | Int64_t As_int -> Int.equal
+  | Sint32_t As_int32 -> Int32.equal
+  | Sint32_t As_int -> Int.equal
+  | Sint64_t As_int64 -> Int64.equal
+  | Sint64_t As_int -> Int.equal
+  | Uint32_t As_int32 -> Int32.equal
+  | Uint32_t As_int -> Int.equal
+  | Uint64_t As_int64 -> Int64.equal
+  | Uint64_t As_int -> Int.equal
+  | Fixed32_t As_int32 -> Int32.equal
+  | Fixed32_t As_int -> Int.equal
+  | Fixed64_t As_int64 -> Int64.equal
+  | Fixed64_t As_int -> Int.equal
+  | Sfixed32_t As_int32 -> Int32.equal
+  | Sfixed32_t As_int -> Int.equal
+  | Sfixed64_t As_int64 -> Int64.equal
+  | Sfixed64_t As_int -> Int.equal
+  | Float_t -> Float.equal
+  | Double_t -> Float.equal
+  | Bool_t -> Bool.equal
+
 let default : type v. v typ -> v = function
   | String_t -> ""
   | Bytes_t -> ""
@@ -102,6 +129,9 @@ let default : type v. v typ -> v = function
   | Float_t -> 0.0
   | Double_t -> 0.0
   | Bool_t -> false
+
+let is_default : type v. v typ -> v -> bool =
+ fun typ value -> equal typ value (default typ)
 
 let max_uint_32_value =
   match Int32.(to_int max_value) with
